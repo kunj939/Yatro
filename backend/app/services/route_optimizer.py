@@ -38,10 +38,11 @@ TRAVEL_PENALTY = 0.015  # score units per travel minute
 WAIT_PENALTY = 0.01
 MAX_ACTIVITY_WAIT = timedelta(minutes=45)
 MAX_MEAL_WAIT = timedelta(minutes=90)
-# The quality gate refuses a day with two stops more than MAX_HOP_M apart by real road. Choosing stops, only estimates
-# are known and they run shorter than real roads, so the bar here sits lower. In a spread-out destination (Goa is
-# 100 km end to end) this keeps each day in one area instead of a North Goa fort after a South Goa lunch.
-HOP_LIMIT_M = int(MAX_HOP_M * 0.75)
+# The quality gate refuses a day with two stops more than MAX_HOP_M apart. Choosing stops, the same bar is applied to
+# the road estimate (which runs a little long: Agra -> Fatehpur Sikri estimates 51 km for about 40 by road), so a day
+# in a spread-out destination (Goa is 100 km end to end) stays in one area instead of a North Goa fort after a South
+# Goa lunch, and the plan isn't refused at the end.
+HOP_LIMIT_M = MAX_HOP_M
 
 
 def mm(n: int | float) -> timedelta:
