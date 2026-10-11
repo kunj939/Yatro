@@ -1,0 +1,136 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Route } from "lucide-react";
+
+type Story = {
+  label: string;      // what the dot is called
+  tag: string;        // the small pill above the headline
+  lead: string;       // headline, up to the accent
+  accent: string;     // the italic, coloured part
+  tone: string;       // accent colour: darker on the light theme, brighter on the dark one
+  body: React.ReactNode;
+  quote: string;
+};
+
+// The same product, told to seven kinds of traveller. Each swaps in for the last; the first is the default
+// (and what shows before scripts run).
+const STORIES: Story[] = [
+  {
+    label: "Everyone", tag: "Less scrolling. More going.",
+    lead: "Your budget called. It wants", accent: "a vacation.",
+    tone: "highlight",
+    body: <>Tell us the money. Pick the destination. We&apos;ll turn it into a trip worth bragging about:{" "}
+      <span className="font-semibold text-ink">rides, stays, food, adventures, the whole thing</span>. Real timings, prices
+      that fit, and if a plan can&apos;t work, we say so. No sugar-coating.</>,
+    quote: "Close the tabs. Open the world.",
+  },
+  {
+    label: "Students", tag: "For students · backpackers · friends",
+    lead: "Broke Today.", accent: "Abroad Tomorrow.",
+    tone: "text-[rgb(77_124_15)] dark:text-[rgb(190_255_74)]",
+    body: <>For the gang with big travel dreams and very <span className="font-semibold text-ink">specific bank balances</span>.
+      Cheap trains, cheaper stays, street food that slaps, and adventures worth every single rupee. Your CGPA can recover.
+      This trip won&apos;t repeat.</>,
+    quote: "Attendance can wait. These memories can't.",
+  },
+  {
+    label: "Professionals", tag: "For professionals · weekend escapes",
+    lead: "Out of Office.", accent: "Out of This World.",
+    tone: "text-[rgb(2_132_199)] dark:text-[rgb(125_200_255)]",
+    body: <>Meetings all week. <span className="font-semibold text-ink">Mountains this weekend.</span> Friday-night
+      connections, comfy stays, and a plan tight enough to fit between &ldquo;EOD&rdquo; and Monday&apos;s standup, with
+      time left to actually unwind.</>,
+    quote: "Your inbox can survive without you.",
+  },
+  {
+    label: "Couples", tag: "For couples · honeymoons",
+    lead: "Two Hearts.", accent: "One Escape Plan.",
+    tone: "text-[rgb(219_39_119)] dark:text-[rgb(255_143_190)]",
+    body: <>Date nights are great. <span className="font-semibold text-ink">New cities together are better.</span> Romantic
+      stays, sunset spots, candle-lit dinners and a budget you both agree on, so the only fight left is who picks the
+      playlist.</>,
+    quote: "Fall in love somewhere new.",
+  },
+  {
+    label: "Families", tag: "For families · grandparents · kids",
+    lead: "Different Generations.", accent: "One Beautiful Trip.",
+    tone: "text-[rgb(180_83_9)] dark:text-[rgb(255_196_110)]",
+    body: <>Dadi wants slow mornings. The kids want everything. <span className="font-semibold text-ink">We plan the day around
+      every age</span>: a gentle pace for grandparents, short walks for little legs, kid-friendly stops, and rides that work
+      for the whole gang.</>,
+    quote: "The best family stories happen together.",
+  },
+  {
+    label: "Seniors", tag: "For retirees · slow travel",
+    lead: "The World Isn't", accent: "Retiring Yet.",
+    tone: "text-[rgb(15_118_110)] dark:text-[rgb(110_231_200)]",
+    body: <>You&apos;ve earned the window seat. Culture-rich places, comfy stays, short walks, and <span className="font-semibold text-ink">no
+      exhausting schedules</span>. A slow, thoughtful plan with room for chai, rest, and every moment worth remembering.</>,
+    quote: "You've earned the time. Now take the trip.",
+  },
+  {
+    label: "Solo", tag: "For solo travellers · nomads",
+    lead: "Just You.", accent: "Zero Group Chat Drama.",
+    tone: "text-[rgb(109_40_217)] dark:text-[rgb(196_167_255)]",
+    body: <>No &ldquo;who&apos;s booking?&rdquo; No &ldquo;I&apos;m out&rdquo; at 11 pm. <span className="font-semibold text-ink">Your pace, your
+      budget, your playlist.</span> Wander at 6 am, eat at 4 pm, change your mind twice. We sort the tickets, stays and timings.</>,
+    quote: "Main character. Solo season.",
+  },
+];
+
+const EVERY_MS = 23_000; // how long each story stays up
+
+/** The hero's headline block. It turns through the stories above on its own, pauses while you hover it, and
+ * the dots jump to one. All the stories sit in one grid cell so the block is as tall as the tallest and nothing below
+ * it moves. The real <h1> is visually hidden: the headline you see changes, the page's title doesn't. */
+export function HeroStory() {
+  const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  // Reduced motion does not stop the turning: the swap is a fade (globals.css makes it instant there), not movement,
+  // and stopping it made the headline look stuck on machines that have animations switched off.
+  useEffect(() => {
+    if (paused) return;
+    const t = setTimeout(() => setI((n) => (n + 1) % STORIES.length), EVERY_MS);
+    return () => clearTimeout(t); // a click on a dot restarts the wait
+  }, [i, paused]);
+
+  return (
+    <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+         onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
+      <h1 className="sr-only">Yatro: trips planned around your budget</h1>
+      <div className="relative">
+      <div className="grid">
+        {STORIES.map((s, n) => {
+          const on = n === i;
+          return (
+            <div key={s.label} aria-hidden={!on || undefined}
+                 className={`col-start-1 row-start-1 min-w-0 transition-all duration-500 ease-out ${
+                   on ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}>
+              <span className="eyebrow max-w-full sm:max-w-[calc(100%-7.75rem)]">
+                <Route className="h-3.5 w-3.5 shrink-0 text-signal" aria-hidden /><span className="truncate">{s.tag}</span>
+              </span>
+              <p className="mt-4 max-w-[22ch] text-[clamp(2rem,3.5vw,2.9rem)] font-extrabold leading-[1.06] text-ink">
+                {s.lead}{" "}
+                <span className={`accent ${s.tone === "highlight" ? "highlight" : s.tone} whitespace-nowrap`}>{s.accent}</span>
+              </p>
+              <p className="mt-3 max-w-[52ch] text-[16px] leading-relaxed text-ink-soft">{s.body}</p>
+              <p className={`accent mt-2 text-[19px] ${s.tone === "highlight" ? "text-ink-soft" : s.tone}`}>&ldquo;{s.quote}&rdquo;</p>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-1 flex h-6 items-center gap-0.5 sm:absolute sm:right-0 sm:top-0 sm:mt-0 sm:h-[30px]" role="group" aria-label="Who is it for">
+        {STORIES.map((s, n) => (
+          <button key={s.label} type="button" onClick={() => setI(n)} aria-label={`Show: ${s.label}`} aria-current={n === i || undefined}
+                  className="group grid h-6 place-items-center px-1">
+            <span className={`block h-1.5 rounded-full transition-all duration-300 ${
+              n === i ? "w-6 bg-signal" : "w-1.5 bg-ink-mute/40 group-hover:bg-ink-mute"}`} />
+          </button>
+        ))}
+      </div>
+      </div>
+    </div>
+  );
+}

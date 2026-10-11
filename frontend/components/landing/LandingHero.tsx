@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { BadgeCheck, Clock3, CreditCard, MapPin, Route } from "lucide-react";
+import { BadgeCheck, Clock3, CreditCard, MapPin } from "lucide-react";
 import { Navbar } from "../Navbar";
 import { HeroSearch } from "./HeroSearch";
+import { HeroStory } from "./HeroStory";
 import { LiveBoard } from "./LiveBoard";
 
 // India and abroad, alternating, so neither reads as an afterthought.
@@ -21,17 +22,10 @@ export function LandingHero() {
       <Navbar />
       <div className="container-x relative grid gap-8 pb-10 pt-4 md:pb-12 md:pt-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-10 lg:pb-8 lg:pt-4">
         <div className="min-w-0">
-          <span className="eyebrow fade-up">
-            <Route className="h-3.5 w-3.5 text-signal" aria-hidden />Less scrolling. More going.
-          </span>
-          <h1 className="fade-up mt-4 max-w-[22ch] text-[clamp(2rem,3.5vw,2.9rem)] font-extrabold leading-[1.06] text-ink" style={{ ["--d" as string]: "80ms" }}>
-            Your budget called. It wants <span className="accent highlight whitespace-nowrap">a vacation.</span>
-          </h1>
-          <p className="fade-up mt-4 max-w-[52ch] text-[16px] leading-relaxed text-ink-soft" style={{ ["--d" as string]: "160ms" }}>
-            Tell us the money. Pick the destination. We&apos;ll turn your budget into a trip worth talking about:{" "}
-            <span className="font-semibold text-ink">rides, stays, food, adventures, the whole thing</span>, with real timings and
-            prices that fit. If a plan can&apos;t work, we say so, and fix it.
-          </p>
+          {/* The headline turns through six traveller stories (students, couples, families…); see HeroStory. */}
+          <div className="fade-up" style={{ ["--d" as string]: "80ms" }}>
+            <HeroStory />
+          </div>
           {/* One box instead of two buttons: type the trip the way you'd text a friend. */}
           <div className="fade-up mt-5" style={{ ["--d" as string]: "240ms" }}>
             <HeroSearch />
