@@ -279,7 +279,10 @@ def test_the_wa_me_link_has_no_phone_number_and_round_trips_the_text(client, see
     j, _ = _share(client, seeded["auth"], seeded["trip_id"])
     u = urlparse(j["wa_url"])
     assert (u.scheme, u.netloc, u.path) == ("https", "wa.me", "/")  # no number: the user picks the chat (I9)
-    assert parse_qs(u.query)["text"] == [j["text"]] and "\n" not in j["wa_url"]
+    assert "\n" not in j["wa_url"]
+    # WhatsApp gets a short message whose link it shows as the trip's card; the full text stays in "text" for copying
+    sent = parse_qs(u.query)["text"][0]
+    assert sent.endswith(j["url"]) and len(sent) < 400 and sent.count("\n") <= 4 and len(j["text"]) > len(sent)
 
 
 def test_a_long_trip_is_shortened_to_fit_a_message():
@@ -340,7 +343,8 @@ def test_the_plan_can_be_opened_in_the_owners_own_whatsapp_chat(client):
     r, _ = _share(client, auth, _planned(client, auth))
     digits = me["phone"].lstrip("+")
     assert r["wa_me_url"].startswith(f"https://wa.me/{digits}?text=")
-    assert r["wa_me_url"].split("?text=", 1)[1] == quote(r["text"], safe="")  # the same message, ready to send
+    assert r["wa_me_url"].split("?text=", 1)[1] == r["wa_url"].split("?text=", 1)[1]  # the same message, ready to send
+    assert quote(r["url"], safe="") in r["wa_me_url"]
     assert r["wa_url"].startswith("https://wa.me/?text=")  # the pick-a-chat link is unchanged
     # the message itself still holds no phone number (the number is only in the chat address the person opens)
     assert me["phone"] not in r["text"] and digits not in r["text"]

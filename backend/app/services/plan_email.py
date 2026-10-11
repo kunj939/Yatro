@@ -29,7 +29,6 @@ log = logging.getLogger("tripai.plan_email")
 LIME, NIGHT, INK, MUTE, LINE, PAPER = "#bcff4a", "#0f1219", "#171a21", "#667085", "#e6e8ee", "#ffffff"
 FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
 EMAIL_TEXT_LIMIT = 6000
-WHATSAPP_IN_EMAIL_LIMIT = 1500  # a wa.me link is a long web address: keep the message in it short enough for every mail app
 
 
 class NotReady(Exception):
@@ -111,7 +110,7 @@ def render(trip, user) -> tuple[str, str, str]:
     stats = "".join([stat("Planned cost", fmt_money(it["total_cost"], cur), True),
                      stat("Per person", fmt_money(it["cost_per_person"], cur)) if t["travellers"] > 1 else "",
                      stat("Budget left", fmt_money(budget["remaining"], cur)) if budget else ""])
-    wa_text = share_service.share_text(view, url, limit=WHATSAPP_IN_EMAIL_LIMIT)
+    wa_text = share_service.card_text(view, url)  # WhatsApp shows the link as the trip's card
     buttons = _button(url, "Open your plan", LIME, NIGHT)
     if user.phone:
         buttons += _button(share_service.wa_link(wa_text, user.phone), "💬 Send to my WhatsApp", "#25D366", "#06240f")

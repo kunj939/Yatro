@@ -561,9 +561,11 @@ def _text_bundle(trip, link, token: str, user: User) -> dict:
     """Made now, from refreshed data, and not stored anywhere (ADR 0006). `wa_me_url` opens WhatsApp on the person's OWN saved mobile
     number (null if they have none), for "send this plan to my WhatsApp"; it is never built from anyone else's number."""
     url = share_service.public_url(token)
-    text = share_service.share_text(share_service.share_view(trip, link), url)
-    return {"url": url, "text": text, "wa_url": share_service.wa_link(text),
-            "wa_me_url": share_service.wa_link(text, user.phone) if user.phone else None}
+    view = share_service.share_view(trip, link)
+    text = share_service.share_text(view, url)  # the full day-by-day text, for copying
+    card = share_service.card_text(view, url)  # what WhatsApp gets: a short line and the link, which it shows as a card
+    return {"url": url, "text": text, "wa_url": share_service.wa_link(card),
+            "wa_me_url": share_service.wa_link(card, user.phone) if user.phone else None}
 
 
 @router.post("/{trip_id}/share", status_code=201, dependencies=[Depends(limit("share-create", 20))])

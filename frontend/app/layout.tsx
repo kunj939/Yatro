@@ -6,7 +6,12 @@ import { themeScript } from "@/components/ThemeToggle";
 import { NightSky } from "@/components/NightSky";
 import { SpotlightTracker } from "@/components/SpotlightTracker";
 
+// Link previews need absolute image URLs. NEXT_PUBLIC_SITE_URL wins; on Vercel the production domain is known at build.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL
+  || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: { default: `${brand.name} — ${brand.tagline}`, template: `%s — ${brand.name}` },
   description: brand.description,
 };
