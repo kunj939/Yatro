@@ -4,7 +4,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -191,6 +191,16 @@ class Settings(BaseSettings):
     rate_limit_auth_per_minute: int = 10
     max_body_bytes: int = 256_000
     http_timeout_seconds: float = 12.0
+
+    @field_validator("database_url")
+    @classmethod
+    def _driver(cls, v: str) -> str:
+        """Hosted databases (Neon, Render, Heroku) hand out postgres:// or postgresql:// URLs; the driver installed here is psycopg 3."""
+        v = v.strip()
+        for plain in ("postgres://", "postgresql://"):
+            if v.startswith(plain):
+                return "postgresql+psycopg://" + v[len(plain):]
+        return v
 
     @model_validator(mode="after")
     def _check_production(self) -> Settings:

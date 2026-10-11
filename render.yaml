@@ -1,0 +1,29 @@
+# Render Blueprint: hosts the Python backend (FastAPI). The website itself runs on Vercel.
+# Render: New > Blueprint > pick this repo. It asks for the values marked "sync: false" below.
+services:
+  - type: web
+    name: yatro-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: ENVIRONMENT
+        value: development          # "development" keeps the on-screen sign-up code when no SMTP is set; use "production" for a real launch
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL           # Neon connection string; postgres:// or postgresql:// both work
+        sync: false
+      - key: CORS_ORIGINS           # the Vercel address, e.g. https://yatro.vercel.app
+        sync: false
+      - key: PUBLIC_APP_URL         # same Vercel address (share links point here)
+        sync: false
+      - key: ADMIN_EMAILS           # your own email, to open /admin
+        sync: false
+      - key: DEMO_MODE
+        value: auto
+      - key: WEB_CONCURRENCY        # the free instance has 512 MB
+        value: "1"
+      - key: MAX_CONCURRENT_PLANS
+        value: "4"
