@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
+from app.core import runtime
 from app.core.config import get_settings
 from app.db.session import SessionLocal
 from app.gateway import context as C
@@ -56,7 +57,7 @@ class Budgets:
     def limit(group: str) -> float | None:
         s = get_settings()
         return {"google": s.google_daily_usd, "llm": s.llm_daily_usd, "search": s.search_daily_usd,
-                "railradar": s.railradar_daily_calls, "irctc1": s.irctc1_daily_calls, "plans": s.daily_plan_cap,
+                "railradar": s.railradar_daily_calls, "irctc1": s.irctc1_daily_calls, "plans": runtime.number("daily_plan_cap", s.daily_plan_cap) or None,
                 "sms": s.sms_daily_limit or None}.get(group)  # 0 = no cap
 
     def _load(self, day: str, group: str) -> float:

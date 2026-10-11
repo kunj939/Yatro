@@ -63,6 +63,7 @@ SWITCHES: dict[str, Switch] = {s.name: s for s in (
 NUMBERS: dict[str, Number] = {n.key: n for n in (
     Number("brownout_level", "Busy mode level", "0 = normal. 1 template text · 2 + no alternatives · 3 + fewer options compared · 4 + saved train timetables only.", 0, 4),
     Number("free_trip_plans", "Free plans per account", "How many trip plans a free account gets in total.", 0, 50),
+    Number("daily_plan_cap", "New plans per day (whole site)", "After this many new plans today, everyone (Plus too) is told new plans reopen at midnight. Each plan costs up to about $0.36 of Google calls, so keep it under GOOGLE_DAILY_USD / 0.36 (28 for $10), or raise that budget too. 0 = no cap.", 0, 5000),
 )}
 
 

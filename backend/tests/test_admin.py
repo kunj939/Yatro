@@ -208,7 +208,7 @@ def test_controls_list_and_validate(client, owner):
     c = client.get("/api/admin/controls", headers=owner).json()
     assert {s["name"] for s in c["switches"]} == {"signups", "plans", "sms", "sharing", "ai_narration", "plan_emails"}
     assert all(s["people_see"] and s["effect"] for s in c["switches"])
-    assert {n["key"] for n in c["numbers"]} == {"brownout_level", "free_trip_plans"}
+    assert {n["key"] for n in c["numbers"]} == {"brownout_level", "free_trip_plans", "daily_plan_cap"}
     assert _put(client, owner, "/controls/switches/nope", on=True).status_code == 404
     assert _put(client, owner, "/controls/settings/brownout_level", value=9).status_code == 422
     assert _put(client, owner, "/controls/settings/nope", value=1).status_code == 404
@@ -275,6 +275,17 @@ def test_numbers_busy_mode_and_free_plans(client, owner):
     client.delete("/api/admin/controls/brownout_level", headers=owner)
     assert brownout.configured() == 0
     assert client.delete("/api/admin/controls/bogus", headers=owner).status_code == 404
+
+
+def test_the_daily_plan_cap_can_be_raised_live(client, owner):
+    from app.gateway.budget import budgets
+    assert budgets.limit("plans") == 25
+    c = _put(client, owner, "/controls/settings/daily_plan_cap", value=60, reason="launch day").json()
+    assert next(n for n in c["numbers"] if n["key"] == "daily_plan_cap")["value"] == 60 and budgets.limit("plans") == 60
+    _put(client, owner, "/controls/settings/daily_plan_cap", value=0)
+    assert budgets.limit("plans") is None  # 0 = no cap
+    client.delete("/api/admin/controls/daily_plan_cap", headers=owner)
+    assert budgets.limit("plans") == 25
 
 
 def test_the_admins_choice_beats_the_environment_and_clearing_gives_it_back(client, owner, monkeypatch):
