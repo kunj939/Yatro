@@ -4,7 +4,7 @@
 #
 #   docker compose -f docker-compose.yml -f docker-compose.verify.yml up --build -d
 #
-#   Your real .env is still read for everything else, but nothing below can be overridden by it.
+# Your real .env is still read for everything else, but nothing below can be overridden by it.
 services:
   backend:
     environment:
@@ -18,7 +18,6 @@ services:
       WEB_SEARCH_API_KEY: ""
       SMTP_HOST: ""
       SMS_PROVIDER: console
-      REQUIRE_PHONE_CODE: "true"       # verification scripts register people by email+phone and expect a phone code as part of signup
       OTP_RESEND_SECONDS: "0"
       RATE_LIMIT_ENABLED: "false"
       OTP_PER_IP_HOUR: "0"                  # verify_stack.py signs up a dozen people from one address
