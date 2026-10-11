@@ -1,0 +1,266 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Lets the .spotlight glow fade in and out (a custom property can only be animated once it is typed). */
+@property --spot { syntax: "<number>"; inherits: true; initial-value: 0; }
+
+/* Light and dark are the same design with one set of values swapped.
+   The brand is electric lime — deliberately a hue nothing else here owns, because every other colour MEANS
+   something: cyan = verified, amber = needs check, slate = sample data, rose = over budget. A traveller never
+   has to wonder whether a coloured thing is a claim about their data. Lime is dark-text-on-accent, which is
+   why .btn-primary flips its text colour rather than using white.
+   Neutrals are a cool graphite rather than an olive tint, so the lime reads as the only warm-green thing. */
+:root {
+  color-scheme: light;
+  --paper: 255 255 255;
+  --haze: 245 246 243;
+  --haze-2: 231 233 228;
+  --line: 222 225 218;
+  --ink: 16 19 17;
+  --ink-soft: 70 77 72;
+  --ink-mute: 102 109 104;  /* 5:1 on white: small grey text must stay readable */
+  --night: 14 17 16;
+  --night-2: 28 32 30;
+  --night-3: 46 52 49;
+  --signal: 101 150 0;
+  --signal-deep: 78 116 0;
+  --signal-soft: 236 248 210;
+  --on-signal: 255 255 255;
+  --spark: 8 145 178;
+  --teal: 8 128 150;
+  --teal-deep: 5 96 114;
+  --teal-soft: 214 239 244;
+  --caution: 176 92 10;
+  --caution-soft: 253 236 213;
+  --demo: 94 104 110;
+  --demo-soft: 227 231 233;
+  --danger: 196 36 68;
+  --danger-soft: 252 222 229;
+  --shadow: 16 19 17;
+}
+
+.dark {
+  color-scheme: dark;
+  --paper: 22 26 34;  /* cards: clearly lifted off the page, not near-black on black */
+  --haze: 9 11 17;  /* a night-sky navy, not green-black */
+  --haze-2: 34 39 50;
+  --line: 45 51 64;
+  --ink: 238 241 236;
+  --ink-soft: 184 190 204;
+  --ink-mute: 150 157 174;  /* about 6:1 on cards (was 4.3:1) */
+  --night: 31 36 48;  /* a raised panel inside a card, so it still stands out in dark mode */
+  --night-2: 42 48 62;
+  --night-3: 62 70 88;
+  --signal: 190 255 74;
+  --signal-deep: 214 255 140;
+  --signal-soft: 30 40 26;
+  --on-signal: 9 11 17;
+  --spark: 45 212 230;
+  --teal: 56 200 218;
+  --teal-deep: 140 230 240;
+  --teal-soft: 10 40 46;
+  --caution: 232 150 70;
+  --caution-soft: 54 34 16;
+  --demo: 150 160 162;
+  --demo-soft: 38 44 46;
+  --danger: 244 110 142;
+  --danger-soft: 56 20 34;
+  --shadow: 0 0 0;
+}
+
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+/* Nothing on the page may push it sideways: wide things (tables, marquees) scroll or clip inside themselves. */
+html, body { overflow-x: clip; }
+body {
+  @apply bg-haze text-ink antialiased;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+/* Headlines in Bricolage Grotesque (character), everything else in Plus Jakarta Sans (easy reading). */
+h1, h2, .text-display, .text-title { font-family: "Bricolage Grotesque", "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.025em; }
+body {
+  letter-spacing: -0.006em;
+}
+::selection { background: rgb(var(--signal) / 0.35); }
+.num { font-variant-numeric: tabular-nums; }
+
+:focus-visible { outline: 2px solid rgb(var(--signal)); outline-offset: 2px; border-radius: 6px; }
+
+/* Anchored sections land below the floating navbar rather than under it. */
+section[id] { scroll-margin-top: 96px; }
+
+@layer components {
+  .container-x { @apply mx-auto w-full max-w-6xl px-5 md:px-8; }
+  .eyebrow { @apply inline-flex items-center gap-2 rounded-full border border-line bg-paper/70 px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-soft backdrop-blur; }
+  .btn { @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg px-5 py-2.5 text-[15px] font-semibold transition-all duration-200 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn bg-signal text-[rgb(var(--on-signal))] shadow-[0_8px_24px_-10px_rgb(var(--signal)/0.7)] hover:bg-signal-deep hover:shadow-[0_12px_30px_-10px_rgb(var(--signal)/0.85)]; }
+  .btn-dark { @apply btn bg-night text-white hover:bg-night-2; }
+  .btn-ghost { @apply btn border border-line bg-paper text-ink hover:border-ink/35 hover:bg-haze; }
+  .btn-ghost-dark { @apply btn border border-white/25 text-white hover:border-white/60; }
+  .field { @apply w-full rounded-lg border border-line bg-paper px-4 py-3 text-[15px] text-ink placeholder:text-ink-mute focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/25; }
+  .chip { @apply inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-200; }
+  .chip-off { @apply chip border-line bg-paper text-ink hover:-translate-y-px hover:border-ink/40; }
+  .chip-on { @apply chip border-signal bg-signal text-[rgb(var(--on-signal))] shadow-[0_6px_18px_-8px_rgb(var(--signal)/0.8)]; }
+  .panel { @apply rounded-ticket border border-line bg-paper; }
+  /* Cards that respond to the pointer: a small lift and a brand-tinted edge. */
+  .card-hover { @apply transition-all duration-300 ease-out hover:-translate-y-1 hover:border-signal/40 hover:shadow-glow; }
+  .text-gradient { @apply bg-gradient-to-r from-ink via-ink to-signal bg-clip-text text-transparent; }
+  /* The accent: the one phrase that matters in a headline, in an italic serif against the bold sans. Pair it with
+     .highlight (the brand gradient, light or dark theme) or .highlight-night (on panels that are always dark). The
+     padding stops the italic's last stroke being clipped by the gradient's text clip. */
+  .accent { font-family: "Instrument Serif", Georgia, "Times New Roman", serif; font-style: italic; font-weight: 400;
+            letter-spacing: -0.005em; font-size: 1.1em; line-height: 1; padding: 0 0.12em 0.08em 0.02em; margin-right: -0.08em; }
+  .wordmark { font-family: "Instrument Serif", Georgia, "Times New Roman", serif; font-style: italic; font-weight: 400;
+              letter-spacing: -0.01em; }
+  .headline-font { font-family: "Bricolage Grotesque", "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.03em; }
+
+  /* Cards that catch the light: a thin glow on the edge that follows the pointer, a faint wash inside, and a soft
+     highlight along the top edge at rest. SpotlightTracker (one listener for the page) writes the pointer position
+     into --mx / --my on the card under it. */
+  .spotlight { position: relative; isolation: isolate; --spot: 0; transition: --spot 0.35s ease; }
+  .spotlight:hover { --spot: 1; }
+  .spotlight::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 2;
+    background:
+      radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgb(var(--signal) / calc(0.7 * var(--spot))), transparent 70%),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.08), transparent 45%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+  }
+  .spotlight::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+    background: radial-gradient(440px circle at var(--mx, 50%) var(--my, 0%), rgb(var(--signal) / calc(0.07 * var(--spot))), transparent 60%);
+  }
+  .highlight { background-image: linear-gradient(100deg, rgb(var(--signal)) 15%, rgb(var(--spark)) 100%);
+               -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .highlight-night { background-image: linear-gradient(100deg, rgb(190 255 74) 15%, rgb(45 212 230) 100%);
+                     -webkit-background-clip: text; background-clip: text; color: transparent; }
+  /* A stop on the route rail: the one motif that threads the page. */
+  .stop { @apply relative pl-7; }
+  .stop::before { content: ""; @apply absolute left-0 top-[0.45em] h-3 w-3 rounded-full border-2 border-signal bg-paper; }
+  .stop::after { content: ""; @apply absolute left-[5px] top-[1.5em] bottom-[-0.4em] w-0.5 bg-line; }
+  .stop:last-child::after { @apply hidden; }
+}
+
+/* Button shine: a soft highlight sweeps across on hover. */
+.shine::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.45) 50%, transparent 70%);
+  transform: translateX(-120%);
+}
+.shine:hover::after { transform: translateX(120%); transition: transform 700ms ease; }
+
+/* Range input in the brand colour, with the filled part drawn from --fill (set inline as a percentage). */
+.range { -webkit-appearance: none; appearance: none; height: 8px; border-radius: 999px; cursor: pointer;
+  background: linear-gradient(to right, rgb(var(--signal)) 0 var(--fill, 50%), rgb(var(--haze-2)) var(--fill, 50%) 100%); }
+.range::-webkit-slider-thumb { -webkit-appearance: none; height: 22px; width: 22px; border-radius: 999px;
+  background: rgb(var(--paper)); border: 3px solid rgb(var(--signal)); box-shadow: 0 0 0 6px rgb(var(--signal) / 0.18);
+  transition: transform 150ms ease, box-shadow 150ms ease; }
+.range::-webkit-slider-thumb:hover { transform: scale(1.12); box-shadow: 0 0 0 9px rgb(var(--signal) / 0.22); }
+.range::-moz-range-thumb { height: 18px; width: 18px; border-radius: 999px; background: rgb(var(--paper));
+  border: 3px solid rgb(var(--signal)); box-shadow: 0 0 0 6px rgb(var(--signal) / 0.18); }
+
+/* Railway-ticket perforation used by the planning console */
+.perforated { position: relative; }
+.perforated::before, .perforated::after {
+  content: ""; position: absolute; left: -9px; width: 18px; height: 18px; border-radius: 999px; background: var(--hole, rgb(var(--night)));
+}
+.perforated::before { top: -9px; }
+.perforated::after { bottom: -9px; }
+.perf-line { background-image: radial-gradient(circle, rgba(255,255,255,0.35) 1.2px, transparent 1.4px); background-size: 10px 10px; background-repeat: repeat-y; width: 10px; }
+
+@keyframes train-run { from { transform: translateX(-30%); } to { transform: translateX(130%); } }
+@keyframes blink { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.train-run { animation: train-run 26s linear infinite; }
+.window-blink { animation: blink 3.2s ease-in-out infinite; }
+
+/* Landing illustration: one 9s loop — the route draws, each stop lands, then the budget fills. */
+@keyframes ys-draw { 0% { stroke-dashoffset: 1; } 14%, 100% { stroke-dashoffset: 0; } }
+@keyframes ys-pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes ys-fill { 0%, 36% { transform: scaleX(0); } 62%, 100% { transform: scaleX(0.84); } }
+
+.ys-line { stroke-dasharray: 1; stroke-dashoffset: 1; animation: ys-draw 9s ease-in-out infinite; }
+.ys-stop { opacity: 0; animation: ys-pop 0.5s ease-out forwards; animation-delay: var(--d); }
+.ys-budget { transform-origin: 188px 0; animation: ys-fill 9s ease-in-out infinite; }
+
+/* The active stage's own timer, drawn as it runs out. */
+@keyframes hiw-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.hiw-bar { transform-origin: left; animation: hiw-bar 3.2s linear forwards; }
+
+/* The board sits in its own light: a soft brand-coloured bloom behind the panel, and a pulse on the live dot. */
+.board-glow::before {
+  content: ""; position: absolute; inset: -14% -8%; z-index: -1; border-radius: 28px;
+  background: radial-gradient(60% 60% at 50% 40%, rgb(var(--signal) / 0.24), transparent 70%),
+              radial-gradient(45% 45% at 80% 80%, rgb(var(--spark) / 0.22), transparent 70%);
+  filter: blur(36px);
+}
+@keyframes board-live { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.7); } }
+.board-live { animation: board-live 1.9s ease-in-out infinite; }
+
+/* Scroll reveal: elements rise into place the first time they enter the viewport (see components/Reveal). */
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity 700ms cubic-bezier(.2,.7,.2,1), transform 700ms cubic-bezier(.2,.7,.2,1); transition-delay: var(--rd, 0ms); }
+.reveal.in { opacity: 1; transform: none; }
+/* a card that both scrolls in and catches the light keeps both transitions (the line above would drop the glow's) */
+.reveal.spotlight { transition: opacity 700ms cubic-bezier(.2,.7,.2,1), transform 700ms cubic-bezier(.2,.7,.2,1), --spot 0.35s ease;
+                    transition-delay: var(--rd, 0ms), var(--rd, 0ms), 0ms; }
+
+/* Endless strip of destinations. The list is rendered twice so the loop has no seam. */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee { animation: marquee 38s linear infinite; }
+.marquee-wrap:hover .marquee { animation-play-state: paused; }
+.mask-x { -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent); }
+
+@keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.float-y { animation: float-y 6s ease-in-out infinite; }
+
+@keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fade-up 500ms cubic-bezier(.2,.7,.2,1) both; animation-delay: var(--d, 0ms); }
+
+@keyframes sheet-in { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: none; } }
+.sheet-in { animation: sheet-in 220ms cubic-bezier(.2,.7,.2,1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .train-run, .window-blink, .board-live, .marquee, .float-y { animation: none; }
+  .ys-line { stroke-dashoffset: 0; animation: none; }
+  .ys-stop { opacity: 1; animation: none; }
+  .ys-budget { transform: scaleX(0.84); animation: none; }
+  .hiw-bar { animation: none; transform: scaleX(1); }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .fade-up, .sheet-in { animation: none; }
+  .star-twinkle { animation: none; }
+  .shooting-star { display: none; }
+  * { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
+
+/* Night sky (dark theme only, see NightSky.tsx): a few stars breathe, and every so often one falls. */
+.star-twinkle { animation: twinkle 4.8s ease-in-out infinite; }
+@keyframes twinkle { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.15; } }
+.shooting-star {
+  position: absolute; top: 9%; left: 62%; width: 140px; height: 1.5px; border-radius: 999px; opacity: 0;
+  background: linear-gradient(90deg, rgb(244 248 236 / 0.95), transparent);
+  transform: rotate(-24deg); transform-origin: left center;
+  animation: shoot 14s ease-in 3s infinite;
+}
+@keyframes shoot {
+  0%, 92% { opacity: 0; transform: rotate(-24deg) translateX(0) scaleX(0.3); }
+  94% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(-24deg) translateX(-420px) scaleX(1); }
+}
+
+/* Page background: a fixed, still wash anchored to the corners — enough colour to stop the page reading as a
+   flat sheet, quiet enough that nothing competes with the board. Tuned separately per theme. */
+.page-bg {
+  position: fixed; inset: 0; z-index: -10; pointer-events: none;
+  background:
+    radial-gradient(52rem 38rem at 88% -6%, rgb(var(--signal) / 0.16), transparent 62%),
+    radial-gradient(44rem 34rem at -8% 42%, rgb(var(--spark) / 0.05), transparent 62%),
+    radial-gradient(40rem 30rem at 50% 108%, rgb(var(--signal) / 0.08), transparent 60%);
+}
+.dark .page-bg {
+  background:
+    radial-gradient(60rem 42rem at 50% -12%, rgb(70 92 160 / 0.16), transparent 62%),
+    radial-gradient(46rem 36rem at -8% 50%, rgb(60 70 130 / 0.07), transparent 62%),
+    radial-gradient(42rem 32rem at 100% 100%, rgb(40 60 120 / 0.08), transparent 60%);
+}

@@ -1,0 +1,54 @@
+[
+ {
+  "concurrent": 1,
+  "ok": 1,
+  "failed": 0,
+  "p50_s": 0.33,
+  "p95_s": 0.33,
+  "max_s": 0.33,
+  "first_event_p95_s": 0.24,
+  "batch_s": 0.34,
+  "plans_per_min": 176.1,
+  "peak_threads": 9,
+  "peak_rss_mb": null
+ },
+ {
+  "concurrent": 5,
+  "ok": 5,
+  "failed": 0,
+  "p50_s": 0.75,
+  "p95_s": 0.96,
+  "max_s": 0.96,
+  "first_event_p95_s": 0.89,
+  "batch_s": 1.01,
+  "plans_per_min": 296.8,
+  "peak_threads": 21,
+  "peak_rss_mb": null
+ },
+ {
+  "concurrent": 10,
+  "ok": 10,
+  "failed": 0,
+  "p50_s": 1.45,
+  "p95_s": 1.8,
+  "max_s": 1.8,
+  "first_event_p95_s": 1.38,
+  "batch_s": 1.93,
+  "plans_per_min": 311.4,
+  "peak_threads": 39,
+  "peak_rss_mb": null
+ },
+ {
+  "concurrent": 20,
+  "ok": 20,
+  "failed": 0,
+  "p50_s": 2.53,
+  "p95_s": 3.58,
+  "max_s": 3.76,
+  "first_event_p95_s": 3.3,
+  "batch_s": 3.92,
+  "plans_per_min": 305.9,
+  "peak_threads": 65,
+  "peak_rss_mb": null
+ }
+]

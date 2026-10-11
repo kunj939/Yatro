@@ -1,0 +1,35 @@
+# For verification only (see VERIFY.md). It makes the stack SAFE and SMALL:
+#   - every real provider key is blanked and DEMO_MODE is on, so nothing here can call (or bill) Google, OpenRouter or a rail API
+#   - plans cost nothing and never run out of free plans; only 2 plans run at once, so a queue forms with a handful of requests
+#
+#   docker compose -f docker-compose.yml -f docker-compose.verify.yml up --build -d
+#
+# Your real .env is still read for everything else, but nothing below can be overridden by it.
+services:
+  backend:
+    environment:
+      ENVIRONMENT: development
+      DEMO_MODE: "true"
+      GOOGLE_MAPS_SERVER_KEY: ""
+      OPENROUTER_API_KEY: ""
+      OPENAI_COMPAT_API_KEY: ""
+      IRCTC_RAPIDAPI_KEY: ""
+      RAILRADAR_API_KEY: ""
+      WEB_SEARCH_API_KEY: ""
+      SMTP_HOST: ""
+      SMS_PROVIDER: console
+      OTP_RESEND_SECONDS: "0"
+      RATE_LIMIT_ENABLED: "false"
+      OTP_PER_IP_HOUR: "0"                  # verify_stack.py signs up a dozen people from one address
+      FREE_TRIP_PLANS: "50"
+      BUDGET_MODE: "off"
+      MAX_CONCURRENT_PLANS: "2"
+      PLAN_QUEUE_LIMIT: "4"
+      PLAN_QUEUE_HARD_LIMIT: "8"
+      JOB_HEARTBEAT_SECONDS: "2"
+      REAPER_STALE_SECONDS: "10"
+      JOB_REQUEUE_MAX_AGE_SECONDS: "0"      # a killed plan is refunded; set 300 to see it run again instead
+      PLAN_TEST_DELAY_SECONDS: ${PLAN_TEST_DELAY_SECONDS:-0}   # set to 30 to hold each plan long enough to kill the container mid-way
+      REDIS_URL: ${REDIS_URL:-}
+      CACHE_REDIS_ENABLED: ${CACHE_REDIS_ENABLED:-false}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}

@@ -1,0 +1,4 @@
+# Keep shell scripts and workflow files on Unix line endings, whatever the Windows setting: a CRLF in docker-entrypoint.sh breaks it on Linux.
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

@@ -1,0 +1,79 @@
+# One-command local stack:  cp .env.example .env && docker compose up --build
+# Frontend: http://localhost:3000   API docs: http://localhost:8000/api/docs
+# Optional services (off unless asked for):
+#   docker compose --profile redis up     a free Redis container; set REDIS_URL=redis://redis:6379/0 in .env to use it
+#   docker compose --profile backup up    a daily pg_dump to the pgbackups volume, kept BACKUP_RETENTION_DAYS (default 14)
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: tripai
+      POSTGRES_USER: tripai
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tripai}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tripai -d tripai"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    profiles: ["redis"]
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]   # a cache and counters only: nothing here is the source of truth
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backup:
+    profiles: ["backup"]
+    image: postgres:16-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: tripai
+      PGDATABASE: tripai
+      PGPASSWORD: ${POSTGRES_PASSWORD:-tripai}
+      BACKUP_DIR: /backups
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - pgbackups:/backups
+      - ./backend/scripts/pg_backup.sh:/pg_backup.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          sh /pg_backup.sh || true
+          sleep 86400
+        done
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://tripai:${POSTGRES_PASSWORD:-tripai}@db:5432/tripai
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY:-}
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  pgbackups:

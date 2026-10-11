@@ -1,0 +1,34 @@
+# --- secrets and local settings: never commit these ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.claude/
+
+# --- databases and backups ---
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
+*.dump
+*.bak
+*.sql.gz
+backups/
+pgbackups/
+verify-results/
+
+# --- build and tool output ---
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+node_modules/
+.next/
+tsconfig.tsbuildinfo
+*.log
+.DS_Store

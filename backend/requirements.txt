@@ -1,0 +1,30 @@
+# fastapi==0.115.6
+# uvicorn[standard]==0.32.1
+# sqlalchemy==2.0.36
+# alembic==1.14.0
+# pydantic==2.10.3
+# pydantic-settings==2.6.1
+# email-validator==2.2.0
+# httpx==0.28.1
+# psycopg[binary]==3.2.3
+# argon2-cffi==23.1.0
+# PyJWT==2.10.1
+
+
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+sqlalchemy==2.0.36
+alembic==1.14.0
+pydantic==2.10.3
+pydantic-settings==2.6.1
+email-validator==2.2.0
+httpx==0.28.1
+psycopg[binary]==3.2.3
+argon2-cffi==23.1.0
+PyJWT==2.10.1
+
+# Per-destination timezone and currency (offline, no API key, no per-request cost)
+timezonefinder==9.0.0
+reverse_geocoder==1.5.1
+gunicorn==26.2.0
+redis==8.1.0

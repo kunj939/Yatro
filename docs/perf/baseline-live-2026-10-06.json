@@ -1,0 +1,2323 @@
+[
+ {
+  "pass": "cold",
+  "route": "local",
+  "label": "Local (same city)",
+  "http_status": 200,
+  "outcome": "infeasible",
+  "wall_ms": 123868,
+  "trace": {
+   "label": "Hawa Mahal, Jaipur -> Jaipur",
+   "total_ms": 123834.7,
+   "first_event_ms": 4082.2,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 4082.2,
+     "end_ms": 4082.3,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 4082.4,
+     "end_ms": 4511.4,
+     "status": "done",
+     "db_queries": 8,
+     "http_calls": 2
+    },
+    {
+     "name": "stage.places",
+     "start_ms": 4511.4,
+     "end_ms": 6014.4,
+     "status": "done",
+     "db_queries": 16,
+     "http_calls": 4
+    },
+    {
+     "name": "stage.hours",
+     "start_ms": 6014.4,
+     "end_ms": 6014.9,
+     "status": "done",
+     "db_queries": 1,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.prices",
+     "start_ms": 6014.9,
+     "end_ms": 6015.0,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.optimize",
+     "start_ms": 6015.0,
+     "end_ms": 75411.7,
+     "status": "done",
+     "db_queries": 16,
+     "http_calls": 16
+    },
+    {
+     "name": "stage.budget",
+     "start_ms": 75411.7,
+     "end_ms": 75411.8,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.alternatives",
+     "start_ms": 75411.8,
+     "end_ms": 75420.8,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.itinerary",
+     "start_ms": 75420.8,
+     "end_ms": 123829.1,
+     "status": "done",
+     "db_queries": 20,
+     "http_calls": 2
+    }
+   ],
+   "http_calls": 26,
+   "http_errors": 0,
+   "endpoints": {
+    "google-places GET /v1/places/{id}": {
+     "calls": 2,
+     "errors": 0,
+     "usd": 0.034,
+     "p50_ms": 295.9,
+     "max_ms": 295.9
+    },
+    "google-places POST /v1/places:autocomplete": {
+     "calls": 2,
+     "errors": 0,
+     "usd": 0.0057,
+     "p50_ms": 3541.9,
+     "max_ms": 3541.9
+    },
+    "google-places POST /v1/places:searchText": {
+     "calls": 4,
+     "errors": 0,
+     "usd": 0.128,
+     "p50_ms": 339.4,
+     "max_ms": 430.1
+    },
+    "google-routes POST /directions/v2:computeRoutes": {
+     "calls": 16,
+     "errors": 0,
+     "usd": 0.08,
+     "p50_ms": 2651.6,
+     "max_ms": 4431.9
+    },
+    "open-meteo GET /v1/forecast": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 736.8,
+     "max_ms": 736.8
+    },
+    "openrouter POST /api/v1/chat/completions": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 11389.7,
+     "max_ms": 11389.7
+    }
+   },
+   "usd_google_and_search": 0.2477,
+   "rail_quota_units": 0,
+   "cache": {
+    "hits": 2,
+    "misses": 25,
+    "by_provider": {
+     "google-autocomplete": {
+      "hits": 1,
+      "misses": 2
+     },
+     "google-place-details": {
+      "hits": 1,
+      "misses": 2
+     },
+     "google-places-search": {
+      "hits": 0,
+      "misses": 4
+     },
+     "google-routes": {
+      "hits": 0,
+      "misses": 16
+     },
+     "open-meteo": {
+      "hits": 0,
+      "misses": 1
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 0,
+    "outcomes": {},
+    "detail": []
+   },
+   "llm": {
+    "calls": 1,
+    "tokens": 2036,
+    "usd": 0.00046
+   },
+   "db": {
+    "queries": 69,
+    "ms": 8.9
+   }
+  }
+ },
+ {
+  "pass": "cold",
+  "route": "rail_short",
+  "label": "Short rail (Jaipur \u2192 New Delhi)",
+  "http_status": 200,
+  "outcome": "infeasible",
+  "wall_ms": 86418,
+  "trace": {
+   "label": "Jaipur -> New Delhi",
+   "total_ms": 86390.5,
+   "first_event_ms": 333.1,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 333.1,
+     "end_ms": 333.2,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 333.2,
+     "end_ms": 2163.3,
+     "status": "done",
+     "db_queries": 49,
+     "http_calls": 11
+    },
+    {
+     "name": "stage.places",
+     "start_ms": 2163.3,
+     "end_ms": 3877.1,
+     "status": "done",
+     "db_queries": 16,
+     "http_calls": 4
+    },
+    {
+     "name": "stage.hours",
+     "start_ms": 3877.1,
+     "end_ms": 3877.5,
+     "status": "done",
+     "db_queries": 1,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.prices",
+     "start_ms": 3877.5,
+     "end_ms": 3877.6,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.optimize",
+     "start_ms": 3877.6,
+     "end_ms": 36492.9,
+     "status": "done",
+     "db_queries": 7,
+     "http_calls": 7
+    },
+    {
+     "name": "stage.budget",
+     "start_ms": 36492.9,
+     "end_ms": 36493.2,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.alternatives",
+     "start_ms": 36493.2,
+     "end_ms": 36509.7,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.itinerary",
+     "start_ms": 36509.7,
+     "end_ms": 86383.2,
+     "status": "done",
+     "db_queries": 26,
+     "http_calls": 2
+    }
+   ],
+   "http_calls": 26,
+   "http_errors": 0,
+   "endpoints": {
+    "google-places GET /v1/places/{id}": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.017,
+     "p50_ms": 120.4,
+     "max_ms": 120.4
+    },
+    "google-places POST /v1/places:autocomplete": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0028,
+     "p50_ms": 193.9,
+     "max_ms": 193.9
+    },
+    "google-places POST /v1/places:searchText": {
+     "calls": 4,
+     "errors": 0,
+     "usd": 0.128,
+     "p50_ms": 414.9,
+     "max_ms": 416.7
+    },
+    "google-routes POST /directions/v2:computeRoutes": {
+     "calls": 14,
+     "errors": 0,
+     "usd": 0.07,
+     "p50_ms": 262.3,
+     "max_ms": 657.8
+    },
+    "open-meteo GET /v1/forecast": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 806.9,
+     "max_ms": 806.9
+    },
+    "openrouter POST /api/v1/chat/completions": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 1681.9,
+     "max_ms": 1681.9
+    },
+    "railradar GET /v1/trains/between/{id}/{id}": {
+     "calls": 4,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 281.1,
+     "max_ms": 454.1
+    }
+   },
+   "usd_google_and_search": 0.2178,
+   "rail_quota_units": 4,
+   "cache": {
+    "hits": 4,
+    "misses": 29,
+    "by_provider": {
+     "google-autocomplete": {
+      "hits": 2,
+      "misses": 1
+     },
+     "google-place-details": {
+      "hits": 2,
+      "misses": 1
+     },
+     "rail-saved:railradar": {
+      "hits": 0,
+      "misses": 4
+     },
+     "railradar": {
+      "hits": 0,
+      "misses": 4
+     },
+     "google-routes": {
+      "hits": 0,
+      "misses": 8
+     },
+     "google-transit": {
+      "hits": 0,
+      "misses": 6
+     },
+     "google-places-search": {
+      "hits": 0,
+      "misses": 4
+     },
+     "open-meteo": {
+      "hits": 0,
+      "misses": 1
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 2,
+    "outcomes": {
+     "trains": 2
+    },
+    "detail": [
+     {
+      "source": "railradar",
+      "pair": "JP-NDLS",
+      "outcome": "trains",
+      "trains": 3,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "JP-DEE",
+      "outcome": "trains",
+      "trains": 9,
+      "kind": "direct"
+     }
+    ]
+   },
+   "llm": {
+    "calls": 1,
+    "tokens": 2308,
+    "usd": 0.00054
+   },
+   "db": {
+    "queries": 107,
+    "ms": 33.8
+   }
+  }
+ },
+ {
+  "pass": "cold",
+  "route": "rail_change",
+  "label": "Rail, likely a change (Udaipur \u2192 Rishikesh)",
+  "http_status": 200,
+  "outcome": "infeasible",
+  "wall_ms": 28362,
+  "trace": {
+   "label": "Udaipur -> Rishikesh",
+   "total_ms": 28336.5,
+   "first_event_ms": 26585.3,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 26585.3,
+     "end_ms": 26585.4,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 26585.4,
+     "end_ms": 28327.8,
+     "status": "failed",
+     "db_queries": 36,
+     "http_calls": 8
+    }
+   ],
+   "http_calls": 11,
+   "http_errors": 2,
+   "endpoints": {
+    "google-places GET /v1/places/{id}": {
+     "calls": 2,
+     "errors": 0,
+     "usd": 0.034,
+     "p50_ms": 135.3,
+     "max_ms": 135.3
+    },
+    "google-places POST /v1/places:autocomplete": {
+     "calls": 4,
+     "errors": 2,
+     "usd": 0.0057,
+     "p50_ms": 11061.2,
+     "max_ms": 11062.8
+    },
+    "google-places POST /v1/places:searchText": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.032,
+     "p50_ms": 3847.2,
+     "max_ms": 3847.2
+    },
+    "railradar GET /v1/trains/between/{id}/{id}": {
+     "calls": 4,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 69.7,
+     "max_ms": 138.0
+    }
+   },
+   "usd_google_and_search": 0.0717,
+   "rail_quota_units": 4,
+   "cache": {
+    "hits": 0,
+    "misses": 14,
+    "by_provider": {
+     "google-autocomplete": {
+      "hits": 0,
+      "misses": 3
+     },
+     "google-places-search": {
+      "hits": 0,
+      "misses": 1
+     },
+     "google-place-details": {
+      "hits": 0,
+      "misses": 2
+     },
+     "rail-saved:railradar": {
+      "hits": 0,
+      "misses": 4
+     },
+     "railradar": {
+      "hits": 0,
+      "misses": 4
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 3,
+    "outcomes": {
+     "empty": 2,
+     "trains": 1
+    },
+    "detail": [
+     {
+      "source": "railradar",
+      "pair": "UDZ-RKSH",
+      "outcome": "empty",
+      "trains": 0,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "ABR-RKSH",
+      "outcome": "empty",
+      "trains": 0,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "UDZ-HW",
+      "outcome": "trains",
+      "trains": 1,
+      "kind": "direct"
+     }
+    ]
+   },
+   "llm": {
+    "calls": 0,
+    "tokens": 0,
+    "usd": 0
+   },
+   "db": {
+    "queries": 43,
+    "ms": 8.0
+   }
+  }
+ },
+ {
+  "pass": "cold",
+  "route": "railhead",
+  "label": "Hill station via railhead (New Delhi \u2192 Mussoorie)",
+  "http_status": 200,
+  "outcome": "infeasible",
+  "wall_ms": 178132,
+  "trace": {
+   "label": "New Delhi -> Mussoorie",
+   "total_ms": 178104.4,
+   "first_event_ms": 254.0,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 254.0,
+     "end_ms": 254.1,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 254.1,
+     "end_ms": 2449.9,
+     "status": "done",
+     "db_queries": 64,
+     "http_calls": 14
+    },
+    {
+     "name": "stage.places",
+     "start_ms": 2449.9,
+     "end_ms": 4497.5,
+     "status": "done",
+     "db_queries": 20,
+     "http_calls": 5
+    },
+    {
+     "name": "stage.hours",
+     "start_ms": 4497.5,
+     "end_ms": 4498.0,
+     "status": "done",
+     "db_queries": 1,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.prices",
+     "start_ms": 4498.0,
+     "end_ms": 4498.3,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.optimize",
+     "start_ms": 4498.3,
+     "end_ms": 135170.2,
+     "status": "done",
+     "db_queries": 26,
+     "http_calls": 26
+    },
+    {
+     "name": "stage.budget",
+     "start_ms": 135170.3,
+     "end_ms": 135170.7,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.alternatives",
+     "start_ms": 135170.7,
+     "end_ms": 135193.5,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.itinerary",
+     "start_ms": 135193.6,
+     "end_ms": 178086.1,
+     "status": "done",
+     "db_queries": 38,
+     "http_calls": 2
+    }
+   ],
+   "http_calls": 49,
+   "http_errors": 1,
+   "endpoints": {
+    "google-places GET /v1/places/{id}": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.017,
+     "p50_ms": 110.5,
+     "max_ms": 110.5
+    },
+    "google-places POST /v1/places:autocomplete": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0028,
+     "p50_ms": 126.1,
+     "max_ms": 126.1
+    },
+    "google-places POST /v1/places:searchText": {
+     "calls": 5,
+     "errors": 0,
+     "usd": 0.16,
+     "p50_ms": 333.0,
+     "max_ms": 607.9
+    },
+    "google-routes POST /directions/v2:computeRoutes": {
+     "calls": 33,
+     "errors": 0,
+     "usd": 0.165,
+     "p50_ms": 173.4,
+     "max_ms": 603.3
+    },
+    "irctc1 GET /api/v1/searchStation": {
+     "calls": 1,
+     "errors": 1,
+     "usd": 0.0,
+     "p50_ms": 376.6,
+     "max_ms": 376.6
+    },
+    "open-meteo GET /v1/forecast": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 794.1,
+     "max_ms": 794.1
+    },
+    "openrouter POST /api/v1/chat/completions": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 1204.8,
+     "max_ms": 1204.8
+    },
+    "railradar GET /v1/trains/between/{id}/{id}": {
+     "calls": 6,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 79.4,
+     "max_ms": 107.2
+    }
+   },
+   "usd_google_and_search": 0.3448,
+   "rail_quota_units": 7,
+   "cache": {
+    "hits": 4,
+    "misses": 54,
+    "by_provider": {
+     "google-autocomplete": {
+      "hits": 2,
+      "misses": 1
+     },
+     "google-place-details": {
+      "hits": 2,
+      "misses": 1
+     },
+     "google-routes": {
+      "hits": 0,
+      "misses": 27
+     },
+     "irctc1": {
+      "hits": 0,
+      "misses": 1
+     },
+     "google-transit": {
+      "hits": 0,
+      "misses": 6
+     },
+     "rail-saved:railradar": {
+      "hits": 0,
+      "misses": 6
+     },
+     "railradar": {
+      "hits": 0,
+      "misses": 6
+     },
+     "google-places-search": {
+      "hits": 0,
+      "misses": 5
+     },
+     "open-meteo": {
+      "hits": 0,
+      "misses": 1
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 3,
+    "outcomes": {
+     "trains": 3
+    },
+    "detail": [
+     {
+      "source": "railradar",
+      "pair": "NDLS-DDN",
+      "outcome": "trains",
+      "trains": 3,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "DEE-DDN",
+      "outcome": "trains",
+      "trains": 1,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "NZM-DDN",
+      "outcome": "trains",
+      "trains": 1,
+      "kind": "direct"
+     }
+    ]
+   },
+   "llm": {
+    "calls": 1,
+    "tokens": 3165,
+    "usd": 0.00072
+   },
+   "db": {
+    "queries": 157,
+    "ms": 36.5
+   }
+  }
+ },
+ {
+  "pass": "cold",
+  "route": "flight_dom",
+  "label": "Domestic flight (Mumbai \u2192 Goa)",
+  "http_status": 200,
+  "outcome": "infeasible",
+  "wall_ms": 113508,
+  "trace": {
+   "label": "Mumbai -> Goa",
+   "total_ms": 113483.6,
+   "first_event_ms": 619.1,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 619.1,
+     "end_ms": 619.2,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 619.2,
+     "end_ms": 2153.7,
+     "status": "done",
+     "db_queries": 35,
+     "http_calls": 7
+    },
+    {
+     "name": "stage.places",
+     "start_ms": 2153.7,
+     "end_ms": 4269.6,
+     "status": "done",
+     "db_queries": 20,
+     "http_calls": 5
+    },
+    {
+     "name": "stage.hours",
+     "start_ms": 4269.6,
+     "end_ms": 4270.8,
+     "status": "done",
+     "db_queries": 1,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.prices",
+     "start_ms": 4270.8,
+     "end_ms": 4271.5,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.optimize",
+     "start_ms": 4271.5,
+     "end_ms": 69585.8,
+     "status": "done",
+     "db_queries": 10,
+     "http_calls": 10
+    },
+    {
+     "name": "stage.budget",
+     "start_ms": 69585.9,
+     "end_ms": 69586.0,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.alternatives",
+     "start_ms": 69586.1,
+     "end_ms": 69595.4,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.itinerary",
+     "start_ms": 69595.4,
+     "end_ms": 113476.5,
+     "status": "done",
+     "db_queries": 30,
+     "http_calls": 2
+    }
+   ],
+   "http_calls": 26,
+   "http_errors": 0,
+   "endpoints": {
+    "google-places GET /v1/places/{id}": {
+     "calls": 2,
+     "errors": 0,
+     "usd": 0.034,
+     "p50_ms": 125.7,
+     "max_ms": 125.7
+    },
+    "google-places POST /v1/places:autocomplete": {
+     "calls": 2,
+     "errors": 0,
+     "usd": 0.0057,
+     "p50_ms": 476.4,
+     "max_ms": 476.4
+    },
+    "google-places POST /v1/places:searchText": {
+     "calls": 5,
+     "errors": 0,
+     "usd": 0.16,
+     "p50_ms": 352.0,
+     "max_ms": 612.6
+    },
+    "google-routes POST /directions/v2:computeRoutes": {
+     "calls": 11,
+     "errors": 0,
+     "usd": 0.055,
+     "p50_ms": 144.6,
+     "max_ms": 507.9
+    },
+    "open-meteo GET /v1/forecast": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 795.5,
+     "max_ms": 795.5
+    },
+    "openrouter POST /api/v1/chat/completions": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 2218.8,
+     "max_ms": 2218.8
+    },
+    "railradar GET /v1/trains/between/{id}/{id}": {
+     "calls": 4,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 113.0,
+     "max_ms": 133.8
+    }
+   },
+   "usd_google_and_search": 0.2547,
+   "rail_quota_units": 4,
+   "cache": {
+    "hits": 2,
+    "misses": 29,
+    "by_provider": {
+     "google-autocomplete": {
+      "hits": 1,
+      "misses": 2
+     },
+     "google-place-details": {
+      "hits": 1,
+      "misses": 2
+     },
+     "google-routes": {
+      "hits": 0,
+      "misses": 11
+     },
+     "rail-saved:railradar": {
+      "hits": 0,
+      "misses": 4
+     },
+     "railradar": {
+      "hits": 0,
+      "misses": 4
+     },
+     "google-places-search": {
+      "hits": 0,
+      "misses": 5
+     },
+     "open-meteo": {
+      "hits": 0,
+      "misses": 1
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 2,
+    "outcomes": {
+     "trains": 2
+    },
+    "detail": [
+     {
+      "source": "railradar",
+      "pair": "CSMT-MAO",
+      "outcome": "trains",
+      "trains": 5,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "LTT-MAO",
+      "outcome": "trains",
+      "trains": 5,
+      "kind": "direct"
+     }
+    ]
+   },
+   "llm": {
+    "calls": 1,
+    "tokens": 3210,
+    "usd": 0.00079
+   },
+   "db": {
+    "queries": 104,
+    "ms": 16.4
+   }
+  }
+ },
+ {
+  "pass": "cold",
+  "route": "international",
+  "label": "International (New Delhi \u2192 Istanbul)",
+  "http_status": 200,
+  "outcome": "infeasible",
+  "wall_ms": 2905,
+  "trace": {
+   "label": "New Delhi -> Istanbul",
+   "total_ms": 2887.4,
+   "first_event_ms": 588.3,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 588.3,
+     "end_ms": 588.4,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 588.4,
+     "end_ms": 757.2,
+     "status": "done",
+     "db_queries": 7,
+     "http_calls": 1
+    },
+    {
+     "name": "stage.places",
+     "start_ms": 757.3,
+     "end_ms": 2882.0,
+     "status": "done",
+     "db_queries": 20,
+     "http_calls": 5
+    },
+    {
+     "name": "stage.hours",
+     "start_ms": 2882.0,
+     "end_ms": 2882.4,
+     "status": "done",
+     "db_queries": 1,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.prices",
+     "start_ms": 2882.4,
+     "end_ms": 2882.6,
+     "status": "failed",
+     "db_queries": 0,
+     "http_calls": 0
+    }
+   ],
+   "http_calls": 8,
+   "http_errors": 0,
+   "endpoints": {
+    "google-places GET /v1/places/{id}": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.017,
+     "p50_ms": 110.3,
+     "max_ms": 110.3
+    },
+    "google-places POST /v1/places:autocomplete": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0028,
+     "p50_ms": 463.1,
+     "max_ms": 463.1
+    },
+    "google-places POST /v1/places:searchText": {
+     "calls": 5,
+     "errors": 0,
+     "usd": 0.16,
+     "p50_ms": 349.3,
+     "max_ms": 661.3
+    },
+    "google-routes POST /directions/v2:computeRoutes": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.005,
+     "p50_ms": 150.7,
+     "max_ms": 150.7
+    }
+   },
+   "usd_google_and_search": 0.1848,
+   "rail_quota_units": 0,
+   "cache": {
+    "hits": 4,
+    "misses": 8,
+    "by_provider": {
+     "google-autocomplete": {
+      "hits": 2,
+      "misses": 1
+     },
+     "google-place-details": {
+      "hits": 2,
+      "misses": 1
+     },
+     "google-routes": {
+      "hits": 0,
+      "misses": 1
+     },
+     "google-places-search": {
+      "hits": 0,
+      "misses": 5
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 0,
+    "outcomes": {},
+    "detail": []
+   },
+   "llm": {
+    "calls": 0,
+    "tokens": 0,
+    "usd": 0
+   },
+   "db": {
+    "queries": 37,
+    "ms": 6.9
+   }
+  }
+ },
+ {
+  "pass": "cold",
+  "route": "replan",
+  "label": "Replan of short rail (\"start at 9am\")",
+  "http_status": 200,
+  "outcome": "ready",
+  "wall_ms": 73544,
+  "trace": {
+   "label": "Jaipur -> New Delhi (replan)",
+   "total_ms": 71265.3,
+   "first_event_ms": 0.2,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 0.2,
+     "end_ms": 0.3,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 0.3,
+     "end_ms": 748.1,
+     "status": "done",
+     "db_queries": 27,
+     "http_calls": 7
+    },
+    {
+     "name": "stage.places",
+     "start_ms": 748.1,
+     "end_ms": 786.0,
+     "status": "done",
+     "db_queries": 30,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.hours",
+     "start_ms": 786.0,
+     "end_ms": 786.6,
+     "status": "done",
+     "db_queries": 1,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.prices",
+     "start_ms": 786.6,
+     "end_ms": 786.8,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.optimize",
+     "start_ms": 786.8,
+     "end_ms": 33345.9,
+     "status": "done",
+     "db_queries": 2,
+     "http_calls": 2
+    },
+    {
+     "name": "stage.budget",
+     "start_ms": 33345.9,
+     "end_ms": 33346.1,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.alternatives",
+     "start_ms": 33346.2,
+     "end_ms": 33348.9,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.itinerary",
+     "start_ms": 33348.9,
+     "end_ms": 71260.6,
+     "status": "done",
+     "db_queries": 16,
+     "http_calls": 2
+    }
+   ],
+   "http_calls": 11,
+   "http_errors": 0,
+   "endpoints": {
+    "google-routes POST /directions/v2:computeRoutes": {
+     "calls": 9,
+     "errors": 0,
+     "usd": 0.045,
+     "p50_ms": 293.9,
+     "max_ms": 393.3
+    },
+    "open-meteo GET /v1/forecast": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 796.2,
+     "max_ms": 796.2
+    },
+    "openrouter POST /api/v1/chat/completions": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 1198.4,
+     "max_ms": 1198.4
+    }
+   },
+   "usd_google_and_search": 0.045,
+   "rail_quota_units": 0,
+   "cache": {
+    "hits": 10,
+    "misses": 10,
+    "by_provider": {
+     "google-place-details": {
+      "hits": 2,
+      "misses": 0
+     },
+     "google-routes": {
+      "hits": 0,
+      "misses": 3
+     },
+     "rail-saved:railradar": {
+      "hits": 4,
+      "misses": 0
+     },
+     "google-transit": {
+      "hits": 0,
+      "misses": 6
+     },
+     "google-places-search": {
+      "hits": 4,
+      "misses": 0
+     },
+     "open-meteo": {
+      "hits": 0,
+      "misses": 1
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 2,
+    "outcomes": {
+     "trains": 2
+    },
+    "detail": [
+     {
+      "source": "railradar",
+      "pair": "JP-NDLS",
+      "outcome": "trains",
+      "trains": 3,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "JP-DEE",
+      "outcome": "trains",
+      "trains": 9,
+      "kind": "direct"
+     }
+    ]
+   },
+   "llm": {
+    "calls": 1,
+    "tokens": 1358,
+    "usd": 0.00033
+   },
+   "db": {
+    "queries": 79,
+    "ms": 14.1
+   }
+  }
+ },
+ {
+  "pass": "warm",
+  "route": "local",
+  "label": "Local (same city)",
+  "http_status": 200,
+  "outcome": "infeasible",
+  "wall_ms": 106445,
+  "trace": {
+   "label": "Hawa Mahal, Jaipur -> Jaipur",
+   "total_ms": 106422.2,
+   "first_event_ms": 1.3,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 1.3,
+     "end_ms": 1.3,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 1.3,
+     "end_ms": 2.7,
+     "status": "done",
+     "db_queries": 4,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.places",
+     "start_ms": 2.7,
+     "end_ms": 17.9,
+     "status": "done",
+     "db_queries": 31,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.hours",
+     "start_ms": 17.9,
+     "end_ms": 18.4,
+     "status": "done",
+     "db_queries": 1,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.prices",
+     "start_ms": 18.4,
+     "end_ms": 18.6,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.optimize",
+     "start_ms": 18.6,
+     "end_ms": 65104.5,
+     "status": "done",
+     "db_queries": 16,
+     "http_calls": 16
+    },
+    {
+     "name": "stage.budget",
+     "start_ms": 65104.5,
+     "end_ms": 65104.7,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.alternatives",
+     "start_ms": 65104.7,
+     "end_ms": 65124.2,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.itinerary",
+     "start_ms": 65124.2,
+     "end_ms": 106415.0,
+     "status": "done",
+     "db_queries": 20,
+     "http_calls": 2
+    }
+   ],
+   "http_calls": 18,
+   "http_errors": 0,
+   "endpoints": {
+    "google-routes POST /directions/v2:computeRoutes": {
+     "calls": 16,
+     "errors": 0,
+     "usd": 0.08,
+     "p50_ms": 140.4,
+     "max_ms": 205.3
+    },
+    "open-meteo GET /v1/forecast": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 700.2,
+     "max_ms": 700.2
+    },
+    "openrouter POST /api/v1/chat/completions": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 1902.2,
+     "max_ms": 1902.2
+    }
+   },
+   "usd_google_and_search": 0.08,
+   "rail_quota_units": 0,
+   "cache": {
+    "hits": 10,
+    "misses": 17,
+    "by_provider": {
+     "google-autocomplete": {
+      "hits": 3,
+      "misses": 0
+     },
+     "google-place-details": {
+      "hits": 3,
+      "misses": 0
+     },
+     "google-places-search": {
+      "hits": 4,
+      "misses": 0
+     },
+     "google-routes": {
+      "hits": 0,
+      "misses": 16
+     },
+     "open-meteo": {
+      "hits": 0,
+      "misses": 1
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 0,
+    "outcomes": {},
+    "detail": []
+   },
+   "llm": {
+    "calls": 1,
+    "tokens": 2067,
+    "usd": 0.00048
+   },
+   "db": {
+    "queries": 76,
+    "ms": 5.1
+   }
+  }
+ },
+ {
+  "pass": "warm",
+  "route": "rail_short",
+  "label": "Short rail (Jaipur \u2192 New Delhi)",
+  "http_status": 200,
+  "outcome": "infeasible",
+  "wall_ms": 73434,
+  "trace": {
+   "label": "Jaipur -> New Delhi",
+   "total_ms": 73410.0,
+   "first_event_ms": 1.2,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 1.2,
+     "end_ms": 1.2,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 1.2,
+     "end_ms": 16.6,
+     "status": "done",
+     "db_queries": 15,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.places",
+     "start_ms": 16.6,
+     "end_ms": 31.4,
+     "status": "done",
+     "db_queries": 31,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.hours",
+     "start_ms": 31.4,
+     "end_ms": 31.8,
+     "status": "done",
+     "db_queries": 1,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.prices",
+     "start_ms": 31.8,
+     "end_ms": 31.9,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.optimize",
+     "start_ms": 32.0,
+     "end_ms": 32668.0,
+     "status": "done",
+     "db_queries": 7,
+     "http_calls": 7
+    },
+    {
+     "name": "stage.budget",
+     "start_ms": 32668.1,
+     "end_ms": 32668.3,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.alternatives",
+     "start_ms": 32668.4,
+     "end_ms": 32684.9,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.itinerary",
+     "start_ms": 32685.0,
+     "end_ms": 73403.4,
+     "status": "done",
+     "db_queries": 26,
+     "http_calls": 2
+    }
+   ],
+   "http_calls": 9,
+   "http_errors": 0,
+   "endpoints": {
+    "google-routes POST /directions/v2:computeRoutes": {
+     "calls": 7,
+     "errors": 0,
+     "usd": 0.035,
+     "p50_ms": 129.6,
+     "max_ms": 169.1
+    },
+    "open-meteo GET /v1/forecast": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 678.2,
+     "max_ms": 678.2
+    },
+    "openrouter POST /api/v1/chat/completions": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 1291.4,
+     "max_ms": 1291.4
+    }
+   },
+   "usd_google_and_search": 0.035,
+   "rail_quota_units": 0,
+   "cache": {
+    "hits": 21,
+    "misses": 8,
+    "by_provider": {
+     "google-autocomplete": {
+      "hits": 3,
+      "misses": 0
+     },
+     "google-place-details": {
+      "hits": 3,
+      "misses": 0
+     },
+     "google-routes": {
+      "hits": 1,
+      "misses": 7
+     },
+     "rail-saved:railradar": {
+      "hits": 4,
+      "misses": 0
+     },
+     "google-transit": {
+      "hits": 6,
+      "misses": 0
+     },
+     "google-places-search": {
+      "hits": 4,
+      "misses": 0
+     },
+     "open-meteo": {
+      "hits": 0,
+      "misses": 1
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 2,
+    "outcomes": {
+     "trains": 2
+    },
+    "detail": [
+     {
+      "source": "railradar",
+      "pair": "JP-NDLS",
+      "outcome": "trains",
+      "trains": 3,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "JP-DEE",
+      "outcome": "trains",
+      "trains": 9,
+      "kind": "direct"
+     }
+    ]
+   },
+   "llm": {
+    "calls": 1,
+    "tokens": 2402,
+    "usd": 0.0006
+   },
+   "db": {
+    "queries": 84,
+    "ms": 14.1
+   }
+  }
+ },
+ {
+  "pass": "warm",
+  "route": "rail_change",
+  "label": "Rail, likely a change (Udaipur \u2192 Rishikesh)",
+  "http_status": 200,
+  "outcome": "infeasible",
+  "wall_ms": 26,
+  "trace": {
+   "label": "Udaipur -> Rishikesh",
+   "total_ms": 8.2,
+   "first_event_ms": 1.0,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 1.0,
+     "end_ms": 1.1,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 1.1,
+     "end_ms": 5.4,
+     "status": "failed",
+     "db_queries": 8,
+     "http_calls": 0
+    }
+   ],
+   "http_calls": 0,
+   "http_errors": 0,
+   "endpoints": {},
+   "usd_google_and_search": 0,
+   "rail_quota_units": 0,
+   "cache": {
+    "hits": 10,
+    "misses": 0,
+    "by_provider": {
+     "google-autocomplete": {
+      "hits": 3,
+      "misses": 0
+     },
+     "google-place-details": {
+      "hits": 3,
+      "misses": 0
+     },
+     "rail-saved:railradar": {
+      "hits": 4,
+      "misses": 0
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 3,
+    "outcomes": {
+     "empty": 2,
+     "trains": 1
+    },
+    "detail": [
+     {
+      "source": "railradar",
+      "pair": "UDZ-RKSH",
+      "outcome": "empty",
+      "trains": 0,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "ABR-RKSH",
+      "outcome": "empty",
+      "trains": 0,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "UDZ-HW",
+      "outcome": "trains",
+      "trains": 1,
+      "kind": "direct"
+     }
+    ]
+   },
+   "llm": {
+    "calls": 0,
+    "tokens": 0,
+    "usd": 0
+   },
+   "db": {
+    "queries": 13,
+    "ms": 0.8
+   }
+  }
+ },
+ {
+  "pass": "warm",
+  "route": "railhead",
+  "label": "Hill station via railhead (New Delhi \u2192 Mussoorie)",
+  "http_status": 200,
+  "outcome": "infeasible",
+  "wall_ms": 183009,
+  "trace": {
+   "label": "New Delhi -> Mussoorie",
+   "total_ms": 182982.1,
+   "first_event_ms": 1.0,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 1.0,
+     "end_ms": 1.0,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 1.0,
+     "end_ms": 432.8,
+     "status": "done",
+     "db_queries": 20,
+     "http_calls": 1
+    },
+    {
+     "name": "stage.places",
+     "start_ms": 432.8,
+     "end_ms": 469.0,
+     "status": "done",
+     "db_queries": 39,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.hours",
+     "start_ms": 469.0,
+     "end_ms": 469.6,
+     "status": "done",
+     "db_queries": 1,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.prices",
+     "start_ms": 469.6,
+     "end_ms": 469.9,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.optimize",
+     "start_ms": 469.9,
+     "end_ms": 137915.5,
+     "status": "done",
+     "db_queries": 26,
+     "http_calls": 26
+    },
+    {
+     "name": "stage.budget",
+     "start_ms": 137915.5,
+     "end_ms": 137916.0,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.alternatives",
+     "start_ms": 137916.0,
+     "end_ms": 137934.5,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.itinerary",
+     "start_ms": 137934.5,
+     "end_ms": 182977.4,
+     "status": "done",
+     "db_queries": 38,
+     "http_calls": 2
+    }
+   ],
+   "http_calls": 29,
+   "http_errors": 1,
+   "endpoints": {
+    "google-routes POST /directions/v2:computeRoutes": {
+     "calls": 26,
+     "errors": 0,
+     "usd": 0.13,
+     "p50_ms": 161.0,
+     "max_ms": 7231.7
+    },
+    "irctc1 GET /api/v1/searchStation": {
+     "calls": 1,
+     "errors": 1,
+     "usd": 0.0,
+     "p50_ms": 405.6,
+     "max_ms": 405.6
+    },
+    "open-meteo GET /v1/forecast": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 792.5,
+     "max_ms": 792.5
+    },
+    "openrouter POST /api/v1/chat/completions": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 1871.5,
+     "max_ms": 1871.5
+    }
+   },
+   "usd_google_and_search": 0.13,
+   "rail_quota_units": 1,
+   "cache": {
+    "hits": 24,
+    "misses": 28,
+    "by_provider": {
+     "google-autocomplete": {
+      "hits": 3,
+      "misses": 0
+     },
+     "google-place-details": {
+      "hits": 3,
+      "misses": 0
+     },
+     "google-routes": {
+      "hits": 1,
+      "misses": 26
+     },
+     "google-transit": {
+      "hits": 6,
+      "misses": 0
+     },
+     "irctc1": {
+      "hits": 0,
+      "misses": 1
+     },
+     "rail-saved:railradar": {
+      "hits": 6,
+      "misses": 0
+     },
+     "google-places-search": {
+      "hits": 5,
+      "misses": 0
+     },
+     "open-meteo": {
+      "hits": 0,
+      "misses": 1
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 3,
+    "outcomes": {
+     "trains": 3
+    },
+    "detail": [
+     {
+      "source": "railradar",
+      "pair": "NDLS-DDN",
+      "outcome": "trains",
+      "trains": 3,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "DEE-DDN",
+      "outcome": "trains",
+      "trains": 1,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "NZM-DDN",
+      "outcome": "trains",
+      "trains": 1,
+      "kind": "direct"
+     }
+    ]
+   },
+   "llm": {
+    "calls": 1,
+    "tokens": 3190,
+    "usd": 0.00073
+   },
+   "db": {
+    "queries": 128,
+    "ms": 24.2
+   }
+  }
+ },
+ {
+  "pass": "warm",
+  "route": "flight_dom",
+  "label": "Domestic flight (Mumbai \u2192 Goa)",
+  "http_status": 200,
+  "outcome": "infeasible",
+  "wall_ms": 110344,
+  "trace": {
+   "label": "Mumbai -> Goa",
+   "total_ms": 110320.5,
+   "first_event_ms": 1.2,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 1.3,
+     "end_ms": 1.3,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 1.3,
+     "end_ms": 11.0,
+     "status": "done",
+     "db_queries": 9,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.places",
+     "start_ms": 11.0,
+     "end_ms": 28.3,
+     "status": "done",
+     "db_queries": 40,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.hours",
+     "start_ms": 28.3,
+     "end_ms": 28.6,
+     "status": "done",
+     "db_queries": 1,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.prices",
+     "start_ms": 28.6,
+     "end_ms": 28.8,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.optimize",
+     "start_ms": 28.8,
+     "end_ms": 66094.1,
+     "status": "done",
+     "db_queries": 10,
+     "http_calls": 10
+    },
+    {
+     "name": "stage.budget",
+     "start_ms": 66094.1,
+     "end_ms": 66094.5,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.alternatives",
+     "start_ms": 66094.5,
+     "end_ms": 66115.6,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.itinerary",
+     "start_ms": 66115.7,
+     "end_ms": 110314.3,
+     "status": "done",
+     "db_queries": 30,
+     "http_calls": 2
+    }
+   ],
+   "http_calls": 12,
+   "http_errors": 0,
+   "endpoints": {
+    "google-routes POST /directions/v2:computeRoutes": {
+     "calls": 10,
+     "errors": 0,
+     "usd": 0.05,
+     "p50_ms": 754.2,
+     "max_ms": 866.4
+    },
+    "open-meteo GET /v1/forecast": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 710.5,
+     "max_ms": 710.5
+    },
+    "openrouter POST /api/v1/chat/completions": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 1916.2,
+     "max_ms": 1916.2
+    }
+   },
+   "usd_google_and_search": 0.05,
+   "rail_quota_units": 0,
+   "cache": {
+    "hits": 16,
+    "misses": 11,
+    "by_provider": {
+     "google-autocomplete": {
+      "hits": 3,
+      "misses": 0
+     },
+     "google-place-details": {
+      "hits": 3,
+      "misses": 0
+     },
+     "google-routes": {
+      "hits": 1,
+      "misses": 10
+     },
+     "rail-saved:railradar": {
+      "hits": 4,
+      "misses": 0
+     },
+     "google-places-search": {
+      "hits": 5,
+      "misses": 0
+     },
+     "open-meteo": {
+      "hits": 0,
+      "misses": 1
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 2,
+    "outcomes": {
+     "trains": 2
+    },
+    "detail": [
+     {
+      "source": "railradar",
+      "pair": "CSMT-MAO",
+      "outcome": "trains",
+      "trains": 5,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "LTT-MAO",
+      "outcome": "trains",
+      "trains": 5,
+      "kind": "direct"
+     }
+    ]
+   },
+   "llm": {
+    "calls": 1,
+    "tokens": 3215,
+    "usd": 0.00061
+   },
+   "db": {
+    "queries": 94,
+    "ms": 6.4
+   }
+  }
+ },
+ {
+  "pass": "warm",
+  "route": "international",
+  "label": "International (New Delhi \u2192 Istanbul)",
+  "http_status": 200,
+  "outcome": "infeasible",
+  "wall_ms": 40,
+  "trace": {
+   "label": "New Delhi -> Istanbul",
+   "total_ms": 24.3,
+   "first_event_ms": 1.3,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 1.3,
+     "end_ms": 1.3,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 1.3,
+     "end_ms": 3.4,
+     "status": "done",
+     "db_queries": 5,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.places",
+     "start_ms": 3.4,
+     "end_ms": 20.6,
+     "status": "done",
+     "db_queries": 38,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.hours",
+     "start_ms": 20.6,
+     "end_ms": 20.9,
+     "status": "done",
+     "db_queries": 1,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.prices",
+     "start_ms": 21.0,
+     "end_ms": 21.2,
+     "status": "failed",
+     "db_queries": 0,
+     "http_calls": 0
+    }
+   ],
+   "http_calls": 0,
+   "http_errors": 0,
+   "endpoints": {},
+   "usd_google_and_search": 0,
+   "rail_quota_units": 0,
+   "cache": {
+    "hits": 12,
+    "misses": 0,
+    "by_provider": {
+     "google-autocomplete": {
+      "hits": 3,
+      "misses": 0
+     },
+     "google-place-details": {
+      "hits": 3,
+      "misses": 0
+     },
+     "google-routes": {
+      "hits": 1,
+      "misses": 0
+     },
+     "google-places-search": {
+      "hits": 5,
+      "misses": 0
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 0,
+    "outcomes": {},
+    "detail": []
+   },
+   "llm": {
+    "calls": 0,
+    "tokens": 0,
+    "usd": 0
+   },
+   "db": {
+    "queries": 49,
+    "ms": 1.8
+   }
+  }
+ },
+ {
+  "pass": "warm",
+  "route": "replan",
+  "label": "Replan of short rail (\"start at 9am\")",
+  "http_status": 200,
+  "outcome": "ready",
+  "wall_ms": 74861,
+  "trace": {
+   "label": "Jaipur -> New Delhi (replan)",
+   "total_ms": 71711.3,
+   "first_event_ms": 0.3,
+   "stages": [
+    {
+     "name": "stage.understand",
+     "start_ms": 0.3,
+     "end_ms": 0.4,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.routes",
+     "start_ms": 0.4,
+     "end_ms": 30.4,
+     "status": "done",
+     "db_queries": 13,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.places",
+     "start_ms": 30.4,
+     "end_ms": 59.5,
+     "status": "done",
+     "db_queries": 30,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.hours",
+     "start_ms": 59.5,
+     "end_ms": 60.2,
+     "status": "done",
+     "db_queries": 1,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.prices",
+     "start_ms": 60.2,
+     "end_ms": 60.4,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.optimize",
+     "start_ms": 60.4,
+     "end_ms": 32583.0,
+     "status": "done",
+     "db_queries": 2,
+     "http_calls": 2
+    },
+    {
+     "name": "stage.budget",
+     "start_ms": 32583.0,
+     "end_ms": 32583.2,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.alternatives",
+     "start_ms": 32583.2,
+     "end_ms": 32586.0,
+     "status": "done",
+     "db_queries": 0,
+     "http_calls": 0
+    },
+    {
+     "name": "stage.itinerary",
+     "start_ms": 32586.0,
+     "end_ms": 71704.3,
+     "status": "done",
+     "db_queries": 16,
+     "http_calls": 2
+    }
+   ],
+   "http_calls": 4,
+   "http_errors": 0,
+   "endpoints": {
+    "google-routes POST /directions/v2:computeRoutes": {
+     "calls": 2,
+     "errors": 0,
+     "usd": 0.01,
+     "p50_ms": 130.6,
+     "max_ms": 130.6
+    },
+    "open-meteo GET /v1/forecast": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 814.0,
+     "max_ms": 814.0
+    },
+    "openrouter POST /api/v1/chat/completions": {
+     "calls": 1,
+     "errors": 0,
+     "usd": 0.0,
+     "p50_ms": 1425.4,
+     "max_ms": 1425.4
+    }
+   },
+   "usd_google_and_search": 0.01,
+   "rail_quota_units": 0,
+   "cache": {
+    "hits": 17,
+    "misses": 3,
+    "by_provider": {
+     "google-place-details": {
+      "hits": 2,
+      "misses": 0
+     },
+     "google-routes": {
+      "hits": 1,
+      "misses": 2
+     },
+     "rail-saved:railradar": {
+      "hits": 4,
+      "misses": 0
+     },
+     "google-transit": {
+      "hits": 6,
+      "misses": 0
+     },
+     "google-places-search": {
+      "hits": 4,
+      "misses": 0
+     },
+     "open-meteo": {
+      "hits": 0,
+      "misses": 1
+     }
+    }
+   },
+   "rail_pairs": {
+    "tried": 2,
+    "outcomes": {
+     "trains": 2
+    },
+    "detail": [
+     {
+      "source": "railradar",
+      "pair": "JP-NDLS",
+      "outcome": "trains",
+      "trains": 3,
+      "kind": "direct"
+     },
+     {
+      "source": "railradar",
+      "pair": "JP-DEE",
+      "outcome": "trains",
+      "trains": 9,
+      "kind": "direct"
+     }
+    ]
+   },
+   "llm": {
+    "calls": 1,
+    "tokens": 1356,
+    "usd": 0.00033
+   },
+   "db": {
+    "queries": 65,
+    "ms": 28.0
+   }
+  }
+ }
+]

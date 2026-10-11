@@ -1,0 +1,292 @@
+[
+ {
+  "pass": "cold",
+  "route": "Gurugram \u2192 Agra (day trip)",
+  "calls": 3,
+  "errors": 0,
+  "endpoints": {
+   "railradar GET /v1/trains/between/{id}/{id}": 3
+  },
+  "rail_units": 3,
+  "pairs": {
+   "empty": 1,
+   "trains": 1
+  },
+  "pair_detail": [
+   "GGN-AGC empty",
+   "NDLS-AGC trains"
+  ],
+  "tiers": {
+   "tier2_miss": 3,
+   "tier2_saved": 2
+  },
+  "options": 74,
+  "trains": [
+   "11057",
+   "11058",
+   "11077",
+   "11078",
+   "11841",
+   "11842",
+   "11905",
+   "11906",
+   "12001",
+   "12002",
+   "12137",
+   "12138",
+   "12279",
+   "12280",
+   "12486",
+   "12615",
+   "12616",
+   "12621",
+   "12622",
+   "12625",
+   "12626",
+   "12627",
+   "12628",
+   "12715",
+   "12716",
+   "12723",
+   "12724",
+   "12751",
+   "12919",
+   "12920",
+   "14211",
+   "14212",
+   "16032",
+   "20805",
+   "20806",
+   "20807",
+   "64073",
+   "64074"
+  ],
+  "sources": [
+   "live_api"
+  ],
+  "error": null
+ },
+ {
+  "pass": "cold",
+  "route": "Gurugram \u2192 Mussoorie (2 days)",
+  "calls": 3,
+  "errors": 1,
+  "endpoints": {
+   "irctc1 GET /api/v1/searchStation": 1,
+   "railradar GET /v1/trains/between/{id}/{id}": 2
+  },
+  "rail_units": 3,
+  "pairs": {
+   "trains": 1
+  },
+  "pair_detail": [
+   "GGN-DDN trains"
+  ],
+  "tiers": {
+   "tier2_miss": 2,
+   "tier2_saved": 2
+  },
+  "options": 4,
+  "trains": [
+   "19565",
+   "19566"
+  ],
+  "sources": [
+   "live_api"
+  ],
+  "error": null
+ },
+ {
+  "pass": "cold",
+  "route": "Delhi \u2192 Jaipur (day trip)",
+  "calls": 5,
+  "errors": 0,
+  "endpoints": {
+   "railradar GET /v1/trains/between/{id}/{id}": 5
+  },
+  "rail_units": 5,
+  "pairs": {
+   "trains": 2,
+   "empty": 1
+  },
+  "pair_detail": [
+   "NDLS-JP trains",
+   "DEE-JP trains",
+   "NZM-JP empty"
+  ],
+  "tiers": {
+   "tier2_miss": 5,
+   "tier2_saved": 4
+  },
+  "options": 36,
+  "trains": [
+   "12015",
+   "12016",
+   "12215",
+   "12216",
+   "12957",
+   "12958",
+   "12985",
+   "12986",
+   "14311",
+   "14312",
+   "14661",
+   "14662",
+   "15013",
+   "150131",
+   "15014",
+   "15715",
+   "19269",
+   "19565",
+   "20983",
+   "20984"
+  ],
+  "sources": [
+   "live_api"
+  ],
+  "error": null
+ },
+ {
+  "pass": "warm",
+  "route": "Gurugram \u2192 Agra (day trip)",
+  "calls": 0,
+  "errors": 0,
+  "endpoints": {},
+  "rail_units": 0,
+  "pairs": {
+   "trains": 1
+  },
+  "pair_detail": [
+   "NDLS-AGC trains"
+  ],
+  "tiers": {
+   "tier2_hit": 2,
+   "tier2_fresh": 2,
+   "tier1_working_pair_hit": 1
+  },
+  "options": 74,
+  "trains": [
+   "11057",
+   "11058",
+   "11077",
+   "11078",
+   "11841",
+   "11842",
+   "11905",
+   "11906",
+   "12001",
+   "12002",
+   "12137",
+   "12138",
+   "12279",
+   "12280",
+   "12486",
+   "12615",
+   "12616",
+   "12621",
+   "12622",
+   "12625",
+   "12626",
+   "12627",
+   "12628",
+   "12715",
+   "12716",
+   "12723",
+   "12724",
+   "12751",
+   "12919",
+   "12920",
+   "14211",
+   "14212",
+   "16032",
+   "20805",
+   "20806",
+   "20807",
+   "64073",
+   "64074"
+  ],
+  "sources": [
+   "saved_timetable"
+  ],
+  "error": null
+ },
+ {
+  "pass": "warm",
+  "route": "Gurugram \u2192 Mussoorie (2 days)",
+  "calls": 1,
+  "errors": 1,
+  "endpoints": {
+   "irctc1 GET /api/v1/searchStation": 1
+  },
+  "rail_units": 1,
+  "pairs": {
+   "trains": 1
+  },
+  "pair_detail": [
+   "GGN-DDN trains"
+  ],
+  "tiers": {
+   "tier2_hit": 2,
+   "tier2_fresh": 2,
+   "tier1_working_pair_hit": 1
+  },
+  "options": 4,
+  "trains": [
+   "19565",
+   "19566"
+  ],
+  "sources": [
+   "saved_timetable"
+  ],
+  "error": null
+ },
+ {
+  "pass": "warm",
+  "route": "Delhi \u2192 Jaipur (day trip)",
+  "calls": 0,
+  "errors": 0,
+  "endpoints": {},
+  "rail_units": 0,
+  "pairs": {
+   "trains": 2,
+   "skipped_known_empty": 1
+  },
+  "pair_detail": [
+   "NDLS-JP trains",
+   "DEE-JP trains",
+   "NZM-JP skipped_known_empty"
+  ],
+  "tiers": {
+   "tier2_hit": 4,
+   "tier2_fresh": 4,
+   "tier1_working_pair_hit": 2,
+   "tier1_skipped_empty": 1
+  },
+  "options": 34,
+  "trains": [
+   "12015",
+   "12016",
+   "12215",
+   "12216",
+   "12957",
+   "12958",
+   "12985",
+   "12986",
+   "14311",
+   "14312",
+   "14661",
+   "14662",
+   "15013",
+   "15014",
+   "15715",
+   "19269",
+   "19565",
+   "20983",
+   "20984"
+  ],
+  "sources": [
+   "saved_timetable"
+  ],
+  "error": null
+ }
+]
