@@ -688,7 +688,7 @@ def _assert_unavailable(body, reason="provider_busy"):
     assert body["state"] == "unavailable" and body["status"] == "unavailable" and body["reason"] == reason
     assert body["quota_used"] is False and "None of your free plans were used" in body["message"]
     assert "trip details are saved" in body["message"]
-    assert datetime.fromisoformat(body["retry_at"]) > datetime.now(UTC)
+    assert datetime.fromisoformat(body["retry_at"]).timestamp() > C.now()  # the gateway's clock (frozen by the gw fixture), not the wall clock
     assert body["trip"]["id"] and body["trip"]["origin"]  # the trip's details come back, saved
 
 

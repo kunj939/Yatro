@@ -438,6 +438,16 @@ class Planner:
                                     default=Decimal(0)) * mc.nights if best.hotel else Decimal(0)
                 acts = sum((c.group_cost(inp.travellers) for c in attractions[:4]), Decimal(0))
                 info = FE.budget_infeasible(inp, mc, any_mode, cheapest_stay, acts)
+                # The minimum above leaves out paid sights, so its "raise the budget" figure can land at or below what the
+                # traveller already has (a plan a few rupees over). Always offer an amount that covers the plan we built.
+                want = FE.ceil_to(breakdown.planned * (1 + buffer_pct(inp.styles)))
+                raise_to = next((a for a in info["adjustments"] if a["key"] == "higher_budget"), None)
+                if raise_to is None:
+                    raise_to = {"key": "higher_budget", "description": "Keeps every preference as it is, with a small buffer."}
+                    info["adjustments"].append(raise_to)
+                if int(raise_to.get("apply", {}).get("budget", 0)) < want:
+                    raise_to["label"] = f"Raise budget to {fmt_money(want, inp.currency)}"
+                    raise_to["apply"] = {"budget": want}
                 info["main_conflict"] = (f"With meals and local rides included, this plan needs about "
                                          f"{fmt_money(breakdown.planned, inp.currency)}, which is {fmt_money(over, inp.currency)} more than "
                                          f"your budget.")
