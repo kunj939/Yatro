@@ -55,3 +55,28 @@ def test_a_morning_arrival_and_a_trip_with_no_journey_keep_their_own_start():
     assert morning[0].start == datetime(2026, 10, 18, 7, 10)
     sunrise = build_frames(_combo(datetime(2026, 10, 18, 5, 0), datetime(2026, 10, 18, 11, 0), outbound=False), None, goa)
     assert sunrise[0].start == datetime(2026, 10, 18, 5, 0)  # a local sunrise walk the traveller asked for
+
+
+def test_a_day_does_not_jump_across_a_spread_out_destination():
+    """Goa is 100 km end to end: a highly rated fort 70 km away must not follow a stop in the south on the same day
+    (the quality gate would then refuse the whole plan with "Day 1 jumps 67 km between two stops")."""
+    from datetime import date, time
+    from app.providers.types import PlaceData
+    from app.services.engine_types import Candidate, DayFrame, PlanInput
+    from app.services.route_optimizer import DayScheduler, Travel
+
+    def place(key, lat, lng, score):
+        return Candidate(key=key, place=PlaceData("sim", key, key, "tourist_attraction", lat, lng), kind="attraction",
+                         score=score, duration=60)
+
+    south = (15.27, 73.96)  # Madgaon
+    near1, near2 = place("colva-beach", 15.28, 73.92, 10), place("margao-market", 15.29, 73.95, 6)
+    far = place("north-fort", 15.87, 73.79, 9)  # about 68 km north of the first stop
+    day = date(2026, 10, 18)
+    inp = PlanInput("Jaipur", "Goa", None, None, datetime(2026, 10, 17, 7), datetime(2026, 10, 20, 22), Decimal(50000),
+                    2, "couple", ["train"], "both", ["balanced"], "budget", pace="normal")
+    frame = DayFrame(1, day, datetime.combine(day, time(9)), datetime.combine(day, time(20)), south, "Madgaon", south, "Madgaon")
+    sched = DayScheduler(inp, Travel("cab", 2), [near1, far, near2], [], set(), Decimal(50000))
+    stops, _ = sched.build(frame, Decimal(0))
+    names = [s.name for s in stops if s.kind == "activity"]
+    assert "colva-beach" in names and "north-fort" not in names, names

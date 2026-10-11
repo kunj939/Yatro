@@ -20,6 +20,7 @@ from app.core.errors import ProviderUnavailable
 from app.providers.base import MapsProvider
 from app.services import fare_model as F
 from app.services.engine_types import Candidate, DayFrame, Leg, PlanInput, Stop
+from app.services.plan_quality import MAX_HOP_M
 from app.services.ranking import food_ok, serves
 from app.utils import hours as H
 from app.utils.geo import estimate_road
@@ -37,6 +38,10 @@ TRAVEL_PENALTY = 0.015  # score units per travel minute
 WAIT_PENALTY = 0.01
 MAX_ACTIVITY_WAIT = timedelta(minutes=45)
 MAX_MEAL_WAIT = timedelta(minutes=90)
+# The quality gate refuses a day with two stops more than MAX_HOP_M apart by real road. Choosing stops, only estimates
+# are known and they run shorter than real roads, so the bar here sits lower. In a spread-out destination (Goa is
+# 100 km end to end) this keeps each day in one area instead of a North Goa fort after a South Goa lunch.
+HOP_LIMIT_M = int(MAX_HOP_M * 0.75)
 
 
 def mm(n: int | float) -> timedelta:
@@ -248,6 +253,8 @@ class DayScheduler:
             if meal.meal == "snack":
                 r = snack_version(r)
             leg = self.travel.leg(p, r.point)
+            if p != frame.start_point and leg.distance_m > HOP_LIMIT_M:
+                continue
             arrive = t + mm(leg.minutes)
             start = max(arrive, meal.window[0])
             if start > meal.window[1] or (start - arrive > MAX_MEAL_WAIT and not allow_wait):
@@ -402,6 +409,8 @@ class DayScheduler:
                     if c.key in self.used:
                         continue
                     leg = self.travel.leg(p, c.point)
+                    if stops and leg.distance_m > HOP_LIMIT_M:
+                        continue
                     start = t + mm(leg.minutes)
                     dur = self._duration(c)
                     close = H.assumed_close(c.place.tags)
@@ -450,7 +459,8 @@ class DayScheduler:
             if sunset and not (meal_first and far_off):
                 leg = self.travel.leg(p, sunset.point)
                 affordable = spent + self._cost(sunset.cand, leg) + self._meal_reserve(pending) <= self._cap
-                if t + mm(leg.minutes) <= sunset.anchor - mm(15) and (affordable or sunset.cand.pinned):
+                near = not stops or leg.distance_m <= HOP_LIMIT_M
+                if near and t + mm(leg.minutes) <= sunset.anchor - mm(15) and (affordable or sunset.cand.pinned):
                     stops.append(sunset)
                     simulate(frame, stops, self.travel, check_end=False)
                     spent += self._cost(sunset.cand, sunset.leg)
