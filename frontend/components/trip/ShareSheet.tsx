@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, Link2, MessageCircle, Share2, Trash2 } from "lucide-react";
+import { Check, Copy, FileText, Link2, MessageCircle, Share2, Trash2 } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { ApiError, endpoints } from "@/lib/api";
 import type { ShareLink, ShareResult, Trip } from "@/lib/types";
+import { buildTripPdf, sendPdf } from "@/lib/tripPdf";
 
 // The full link is shown once by the server and only its hash is kept there, so the browser keeps the last one it made
 // (to share again later). The WhatsApp message is never stored: it is made again, from fresh data, each time.
@@ -29,6 +30,28 @@ export function ShareSheet({ trip, open, onClose, onChanged }: { trip: Trip; ope
   const [copied, setCopied] = useState<string | null>(null);
   const [canShare, setCanShare] = useState(false);
   const [hasOld, setHasOld] = useState(false);
+  // The PDF is made as soon as the link exists, so "Send as PDF" can open the share menu straight away (phones only
+  // allow it within a moment of the tap, which a PDF being built would use up).
+  const [pdf, setPdf] = useState<File | null>(null);
+  const [pdfState, setPdfState] = useState<"idle" | "making" | "ready" | "failed">("idle");
+  const [pdfNote, setPdfNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPdf(null); setPdfNote(null);
+    if (!result) { setPdfState("idle"); return; }
+    let live = true;
+    setPdfState("making");
+    buildTripPdf(tokenOf(result.url), result.url)
+      .then((f) => { if (live) { setPdf(f); setPdfState("ready"); } })
+      .catch(() => live && setPdfState("failed"));
+    return () => { live = false; };
+  }, [result]);
+
+  async function sharePdf() {
+    if (!pdf || !result) return;
+    const how = await sendPdf(pdf, trip.title, result.url);
+    setPdfNote(how === "saved" ? "PDF saved to your downloads. Open WhatsApp and attach it to the chat." : null);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -113,13 +136,18 @@ export function ShareSheet({ trip, open, onClose, onChanged }: { trip: Trip; ope
             </div>
             {error && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
             <div className="grid gap-2 sm:grid-cols-2">
+              <button className="btn-primary sm:col-span-2" disabled={pdfState !== "ready"} onClick={sharePdf}>
+                <FileText className="h-4 w-4" aria-hidden />
+                {pdfState === "making" ? "Making the PDF…" : pdfState === "failed" ? "PDF couldn't be made" : "Send as PDF"}
+              </button>
+              {pdfNote && <p role="status" className="text-[13px] text-ink-soft sm:col-span-2">{pdfNote}</p>}
               {canShare && <button className="btn-dark sm:col-span-2" onClick={nativeShare}><Share2 className="h-4 w-4" aria-hidden />Share…</button>}
               {result.wa_me_url && (
-                <a className="btn-primary sm:col-span-2" href={result.wa_me_url} target="_blank" rel="noopener noreferrer">
+                <a className="btn-dark sm:col-span-2" href={result.wa_me_url} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="h-4 w-4" aria-hidden />Send to my WhatsApp
                 </a>
               )}
-              <a className={result.wa_me_url ? "btn-ghost" : "btn-primary"} href={result.wa_url} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" aria-hidden />Send to someone</a>
+              <a className={result.wa_me_url ? "btn-ghost" : "btn-dark"} href={result.wa_url} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" aria-hidden />Send to someone</a>
               <button className="btn-ghost" onClick={() => copy("text", result.text)}>{copied === "text" ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}{copied === "text" ? "Copied" : "Copy message"}</button>
               <button className="btn-ghost sm:col-span-2" onClick={() => copy("link", result.url)}>{copied === "link" ? <Check className="h-4 w-4" aria-hidden /> : <Link2 className="h-4 w-4" aria-hidden />}{copied === "link" ? "Copied" : "Copy link only"}</button>
             </div>
