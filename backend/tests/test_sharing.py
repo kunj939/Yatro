@@ -373,8 +373,11 @@ def test_wa_link_keeps_only_digits_of_the_number():
 
 
 def test_the_whatsapp_message_uses_only_symbols_whatsapp_desktop_can_show(client, seeded):
-    """WhatsApp Desktop on Windows turns emoji outside the basic plane (📅 👥 💰) in a pre-filled message into "�"."""
+    """WhatsApp Desktop on Windows turns every emoji in a pre-filled message into "�" (📅 and ✈ alike); punctuation such as
+    · – → ₹ comes through. So the message has no emoji or emoji symbols at all."""
     from urllib.parse import parse_qs, urlparse
     j, _ = _share(client, seeded["auth"], seeded["trip_id"])
     sent = parse_qs(urlparse(j["wa_url"]).query)["text"][0]
-    assert all(ord(ch) <= 0xFFFF for ch in sent), [ch for ch in sent if ord(ch) > 0xFFFF]
+    emoji = [ch for ch in sent if ord(ch) >= 0x2300 or ch == "️"]  # symbols, dingbats, emoji and the emoji selector
+    assert not emoji, emoji
+    assert "→" in sent and sent.endswith(j["url"])

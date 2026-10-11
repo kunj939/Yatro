@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Mail, MessageCircle } from "lucide-react";
+import { Download, FileText, Mail, MessageCircle } from "lucide-react";
 import { ApiError, endpoints } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useFlags } from "@/lib/flags";
 import type { ShareResult, Trip } from "@/lib/types";
 import { remember, remembered, tokenOf } from "./ShareSheet";
-import { buildTripPdf, sendPdf } from "@/lib/tripPdf";
+import { buildTripPdf, savePdf, sendPdf } from "@/lib/tripPdf";
 
 /** "Send this plan to my WhatsApp": one tap makes a private link (budget hidden, ends 30 days after the trip), builds the message and
  *  opens WhatsApp on the person's OWN saved mobile number with it typed in. They tap Send in WhatsApp themselves: Yatro cannot and does
@@ -70,6 +70,22 @@ export function WhatsAppCard({ trip }: { trip: Trip }) {
     } finally { setPdfBusy(false); }
   }
 
+  /** Always save the PDF (making it first if needed), whatever the device can share. */
+  async function download() {
+    setError(null);
+    if (pdf) { savePdf(pdf.file); setPdfNote("PDF saved to your downloads."); return; }
+    setPdfBusy(true); setPdfNote(null);
+    try {
+      const r = await link();
+      const file = await buildTripPdf(tokenOf(r.url), r.url);
+      setPdf({ file, url: r.url });
+      savePdf(file);
+      setPdfNote("PDF saved to your downloads.");
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Couldn't make the PDF. Try again.");
+    } finally { setPdfBusy(false); }
+  }
+
   async function send() {
     setBusy(true); setError(null); setFallback(null);
     // Open the tab now, inside the tap (browsers block a tab opened after a wait), and point it at WhatsApp once the message is ready.
@@ -106,7 +122,10 @@ export function WhatsAppCard({ trip }: { trip: Trip }) {
           </button>
         )}
         <button type="button" className={last4 ? "btn-dark" : "btn-primary"} onClick={pdfTap} disabled={pdfBusy}>
-          <FileText className="h-4 w-4" aria-hidden />{pdfBusy ? "Making PDF…" : pdf ? "Send PDF" : "Get PDF"}
+          <FileText className="h-4 w-4" aria-hidden />{pdfBusy ? "Making PDF…" : pdf ? "Send PDF" : "Share PDF"}
+        </button>
+        <button type="button" className="btn-ghost" onClick={download} disabled={pdfBusy}>
+          <Download className="h-4 w-4" aria-hidden />Download PDF
         </button>
         {flags.planEmails && (
           <button type="button" className="btn-ghost" onClick={email} disabled={mailing}>

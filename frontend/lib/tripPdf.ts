@@ -24,6 +24,12 @@ export async function sendPdf(file: File, title: string, url: string): Promise<"
       if ((e as DOMException)?.name === "AbortError") return "cancelled";
     }
   }
+  savePdf(file);
+  return "saved";
+}
+
+/** Save the PDF to the device's downloads. */
+export function savePdf(file: File): void {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(file);
   a.download = file.name;
@@ -31,5 +37,4 @@ export async function sendPdf(file: File, title: string, url: string): Promise<"
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 30_000);
-  return "saved";
 }

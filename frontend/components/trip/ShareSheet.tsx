@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, FileText, Link2, MessageCircle, Share2, Trash2 } from "lucide-react";
+import { Check, Copy, Download, FileText, Link2, MessageCircle, Share2, Trash2 } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { ApiError, endpoints } from "@/lib/api";
 import type { ShareLink, ShareResult, Trip } from "@/lib/types";
-import { buildTripPdf, sendPdf } from "@/lib/tripPdf";
+import { buildTripPdf, savePdf, sendPdf } from "@/lib/tripPdf";
 
 // The full link is shown once by the server and only its hash is kept there, so the browser keeps the last one it made
 // (to share again later). The WhatsApp message is never stored: it is made again, from fresh data, each time.
@@ -136,9 +136,13 @@ export function ShareSheet({ trip, open, onClose, onChanged }: { trip: Trip; ope
             </div>
             {error && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
             <div className="grid gap-2 sm:grid-cols-2">
-              <button className="btn-primary sm:col-span-2" disabled={pdfState !== "ready"} onClick={sharePdf}>
+              <button className="btn-primary" disabled={pdfState !== "ready"} onClick={sharePdf}>
                 <FileText className="h-4 w-4" aria-hidden />
                 {pdfState === "making" ? "Making the PDF…" : pdfState === "failed" ? "PDF couldn't be made" : "Send as PDF"}
+              </button>
+              <button className="btn-ghost" disabled={pdfState !== "ready"}
+                      onClick={() => { if (pdf) { savePdf(pdf); setPdfNote("PDF saved to your downloads."); } }}>
+                <Download className="h-4 w-4" aria-hidden />Download PDF
               </button>
               {pdfNote && <p role="status" className="text-[13px] text-ink-soft sm:col-span-2">{pdfNote}</p>}
               {canShare && <button className="btn-dark sm:col-span-2" onClick={nativeShare}><Share2 className="h-4 w-4" aria-hidden />Share…</button>}
