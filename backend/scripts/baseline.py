@@ -84,11 +84,9 @@ def main() -> None:
     results: list[dict] = []
     with TestClient(app) as c:
         email, phone = "baseline@example.com", "+919800099999"
-        codes = {ch: c.post("/api/auth/send-code", json={"channel": ch, "target": t}).json()["dev_code"]
-                 for ch, t in (("email", email), ("phone", phone))}
+        code = c.post("/api/auth/send-code", json={"channel": "email", "target": email}).json()["dev_code"]  # email-only sign-up
         tok = c.post("/api/auth/register", json={"name": "Baseline", "email": email, "phone": phone, "password": "baseline123",
-                                                 "password_confirm": "baseline123", "email_code": codes["email"],
-                                                 "phone_code": codes["phone"]}).json()["access_token"]
+                                                 "password_confirm": "baseline123", "email_code": code}).json()["access_token"]
         auth = {"Authorization": f"Bearer {tok}"}
         for n in range(1, args.passes + 1):
             pass_name = "cold" if n == 1 else "warm"

@@ -71,11 +71,9 @@ def main() -> None:
 
     c = httpx.Client(base_url=base, timeout=300)
     email, phone = "load@example.com", "+919800088888"
-    codes = {ch: c.post("/auth/send-code", json={"channel": ch, "target": t}).json()["dev_code"]
-             for ch, t in (("email", email), ("phone", phone))}
+    code = c.post("/auth/send-code", json={"channel": "email", "target": email}).json()["dev_code"]  # email-only sign-up
     tok = c.post("/auth/register", json={"name": "Load", "email": email, "phone": phone, "password": "loadtest123",
-                                         "password_confirm": "loadtest123", "email_code": codes["email"],
-                                         "phone_code": codes["phone"]}).json()["access_token"]
+                                         "password_confirm": "loadtest123", "email_code": code}).json()["access_token"]
     auth = {"Authorization": f"Bearer {tok}"}
     d = next_saturday(2)
     body = {"origin": {"name": "Jaipur"}, "destination": {"name": "New Delhi"}, "start_date": d.isoformat(),

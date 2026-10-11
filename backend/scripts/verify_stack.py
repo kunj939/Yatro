@@ -32,9 +32,10 @@ def check(name: str, ok: bool, detail: str = "") -> bool:
 
 def register(c: httpx.Client, tag: str) -> dict:
     email, phone = f"verify-{tag}-{uuid.uuid4().hex[:6]}@example.com", f"+9171{uuid.uuid4().int % 10**8:08d}"
-    codes = {ch: c.post("/api/auth/send-code", json={"channel": ch, "target": t}).json()["dev_code"] for ch, t in (("email", email), ("phone", phone))}
+    # Sign-up verifies the email only; the mobile number is stored (unique) without a code (ADR 0010).
+    code = c.post("/api/auth/send-code", json={"channel": "email", "target": email}).json()["dev_code"]
     r = c.post("/api/auth/register", json={"name": "Verify", "email": email, "phone": phone, "password": "verify12345", "password_confirm": "verify12345",
-                                           "email_code": codes["email"], "phone_code": codes["phone"]})
+                                           "email_code": code})
     r.raise_for_status()
     return {"Authorization": "Bearer " + r.json()["access_token"]}
 

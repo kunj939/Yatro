@@ -552,7 +552,9 @@ def step_proxy() -> None:
     record(s, "with TRUSTED_PROXY_IPS empty, 14 different X-Forwarded-For values are still one client: refused from the 11th", codes[:10] == [401] * 10 and 429 in codes[10:], str(codes))
     srv.stop()
     # A2. send-code, with the per-minute limiter off so only the code limits are in play
-    srv = Server("proxy-a2", fresh_db("tripai_proxy_a2"), {"RATE_LIMIT_ENABLED": "false", "WEB_CONCURRENCY": "1", "TRUSTED_PROXY_IPS": ""})
+    # Phone codes are off by default (email-only sign-up); this check is about their limits, so it switches them on.
+    srv = Server("proxy-a2", fresh_db("tripai_proxy_a2"), {"RATE_LIMIT_ENABLED": "false", "WEB_CONCURRENCY": "1", "TRUSTED_PROXY_IPS": "",
+                                                          "REQUIRE_PHONE_CODE": "true"})
     srv.start()
     if not srv.wait_ready():
         record(s, "the API starts for the send-code checks", False, srv.text()[-300:])
