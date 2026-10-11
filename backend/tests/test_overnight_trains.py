@@ -80,3 +80,29 @@ def test_a_day_does_not_jump_across_a_spread_out_destination():
     stops, _ = sched.build(frame, Decimal(0))
     names = [s.name for s in stops if s.kind == "activity"]
     assert "colva-beach" in names and "north-fort" not in names, names
+
+
+def test_repair_never_leaves_two_far_apart_stops_side_by_side():
+    """South, centre, north: each hop is fine until the centre stop is dropped (real roads came back slower), which
+    left "Day 2 jumps 88 km between two stops". Repair now drops the far one as well."""
+    from datetime import date, time
+    from app.providers.types import PlaceData
+    from app.services.engine_types import Candidate, DayFrame, PlanInput, Stop
+    from app.services.route_optimizer import DayScheduler, Travel
+
+    def stop(key, lat, lng, pinned=False):
+        c = Candidate(key=key, place=PlaceData("sim", key, key, "tourist_attraction", lat, lng), kind="attraction",
+                      score=5, duration=60, pinned=pinned)
+        return Stop(kind="activity", cand=c, name=key, duration=60)
+
+    day = date(2026, 10, 19)
+    inp = PlanInput("Jaipur", "Goa", None, None, datetime(2026, 10, 17, 7), datetime(2026, 10, 23, 22), Decimal(50000),
+                    2, "couple", ["train"], "both", ["balanced"], "budget")
+    home = (15.30, 73.95)
+    frame = DayFrame(2, day, datetime.combine(day, time(8, 30)), datetime.combine(day, time(22)), home, "hotel", home, "hotel")
+    sched = DayScheduler(inp, Travel("cab", 2), [], [], set(), Decimal(50000))
+    south, north = stop("cabo-de-rama", 15.09, 73.92), stop("chapora-fort", 15.61, 73.74)  # ~60 km straight, more by road
+    kept = [s.name for s in sched._repair(frame, [south, north])]
+    assert kept == ["cabo-de-rama"]
+    must_see = stop("chapora-fort", 15.61, 73.74, pinned=True)
+    assert [s.name for s in sched._repair(frame, [stop("cabo-de-rama", 15.09, 73.92), must_see])] == ["chapora-fort"]

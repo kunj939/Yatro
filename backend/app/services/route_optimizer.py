@@ -489,11 +489,30 @@ class DayScheduler:
         stops = self.two_opt(frame, stops)
         return stops, spent
 
+    def _far_hop(self, stops: list[Stop]) -> int | None:
+        """Index of the first stop reached by a hop longer than HOP_LIMIT_M from the stop before it (the day's first
+        stop, reached from the station or hotel, is not counted, as in the quality gate)."""
+        for i in range(1, len(stops)):
+            a, b = stops[i - 1].cand, stops[i].cand
+            if a and b and self.travel.leg(a.point, b.point).distance_m > HOP_LIMIT_M:
+                return i
+        return None
+
     def _repair(self, frame: DayFrame, stops: list[Stop]) -> list[Stop]:
-        """Drop the weakest activity (then the latest stop) until the whole day, incl. the final leg, is valid."""
-        while stops and not simulate(frame, stops, self.travel)[0]:
-            removable = [s for s in stops if s.kind == "activity" and not (s.cand and s.cand.pinned)]
-            victim = min(removable, key=lambda s: s.cand.score if s.cand else 0) if removable else stops[-1]
+        """Drop the weakest activity (then the latest stop) until the whole day, incl. the final leg, is valid — and
+        no two neighbouring stops are too far apart. Dropping a stop in the middle (south, centre, north) can leave its
+        neighbours 80 km apart; then the later one of the pair goes (or the earlier, if the later is a must-see)."""
+        while stops:
+            far = self._far_hop(stops)
+            if far is not None:
+                victim = stops[far]
+                if victim.cand and victim.cand.pinned and not (stops[far - 1].cand and stops[far - 1].cand.pinned):
+                    victim = stops[far - 1]
+            elif not simulate(frame, stops, self.travel)[0]:
+                removable = [s for s in stops if s.kind == "activity" and not (s.cand and s.cand.pinned)]
+                victim = min(removable, key=lambda s: s.cand.score if s.cand else 0) if removable else stops[-1]
+            else:
+                break
             stops.remove(victim)
             if victim.cand:
                 self.used.discard(victim.cand.key)
@@ -511,6 +530,8 @@ class DayScheduler:
             for i in range(len(stops) - 1):
                 for j in range(i + 2, len(stops) + 1):
                     trial = stops[:i] + stops[i:j][::-1] + stops[j:]
+                    if self._far_hop(trial) is not None:
+                        continue  # a shorter total that puts two far-apart stops side by side is not a better day
                     ok, travel_min, _ = simulate(frame, trial, self.travel)
                     if ok and travel_min < best_travel:
                         stops, best_travel, improved = trial, travel_min, True
