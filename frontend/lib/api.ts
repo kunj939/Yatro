@@ -49,7 +49,7 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
       body: json !== undefined ? JSON.stringify(json) : rest.body, cache: "no-store",
     });
   } catch {
-    throw new ApiError(0, "network", "Can't reach the TripAI server. Check that the backend is running.");
+    throw new ApiError(0, "network", "Can't reach Yatro right now. Check your internet and try again in a moment.");
   }
   if (!res.ok) throw await toError(res);
   if (res.status === 204) return undefined as T;
@@ -65,7 +65,7 @@ export async function streamEvents(path: string, body: unknown, onEvent: (e: Pla
     res = await fetch(`${API_URL}${path}`, { method: "POST", headers: { ...headers(true), ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}) },
       body: JSON.stringify(body ?? {}) });
   } catch {
-    throw new ApiError(0, "network", "Can't reach the TripAI server. Check that the backend is running.");
+    throw new ApiError(0, "network", "Can't reach Yatro right now. Check your internet and try again in a moment.");
   }
   if (!res.ok || !res.body) throw await toError(res);
   const reader = res.body.getReader();
