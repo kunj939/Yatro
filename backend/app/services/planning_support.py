@@ -161,8 +161,15 @@ def centroid(cands: list[Candidate], fallback: tuple[float, float]) -> tuple[flo
     return (sum(c.place.lat for c in cands) / len(cands), sum(c.place.lng for c in cands) / len(cands))
 
 
+NIGHT_ARRIVAL_BEFORE = time(6, 0)  # a journey arriving before this: the day starts at DAY_START, not at the station at 3 am
+
+
 def build_frames(combo: Combo, hotel: Candidate | None, dest: PlaceData) -> list[DayFrame]:
     start, end = combo.dest_start, combo.dest_end
+    if combo.outbound and start.time() < NIGHT_ARRIVAL_BEFORE and end > datetime.combine(start.date(), DAY_START):
+        # A train that pulls in at 01:55 is followed by rest, not a waterfall at 02:38 and a fort at 05:07 (places
+        # listed "open 24 hours" would otherwise be scheduled in the dark). Sightseeing starts with the morning.
+        start = datetime.combine(start.date(), DAY_START)
     days = (end.date() - start.date()).days + 1
     base = hotel.point if hotel else (dest.lat, dest.lng)
     base_name = hotel.place.name if hotel else f"{dest.name} centre"

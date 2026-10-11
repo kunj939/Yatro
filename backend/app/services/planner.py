@@ -660,7 +660,7 @@ class Planner:
             if local:
                 mode = {"cab": "cab", "transit": "metro/bus", "own_car": "fuel & parking"}.get(
                     next((s.leg.mode for s in f.stops if s.leg and s.leg.mode != "walk"), "cab"), "cab")
-                day = f" (day {f.index + 1})" if len(frames) > 1 else ""
+                day = f" (day {max(f.index, (f.day - inp.start.date()).days) + 1})" if len(frames) > 1 else ""
                 lines.append(BudgetLine("local", f"Local {mode}, {rides} ride{'s' if rides > 1 else ''}{day}",
                                         round_rupees(local), "estimated"))
         return compute(inp.budget, inp.travellers, lines, inp.styles)
@@ -822,6 +822,9 @@ class Planner:
                        "leg_state": "estimated" if o.access_minutes else None}
             transport_item(o, 0, leg, "transport:outbound")
         for f in a.frames:
+            # The day's number comes from its date, not its position: after an overnight train the first day here is
+            # the arrival day, and the departure day holds only the journey.
+            di = max(f.index, (f.day - inp.start.date()).days)
             prev_name, prev_end = f.start_name, f.start
             if f.index > 0 and a.hotel:
                 checkout = f is a.frames[-1] and not f.stops
@@ -829,15 +832,15 @@ class Planner:
                 if checkout and f.final_leg:  # leave in time to make the departure, by the real route if known
                     leave = min(leave, f.end - timedelta(minutes=f.final_leg.minutes + 5))
                     prev_end = leave
-                add(kind="stay", day_index=f.index, start=leave, end=leave,
+                add(kind="stay", day_index=di, start=leave, end=leave,
                     title=f"Check out: {a.hotel.place.name}" if checkout else f"Start from {a.hotel.place.name}",
-                    subtitle=f"Day {f.index + 1}", cost=Decimal(0), meta={"lat": a.hotel.place.lat, "lng": a.hotel.place.lng,
+                    subtitle=f"Day {di + 1}", cost=Decimal(0), meta={"lat": a.hotel.place.lat, "lng": a.hotel.place.lng,
                                                                          "marker": False})
             for i, s in enumerate(f.stops):
                 c = s.cand
                 leave = s.start - timedelta(minutes=s.leg.minutes if s.leg else 0)
                 if (leave - prev_end) >= timedelta(minutes=30):
-                    add(kind="free", day_index=f.index, start=prev_end, end=leave, title=f"Free time near {prev_name}",
+                    add(kind="free", day_index=di, start=prev_end, end=leave, title=f"Free time near {prev_name}",
                         subtitle="Unscheduled — wander, rest or grab a chai", cost=Decimal(0))
                 reasons = self._reasons(inp, s, prev_name, f)
                 o_, cl_ = PS.hours_display(c, f.day, s.start)
@@ -845,7 +848,7 @@ class Planner:
                 sub = {"meal": f"{MEAL_LABEL.get(meal, 'Meal')}" + (f" — {', '.join(c.place.restaurant.cuisines[:2])}"
                                                                    if c.place.restaurant and c.place.restaurant.cuisines else ""),
                        "sunset": f"Sunset at {f.sunset:%H:%M}" if f.sunset else "Sunset"}.get(s.kind, c.place.description)
-                add(kind=s.kind, day_index=f.index, start=s.start, end=s.end, title=c.place.name, subtitle=sub,
+                add(kind=s.kind, day_index=di, start=s.start, end=s.end, title=c.place.name, subtitle=sub,
                     cand=c, cost=round_rupees(c.group_cost(tv)), cost_state=c.cost_state,
                     recommended_minutes=s.duration, opening_time=o_, closing_time=cl_, hours_state=c.hours_state,
                     hours_note=c.hours_note, sources=c.sources, reasons=reasons, why=self._why(reasons),
@@ -868,7 +871,7 @@ class Planner:
                 arrive = prev_end + timedelta(minutes=fl.minutes if fl else 0)
                 first_night = f.index == 0
                 stay_cost = round_rupees(a.hotel.unit_cost * rooms * combo.nights) if first_night else Decimal(0)
-                add(kind="stay", day_index=f.index, start=arrive, end=arrive,
+                add(kind="stay", day_index=di, start=arrive, end=arrive,
                     title=(f"Check in: {a.hotel.place.name}" if first_night else f"Back to {a.hotel.place.name}"),
                     subtitle=(f"{combo.nights} night{'s' if combo.nights > 1 else ''}, {rooms} "
                               f"{'bed' if inp.stay == 'hostel' else 'room'}{'s' if rooms > 1 else ''}"
@@ -882,24 +885,24 @@ class Planner:
             elif last and combo.ret:
                 r = combo.ret
                 if (r.depart_at - timedelta(minutes=(fl.minutes if fl else 0) + 35)) - prev_end >= timedelta(minutes=45):
-                    add(kind="free", day_index=f.index, start=prev_end,
+                    add(kind="free", day_index=di, start=prev_end,
                         end=r.depart_at - timedelta(minutes=(fl.minutes if fl else 0) + 20),
                         title=f"Free time near {prev_name}", subtitle="Unscheduled before heading back", cost=Decimal(0))
-                transport_item(r, f.index, leg, "transport:return")
+                transport_item(r, di, leg, "transport:return")
                 _, access = FE.group_cost(r, tv)
                 home = r.arrive_at + timedelta(minutes=r.access_minutes)
-                if station_transfer(r, f.index, outbound=False):
-                    add(kind="arrival", day_index=f.index, start=home, end=home, title=f"Back in {origin.name}",
+                if station_transfer(r, di, outbound=False):
+                    add(kind="arrival", day_index=di, start=home, end=home, title=f"Back in {origin.name}",
                         subtitle="Trip complete", cost=Decimal(0), meta={"lat": origin.lat, "lng": origin.lng})
                 else:
-                    add(kind="arrival", day_index=f.index, start=home, end=home, title=f"Back in {origin.name}",
+                    add(kind="arrival", day_index=di, start=home, end=home, title=f"Back in {origin.name}",
                         subtitle="Trip complete", cost=Decimal(0), distance_m=r.access_distance_m or None,
                         travel_minutes=r.access_minutes or None, travel_mode="cab" if r.access_minutes else None,
                         travel_cost=access, leg_state="estimated" if r.access_minutes else None,
                         meta={"lat": origin.lat, "lng": origin.lng})
             elif last:
                 end_at = prev_end + timedelta(minutes=fl.minutes if fl else 0)
-                add(kind="arrival", day_index=f.index, start=end_at, end=end_at, title=f"Back at {f.end_name}",
+                add(kind="arrival", day_index=di, start=end_at, end=end_at, title=f"Back at {f.end_name}",
                     subtitle="Trip complete", cost=Decimal(0), **leg, meta={"lat": f.end_point[0], "lng": f.end_point[1]})
         return drafts
 

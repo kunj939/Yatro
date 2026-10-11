@@ -24,6 +24,22 @@ from app.providers.rail_sources import AiGuidance, NoAiGuidance, NoOfficialTimet
 
 log = logging.getLogger("tripai.rail_chain")
 
+# No Indian train averages more than about 95 km/h over a whole journey (the fastest Vande Bharat and Rajdhani runs).
+# Distances here are road estimates, which can be a little longer than the line, so the bar sits well above that.
+MAX_TRAIN_KMH = 115
+
+
+def plausible(t) -> bool:
+    """False for a timetable row that can't be a real journey between these two places: a short local train matched
+    to a long route (a Hanumangarh passenger train listed Jaipur -> Madgaon, 1,900 km in nine hours), or an arrival
+    before the departure. Such a row would put the traveller at the destination a day early, sightseeing at 3 am."""
+    if getattr(t, "mode", None) != "train":
+        return True
+    minutes, km = t.duration_minutes or 0, (t.distance_m or 0) / 1000
+    if minutes <= 0:
+        return False
+    return km / (minutes / 60) <= MAX_TRAIN_KMH
+
 
 class RailChain:
     """Tries each rail provider in order; returns the first with trains, or empty with the best explanation."""
@@ -42,6 +58,11 @@ class RailChain:
                 log.warning("%s failed unexpectedly, trying the next source: %s", provider.name, exc)
                 issues.append(f"{provider.name} had an unexpected problem")
                 continue
+            dropped = [x for x in out if not plausible(x)]
+            if dropped:
+                log.warning("%s: dropped %d train(s) %s -> %s that would beat %d km/h (e.g. %s %s)", provider.name,
+                            len(dropped), origin.name, dest.name, MAX_TRAIN_KMH, dropped[0].meta.get("number"), dropped[0].name)
+                out = [x for x in out if plausible(x)]
             if out:
                 self.last_issue = None
                 return out
