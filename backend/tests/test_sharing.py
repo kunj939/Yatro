@@ -370,3 +370,11 @@ def test_wa_link_keeps_only_digits_of_the_number():
     assert share_service.wa_link("hi there", "+91 98765-43210") == "https://wa.me/919876543210?text=hi%20there"
     assert share_service.wa_link("hi", None) == "https://wa.me/?text=hi"
     assert share_service.wa_link("hi", "") == "https://wa.me/?text=hi"
+
+
+def test_the_whatsapp_message_uses_only_symbols_whatsapp_desktop_can_show(client, seeded):
+    """WhatsApp Desktop on Windows turns emoji outside the basic plane (📅 👥 💰) in a pre-filled message into "�"."""
+    from urllib.parse import parse_qs, urlparse
+    j, _ = _share(client, seeded["auth"], seeded["trip_id"])
+    sent = parse_qs(urlparse(j["wa_url"]).query)["text"][0]
+    assert all(ord(ch) <= 0xFFFF for ch in sent), [ch for ch in sent if ord(ch) > 0xFFFF]

@@ -625,10 +625,10 @@ def itinerary_out(it: Itinerary, trip: Trip) -> dict:
     items = [item_out(i, trip.destination_name) for i in sorted(it.items, key=lambda i: i.position)]
     stale_text = google_content.narration_expired(it.items, it.created_at)
     days = []
-    for idx in sorted({i["day_index"] for i in items}):
+    for n, idx in enumerate(sorted({i["day_index"] for i in items})):
         day_items = [i for i in items if i["day_index"] == idx]
         d = trip.start_date + timedelta(days=idx)
-        days.append({"index": idx, "date": d.isoformat(), "label": f"Day {idx + 1}", "items": day_items})
+        days.append({"index": idx, "date": d.isoformat(), "label": f"Day {n + 1}", "items": day_items})
     return {"id": str(it.id), "version": it.version, "title": it.title,
             "summary": None if stale_text else it.summary, "tips": [] if stale_text else (it.tips or []),
             "summary_expired": stale_text,

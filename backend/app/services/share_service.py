@@ -283,14 +283,17 @@ def share_text(view: dict, url: str, limit: int = TEXT_LIMIT) -> str:
 def card_text(view: dict, url: str) -> str:
     """The WhatsApp message: two lines and the link. WhatsApp turns the link into a card (the share page's preview image,
     app/s/[token]/opengraph-image.tsx: title, dates, cost and a colour strip of the days), so the chat shows a card to
-    tap, not a wall of text. The full day-by-day text is still there for copying (share_text)."""
+    tap, not a wall of text. The full day-by-day text is still there for copying (share_text).
+
+    Only symbols from the basic plane (✈ ⏳ ⭐ ➡): WhatsApp Desktop on Windows turns emoji such as 📅 or 👥 in a pre-filled
+    wa.me message into "�". Phones show both; these show everywhere."""
     t, it = view["trip"], view["itinerary"]
     d0, d1 = date.fromisoformat(t["start_date"]), date.fromisoformat(t["end_date"])
     span = f"{d0:%a %d %b}" if d0 == d1 else f"{d0:%d %b} – {d1:%d %b}"
-    facts = [f"📅 {span}", f"👥 {t['travellers']} traveller{'s' if t['travellers'] != 1 else ''}"]
+    facts = [f"⏳ {span}", f"⭐ {t['travellers']} traveller{'s' if t['travellers'] != 1 else ''}"]
     if it["total_cost"]:
-        facts.append(f"💰 {fmt_money(it['total_cost'], t['currency'])}")
-    return "\n".join([f"🧳 *{it['title'] or t['title']}*", " · ".join(facts), "", f"👉 Full day-by-day plan: {url}"])
+        facts.append(fmt_money(it["total_cost"], t["currency"]))
+    return "\n".join([f"✈️ *{it['title'] or t['title']}*", " · ".join(facts), "", f"➡️ Full day-by-day plan: {url}"])
 
 
 def wa_link(text: str, phone: str | None = None) -> str:
