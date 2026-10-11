@@ -10,6 +10,8 @@ os.environ.update({"DATABASE_URL": os.environ.get("TEST_DATABASE_URL", f"sqlite:
                    "BUDGET_MODE": "off", "IRCTC1_ASSUME_EXHAUSTED": "false",
                    # every test client is one address: the per-address code limit (10 an hour) is tested by its own tests
                    "OTP_PER_IP_HOUR": "0"})
+# The suite is written around 2 free plans (the product default is higher): pinned here so a plain `pytest` works too
+os.environ.setdefault("FREE_TRIP_PLANS", "2")
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

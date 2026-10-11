@@ -17,7 +17,7 @@ class User(IdMixin, TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    # Lifetime counter — the free plan is "2 trip plans ever", not per day.
+    # Lifetime counter — the free plan is "N trip plans ever" (FREE_TRIP_PLANS), not per day.
     free_plans_used: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     # Mobile number in international form (+919876543210). Optional only for accounts made before it was asked for.
     phone: Mapped[str | None] = mapped_column(String(20), unique=True, index=True)

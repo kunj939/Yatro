@@ -4,6 +4,7 @@ import { Navbar } from "../Navbar";
 import { HeroSearch } from "./HeroSearch";
 import { HeroStory } from "./HeroStory";
 import { LiveBoard } from "./LiveBoard";
+import { brand } from "@/lib/brand";
 
 // India and abroad, alternating, so neither reads as an afterthought.
 const DESTINATIONS = [
@@ -37,7 +38,7 @@ export function LandingHero() {
             </p>
           </div>
           <ul className="fade-up mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-ink-mute" style={{ ["--d" as string]: "320ms" }}>
-            <li className="inline-flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-teal" aria-hidden />First 2 plans free</li>
+            <li className="inline-flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-teal" aria-hidden />First {brand.freePlans} plans free</li>
             <li className="inline-flex items-center gap-1.5"><Clock3 className="h-4 w-4 text-teal" aria-hidden />Done in under a minute</li>
             <li className="inline-flex items-center gap-1.5"><CreditCard className="h-4 w-4 text-teal" aria-hidden />No card. No catch.</li>
           </ul>

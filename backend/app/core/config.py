@@ -65,7 +65,7 @@ class Settings(BaseSettings):
     hotel_provider: Literal["auto", "places", "estimate"] = "auto"
 
     # --- Business rules --------------------------------------------------
-    free_trip_plans: int = 2
+    free_trip_plans: int = 7  # lifetime, per account; an admin can change it live (/admin → Controls)
     max_replans_per_trip: int = 40
     payments_mode: Literal["mock", "disabled"] = "mock"
     plus_price_inr: int = 99
