@@ -834,7 +834,7 @@ class Planner:
                     prev_end = leave
                 add(kind="stay", day_index=di, start=leave, end=leave,
                     title=f"Check out: {a.hotel.place.name}" if checkout else f"Start from {a.hotel.place.name}",
-                    subtitle=f"Day {di + 1}", cost=Decimal(0), meta={"lat": a.hotel.place.lat, "lng": a.hotel.place.lng,
+                    subtitle="Start of the day", cost=Decimal(0), meta={"lat": a.hotel.place.lat, "lng": a.hotel.place.lng,
                                                                          "marker": False})
             for i, s in enumerate(f.stops):
                 c = s.cand
