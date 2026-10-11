@@ -1,0 +1,9 @@
+# Netlify builds only the website (the Next.js app in /frontend). The Python backend is hosted separately:
+# set NEXT_PUBLIC_API_URL (and NODE_VERSION) in Site configuration > Environment variables.
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
