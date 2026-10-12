@@ -50,7 +50,12 @@ def merge(google: list[PlaceData], wiki: list[PlaceData], limit: int = 40) -> li
 
 
 class WikiAwarePlaces:
-    """A places provider: Google's, with attractions() widened by Wikidata."""
+    """A places provider: Google's, with attractions() widened by Wikidata.
+
+    Free plans: Wikidata first, and Google only for what it lacks (fewer paid searches). Plus plans (`thorough`): every
+    Google search as well, with Wikidata's extras merged in, since they cost nothing and only add famous places."""
+
+    supports_thorough = True
 
     def __init__(self, base):
         self.base = base
@@ -60,6 +65,7 @@ class WikiAwarePlaces:
     def __getattr__(self, item):
         return getattr(self.base, item)
 
-    def attractions(self, city: PlaceData, interests: list[str]) -> list[PlaceData]:
+    def attractions(self, city: PlaceData, interests: list[str], thorough: bool = False) -> list[PlaceData]:
         wiki = wikidata.sights(city)
-        return merge(self.base.attractions(city, interests, known=wiki), wiki)
+        google = self.base.attractions(city, interests) if thorough else self.base.attractions(city, interests, known=wiki)
+        return merge(google, wiki)

@@ -558,7 +558,9 @@ def _note_degraded(db: Session, trip: Trip, scope) -> None:
 def _run_plan(db: Session, providers: Providers, user: User, trip: Trip, reporter: StageReporter | None,
               change_note: str | None, is_replan: bool) -> PlanResult:
     try:
-        result = Planner(db, providers, reporter, user.id).plan(trip, change_note)
+        # Plus plans get every Google search (thorough); free plans start from Wikidata's free sights (ADR 0011)
+        thorough = quota_service.plus_active(quota_service.get_subscription(db, user))
+        result = Planner(db, providers, reporter, user.id, thorough=thorough).plan(trip, change_note)
         if is_replan and result.status == "ready":
             trip.replan_count = (trip.replan_count or 0) + 1
         if result.status == "infeasible":

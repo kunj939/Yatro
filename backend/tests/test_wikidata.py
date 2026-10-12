@@ -67,3 +67,21 @@ def test_with_wikidata_in_hand_google_skips_the_searches_it_covers(monkeypatch):
     asked.clear()
     G.GooglePlacesProvider().attractions(BHARATPUR, ["fort"])  # without Wikidata: the full search, as before
     assert "forts in Bharatpur" in asked and any("near Bharatpur" in q for q in asked)
+
+
+def test_plus_plans_get_every_google_search_and_free_plans_the_lean_one(monkeypatch):
+    calls = []
+
+    class Base:
+        name, live = "google-places", True
+
+        def attractions(self, city, interests, known=None):
+            calls.append(known)
+            return []
+
+    wiki = [PlaceData("wikidata", "wd:Q1", "Fatehpur Sikri", "attraction", 27.09, 77.66, tags=["fort"], meta={"wiki_links": 85})]
+    monkeypatch.setattr(WP.wikidata, "sights", lambda city: wiki)
+    places = WP.WikiAwarePlaces(Base())
+    assert [p.name for p in places.attractions(BHARATPUR, ["fort"])] == ["Fatehpur Sikri"] and calls[-1] == wiki  # free: lean
+    assert [p.name for p in places.attractions(BHARATPUR, ["fort"], thorough=True)] == ["Fatehpur Sikri"]
+    assert calls[-1] is None  # Plus: Google searches everything, Wikidata's extras still merged in
