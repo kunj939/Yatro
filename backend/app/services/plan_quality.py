@@ -18,7 +18,8 @@ MAX_ARRIVAL_M = 150_000  # arrival point or hotel this far from the destination:
 MAX_FROM_DEST_M = 120_000  # a planned stop this far from the destination centre: the places and the destination disagree
 TOO_BROAD_TYPES = {"country", "continent"}
 MEAL_ORDER = ["breakfast", "lunch", "snack", "dinner"]
-_MEAL_WARNING = re.compile(r"^No (breakfast|lunch|snack|dinner) stop matched .* on day (\d+)\.$")
+# "on Mon 19 Oct": the date, because day numbers in the plan skip a day spent on an overnight train
+_MEAL_WARNING = re.compile(r"^No (breakfast|lunch|snack|dinner) stop matched .* on (\w{3} \d{2} \w{3})\.$")
 
 
 @dataclass
@@ -39,21 +40,21 @@ def too_broad(types: list[str] | None) -> bool:
     return bool(set(types or []) & TOO_BROAD_TYPES)
 
 
-def _days_text(days: list[int]) -> str:
-    days = sorted(set(days))
+def _days_text(days: list[str]) -> str:
+    days = list(dict.fromkeys(days))  # in the order the plan reached them, which is date order
     if len(days) == 1:
-        return f"day {days[0]}"
-    return "days " + ", ".join(str(d) for d in days[:-1]) + f" and {days[-1]}"
+        return days[0]
+    return ", ".join(days[:-1]) + f" and {days[-1]}"
 
 
 def consolidate_warnings(warnings: list[str]) -> list[str]:
-    """Turn "No lunch stop matched ... on day 2" x 20 into one line per meal, and drop duplicates."""
+    """Turn "No lunch stop matched ... on Mon 19 Oct" x 20 into one line per meal, and drop duplicates."""
     missing: dict[str, list[int]] = {}
     others: list[str] = []
     for w in warnings:
         m = _MEAL_WARNING.match(w)
         if m:
-            missing.setdefault(m.group(1), []).append(int(m.group(2)))
+            missing.setdefault(m.group(1), []).append(m.group(2))
         elif w not in others:
             others.append(w)
     lines = []
@@ -123,6 +124,7 @@ def review(frames: list[DayFrame], dest_point: tuple[float, float], arrival_poin
         rep.blocking.append(f"{len(empty)} of {len(full)} full days have nothing planned: not enough suitable places "
                             "were found near the destination.")
     elif empty:
-        rep.notes.append(f"{_days_text([f.index + 1 for f in empty]).capitalize()} is kept free: nothing else fitted "
+        dates = [f"{f.day:%a %d %b}" for f in empty]  # dates, not numbers: the plan's day labels skip a train-only day
+        rep.notes.append(f"{_days_text(dates)} {'is' if len(dates) == 1 else 'are'} kept free: nothing else fitted "
                          "your time and budget.")
     return rep

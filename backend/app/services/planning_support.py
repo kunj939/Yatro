@@ -16,7 +16,7 @@ from app.services import age_fit
 from app.services import destination_profile
 from app.services import fare_model as F
 from app.services.engine_types import Candidate, DayFrame, PlanInput
-from app.services.feasibility import BOARDING_BUFFER, EXIT_BUFFER, Combo
+from app.services.feasibility import BOARDING_BUFFER, EXIT_BUFFER, NIGHT_ARRIVAL_BEFORE, Combo
 from app.services.intent import interests_from_notes
 from app.services.ranking import _quality, score_attraction, score_restaurant
 from app.utils import hours as H
@@ -182,12 +182,12 @@ def centroid(cands: list[Candidate], fallback: tuple[float, float]) -> tuple[flo
     return (sum(c.place.lat for c in cands) / len(cands), sum(c.place.lng for c in cands) / len(cands))
 
 
-NIGHT_ARRIVAL_BEFORE = time(6, 0)  # a journey arriving before this: the day starts at DAY_START, not at the station at 3 am
 
 
 def build_frames(combo: Combo, hotel: Candidate | None, dest: PlaceData) -> list[DayFrame]:
     start, end = combo.dest_start, combo.dest_end
-    if combo.outbound and start.time() < NIGHT_ARRIVAL_BEFORE and end > datetime.combine(start.date(), DAY_START):
+    night = combo.night_arrival and end > datetime.combine(start.date(), DAY_START)
+    if night:
         # A train that pulls in at 01:55 is followed by rest, not a waterfall at 02:38 and a fort at 05:07 (places
         # listed "open 24 hours" would otherwise be scheduled in the dark). Sightseeing starts with the morning.
         start = datetime.combine(start.date(), DAY_START)
@@ -210,10 +210,18 @@ def build_frames(combo: Combo, hotel: Candidate | None, dest: PlaceData) -> list
             dist, dur = estimate_road(*base, *combo.end_point)
             ride = max(F.local_leg_minutes(dur, dist, "cab"), F.local_leg_minutes(dur, dist, "transit")) if dist else 0
             f_start = min(f_start, f_end - timedelta(minutes=ride + 10))
-        frames.append(DayFrame(i, d, f_start, f_end, combo.start_point if first else base,
-                               combo.start_name if first else base_name, combo.end_point if last else base,
+        # after a night arrival the traveller has slept at the hotel: the first day starts there, not at the station
+        from_station = first and not (night and hotel)
+        frames.append(DayFrame(i, d, f_start, f_end, combo.start_point if from_station else base,
+                               combo.start_name if from_station else base_name, combo.end_point if last else base,
                                combo.end_name if last else base_name))
     return frames
+
+
+def night_transfer(combo: Combo, hotel: Candidate, travellers: int) -> tuple[int, int, Decimal]:
+    """(metres, minutes, cost) of the cab from the station to the hotel straight after a night arrival."""
+    dist, dur = estimate_road(*combo.start_point, *hotel.point)
+    return dist, F.local_leg_minutes(dur, dist, "cab"), F.local_leg_cost(dist, "cab", travellers)
 
 
 STATION_TRANSFER_MIN_M = 8000  # closer than this, the ride to the station isn't worth a separate choice

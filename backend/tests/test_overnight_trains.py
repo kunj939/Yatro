@@ -106,3 +106,17 @@ def test_repair_never_leaves_two_far_apart_stops_side_by_side():
     assert kept == ["cabo-de-rama"]
     must_see = stop("chapora-fort", 15.61, 73.74, pinned=True)
     assert [s.name for s in sched._repair(frame, [stop("cabo-de-rama", 15.09, 73.92), must_see])] == ["chapora-fort"]
+
+
+def test_a_night_arrival_books_that_night_and_the_first_day_starts_at_the_hotel():
+    """Udaipur at 00:48 with a hotel check-in at 20:04 the next evening left the traveller nowhere to sleep."""
+    from app.providers.types import PlaceData
+    from app.services.engine_types import Candidate
+    night = _combo(datetime(2026, 10, 18, 0, 58), datetime(2026, 10, 19, 13, 30))
+    assert night.night_arrival and night.nights == 2  # the 18th's early hours and the night of the 18th
+    morning = _combo(datetime(2026, 10, 18, 7, 10), datetime(2026, 10, 19, 13, 30))
+    assert not morning.night_arrival and morning.nights == 1
+    hotel = Candidate(key="h", place=PlaceData("sim", "h", "Soham Haveli", "hotel", 24.58, 73.68), kind="hotel")
+    frames = build_frames(night, hotel, NS(name="Udaipur", lat=24.58, lng=73.71))
+    assert frames[0].start_name == "Soham Haveli" and frames[0].start_point == (24.58, 73.68)
+    assert build_frames(morning, hotel, NS(name="Udaipur", lat=24.58, lng=73.71))[0].start_name == "Madgaon"  # from the station

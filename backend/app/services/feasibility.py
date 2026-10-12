@@ -30,6 +30,7 @@ STAY_LABEL = {"premium": "Premium (5-star)", "tier1": "Tier 1 (4-star)", "tier2"
 STAY_ORDER = ["premium", "tier1", "tier2", "budget", "oyo", "hostel"]
 BOARDING_BUFFER = 15  # minutes before a scheduled departure
 EXIT_BUFFER = 10  # minutes to leave the station/airport after arrival
+NIGHT_ARRIVAL_BEFORE = time(6, 0)  # arriving before this, the night is spent at the hotel, not at the station
 MIN_DEST_MINUTES = 120
 MAX_TRIP_DAYS = 7  # the wizard's limit too; a suggested fix must never stretch a trip past it
 EARLIEST_START = time(4, 30)  # never suggest leaving home before this
@@ -194,8 +195,14 @@ class Combo:
         return self.outbound is None
 
     @property
+    def night_arrival(self) -> bool:
+        """A journey that pulls in between midnight and 06:00: the traveller needs a room from the moment they arrive."""
+        return self.outbound is not None and self.dest_start.time() < NIGHT_ARRIVAL_BEFORE
+
+    @property
     def nights(self) -> int:
-        return (self.dest_end.date() - self.dest_start.date()).days
+        # arriving at 00:48 on the 18th and leaving on the 19th is two nights in a room, not one
+        return (self.dest_end.date() - self.dest_start.date()).days + (1 if self.night_arrival else 0)
 
     def label(self) -> str:
         if self.local:

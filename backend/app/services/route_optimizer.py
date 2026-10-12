@@ -397,8 +397,8 @@ class DayScheduler:
                         spent += self._cost(chosen.cand, chosen.leg)
                         self.used.add(chosen.cand.key)
                     else:
-                        self.warnings.append(f"No {meal.meal} stop matched your food preference and timing on day "
-                                             f"{frame.index + 1}.")
+                        self.warnings.append(f"No {meal.meal} stop matched your food preference and timing on "
+                                             f"{frame.day:%a %d %b}.")
                     continue
             # 2) best activity that keeps every later commitment reachable
             best, best_val, best_leg, _best_start = None, -1e9, None, None
@@ -481,8 +481,8 @@ class DayScheduler:
                     spent += self._cost(chosen.cand, chosen.leg)
                     self.used.add(chosen.cand.key)
                 else:
-                    self.warnings.append(f"No {meal.meal} stop matched your food preference and timing on day "
-                                         f"{frame.index + 1}.")
+                    self.warnings.append(f"No {meal.meal} stop matched your food preference and timing on "
+                                         f"{frame.day:%a %d %b}.")
                 continue
             break
         stops = self._repair(frame, stops)

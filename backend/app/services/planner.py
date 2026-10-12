@@ -673,6 +673,9 @@ class Planner:
             lines.append(BudgetLine("stay", f"{hotel.place.name} — {combo.nights} night{'s' if combo.nights > 1 else ''}"
                                             f" × {rooms} {'bed' if inp.stay == 'hostel' else 'room'}{'s' if rooms > 1 else ''}",
                                     round_rupees(hotel.unit_cost * rooms * combo.nights), hotel.cost_state))
+        if hotel and combo.night_arrival:  # the cab from the station to the hotel, straight after a night arrival
+            _, _, ride = PS.night_transfer(combo, hotel, inp.travellers)
+            lines.append(BudgetLine("local", "Cab to the hotel after the night arrival", round_rupees(ride), "estimated"))
         for f in frames:
             local = Decimal(0)
             rides = 0
@@ -846,6 +849,21 @@ class Planner:
                       "per_vehicle": not metro})
             return True
 
+        night = combo.night_arrival and a.hotel is not None
+
+        def stay_draft(at, first: bool, di: int, leg: dict, extra: list[dict] | None = None) -> None:
+            """The hotel line: the check-in carries the nights and the cost; later evenings are "Back to"."""
+            add(kind="stay", day_index=di, start=at, end=at,
+                title=(f"Check in: {a.hotel.place.name}" if first else f"Back to {a.hotel.place.name}"),
+                subtitle=(f"{combo.nights} night{'s' if combo.nights > 1 else ''}, {rooms} "
+                          f"{'bed' if inp.stay == 'hostel' else 'room'}{'s' if rooms > 1 else ''}" if first else "Overnight"),
+                cand=a.hotel, cost=round_rupees(a.hotel.unit_cost * rooms * combo.nights) if first else Decimal(0),
+                cost_state=a.hotel.cost_state if first else None, alt_key="hotel" if first else None, **leg,
+                reasons=([{"key": "stay", "text": f"a {FE.STAY_LABEL.get(inp.stay, inp.stay)} stay as you asked"},
+                          {"key": "nearby", "text": "central to the places you're visiting"}, *(extra or [])] if first else []),
+                meta={"lat": a.hotel.place.lat, "lng": a.hotel.place.lng, "key": a.hotel.key,
+                      "nightly": float(a.hotel.unit_cost), "stars": a.hotel.place.hotel.stars if a.hotel.place.hotel else None})
+
         if combo.outbound:
             o = combo.outbound
             _, access = FE.group_cost(o, tv)
@@ -861,7 +879,14 @@ class Planner:
             # the arrival day, and the departure day holds only the journey.
             di = max(f.index, (f.day - inp.start.date()).days)
             prev_name, prev_end = f.start_name, f.start
-            if f.index > 0 and a.hotel:
+            if f.index == 0 and night:
+                # arriving at 00:48: straight to the hotel for the night, by cab, before the first day begins
+                dist, mins, ride = PS.night_transfer(combo, a.hotel, tv)
+                at = combo.dest_start + timedelta(minutes=mins)
+                stay_draft(at, True, di, {"distance_m": dist, "travel_minutes": mins, "travel_mode": "cab",
+                                          "travel_cost": ride, "leg_state": "estimated"},
+                           extra=[{"key": "night", "text": "you arrive at night, so the room starts from that night"}])
+            if (f.index > 0 or night) and a.hotel:
                 checkout = f is a.frames[-1] and not f.stops
                 leave = f.start
                 if checkout and f.final_leg:  # leave in time to make the departure, by the real route if known
@@ -908,19 +933,7 @@ class Planner:
             last = f.index == len(a.frames) - 1
             if not last and a.hotel:
                 arrive = prev_end + timedelta(minutes=fl.minutes if fl else 0)
-                first_night = f.index == 0
-                stay_cost = round_rupees(a.hotel.unit_cost * rooms * combo.nights) if first_night else Decimal(0)
-                add(kind="stay", day_index=di, start=arrive, end=arrive,
-                    title=(f"Check in: {a.hotel.place.name}" if first_night else f"Back to {a.hotel.place.name}"),
-                    subtitle=(f"{combo.nights} night{'s' if combo.nights > 1 else ''}, {rooms} "
-                              f"{'bed' if inp.stay == 'hostel' else 'room'}{'s' if rooms > 1 else ''}"
-                              if first_night else "Overnight"),
-                    cand=a.hotel, cost=stay_cost, cost_state=a.hotel.cost_state if first_night else None,
-                    alt_key="hotel" if first_night else None, **leg,
-                    reasons=[{"key": "stay", "text": f"a {FE.STAY_LABEL.get(inp.stay, inp.stay)} stay as you asked"},
-                             {"key": "nearby", "text": "central to the places you're visiting"}] if first_night else [],
-                    meta={"lat": a.hotel.place.lat, "lng": a.hotel.place.lng, "key": a.hotel.key,
-                          "nightly": float(a.hotel.unit_cost), "stars": a.hotel.place.hotel.stars if a.hotel.place.hotel else None})
+                stay_draft(arrive, f.index == 0 and not night, di, leg)  # after a night check-in, the first evening is "Back to"
             elif last and combo.ret:
                 r = combo.ret
                 if (r.depart_at - timedelta(minutes=(fl.minutes if fl else 0) + 35)) - prev_end >= timedelta(minutes=45):

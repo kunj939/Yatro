@@ -9,11 +9,11 @@ from app.services.feasibility import _valid_outbound, _valid_return
 
 
 def test_meal_warnings_become_one_line():
-    raw = [f"No {m} stop matched your food preference and timing on day {d}." for d in (2, 3, 4)
+    raw = [f"No {m} stop matched your food preference and timing on {d}." for d in ("Sun 18 Oct", "Mon 19 Oct", "Tue 20 Oct")
            for m in ("breakfast", "lunch", "snack", "dinner")]
     out = Q.consolidate_warnings(raw + ["Some current information could not be verified."])
     assert len(out) == 2
-    assert out[0].startswith("Couldn't fit every meal") and "lunch on days 2, 3 and 4" in out[0]
+    assert out[0].startswith("Couldn't fit every meal") and "lunch on Sun 18 Oct, Mon 19 Oct and Tue 20 Oct" in out[0]
     assert "snack on" not in out[0]
 
 
