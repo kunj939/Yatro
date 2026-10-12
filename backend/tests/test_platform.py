@@ -160,8 +160,10 @@ def test_0009_applies_and_rolls_back_on_a_fresh_database():
 
 def test_the_ttl_table_holds_exactly_the_values_that_used_to_be_literals():
     assert ttl.get("google-routes") == timedelta(hours=6) and ttl.get("google-matrix") == timedelta(hours=24)
-    assert ttl.get("google-places-search") == timedelta(hours=24) and ttl.get("google-autocomplete") == timedelta(hours=24)
-    assert ttl.get("google-place-details") == timedelta(days=3) and ttl.get("google-reverse") == timedelta(days=7)
+    # place searches and details were raised to the 7-day Google maximum (ADR 0011): a city's places hardly change in a week
+    assert ttl.get("google-places-search") == timedelta(days=7) and ttl.get("google-autocomplete") == timedelta(hours=24)
+    assert ttl.get("google-place-details") == timedelta(days=7) and ttl.get("google-reverse") == timedelta(days=7)
+    assert ttl.get("wikidata") == timedelta(days=30)  # CC0, ours to keep; not under the Google cap
     assert ttl.get("google-transit") == timedelta(hours=12) and ttl.get("open-meteo") == timedelta(hours=3)
     assert ttl.get("search") == timedelta(hours=12) and ttl.get("irctc1-station") == timedelta(days=1)
     assert ttl.get("irctc1-between") == timedelta(hours=12) and ttl.get("railradar") == timedelta(hours=12)

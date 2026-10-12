@@ -58,6 +58,7 @@ HOSTS = {
     "maps.googleapis.com": "google-geocoding", "openrouter.ai": "openrouter", "api.railradar.in": "railradar",
     "railradar.in": "railradar", "irctc1.p.rapidapi.com": "irctc1", "api.open-meteo.com": "open-meteo",
     "api.search.brave.com": "brave", "google.serper.dev": "serper", "api.tavily.com": "tavily",
+    "query.wikidata.org": "wikidata",
 }
 
 _ID = re.compile(r"/(?:[A-Za-z0-9_-]{20,}|\d{3,}|[A-Z]{2,5})(?=/|$)")

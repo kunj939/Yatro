@@ -4,6 +4,7 @@ from __future__ import annotations
 import math
 from decimal import Decimal
 
+from app.providers.wikidata import fame_count
 from app.services import age_fit, destination_profile
 from app.services.engine_types import Candidate, PlanInput
 
@@ -81,8 +82,9 @@ def score_attraction(c: Candidate, inp: PlanInput, activity_allowance: Decimal) 
     cost_fit = 1.0 if cost == 0 else max(0.0, 1 - float(cost / max(activity_allowance, Decimal(1))))
     if "budget" in inp.styles:
         cost_fit = cost_fit ** 0.5 + (0.3 if cost == 0 else 0)
-    fame = famous(c.place.rating_count)
-    must_see = 0.3 if (c.place.rating_count or 0) >= 20_000 else 0.0  # Hawa Mahal, Amber Fort...
+    known_by = fame_count(c.place)  # reviews, or how many Wikipedias have a page on it (providers/wikidata.py)
+    fame = famous(known_by)
+    must_see = 0.3 if (known_by or 0) >= 20_000 else 0.0  # Hawa Mahal, Amber Fort, Fatehpur Sikri...
     picked = tags & set(inp.interests)  # tags matching the traveller's own explicit picks, not just inferred style
     avoided = (tags & inp.avoid_tags) and not c.pinned  # "no temples": ranked last unless asked for by name
     ages = getattr(inp, "age_groups", None) or ()  # who is travelling (services/age_fit.py); nothing changes without it
@@ -97,7 +99,8 @@ def score_attraction(c: Candidate, inp: PlanInput, activity_allowance: Decimal) 
     c.matched = [TAG_LABELS.get(t, t) for t in matched[:3]]
     c.matched_interests = [TAG_LABELS.get(t, t) for t in sorted(picked, key=lambda t: -w.get(t, 0))[:2]]
     if must_see:
-        c.reasons.append(f"one of the best-known sights here ({c.place.rating_count:,} reviews)")
+        c.reasons.append(f"one of the best-known sights here ({c.place.rating_count:,} reviews)" if c.place.rating_count
+                         else f"one of the best-known sights here (on Wikipedia in {c.place.meta['wiki_links']} languages)")
     if kind:
         c.reasons.append(destination_profile.REASON[kind])
 

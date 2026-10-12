@@ -15,8 +15,11 @@ log = logging.getLogger("tripai.cache")
 
 H, D = 3600, 86400
 DEFAULTS: dict[str, int] = {
-    "google-routes": 6 * H, "google-matrix": 24 * H, "google-places-search": 24 * H, "google-autocomplete": 24 * H,
-    "google-place-details": 3 * D, "google-reverse": 7 * D, "google-transit": 12 * H,
+    # Place searches and details: the full 7 days Google content may be cached (I6, GOOGLE_MAX). A destination's sights,
+    # restaurants and hotels hardly change in a week, and every traveller going there that week reuses them.
+    "google-routes": 6 * H, "google-matrix": 24 * H, "google-places-search": 7 * D, "google-autocomplete": 24 * H,
+    "google-place-details": 7 * D, "google-reverse": 7 * D, "google-transit": 12 * H,
+    "wikidata": 30 * D,  # CC0 data, ours to keep; refreshed monthly to pick up new pages
     "open-meteo": 3 * H, "search": 12 * H,
     "irctc1-station": 1 * D, "irctc1-between": 12 * H, "railradar": 12 * H,
 }

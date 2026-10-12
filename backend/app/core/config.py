@@ -135,6 +135,7 @@ class Settings(BaseSettings):
     # before Google is cut off. Worst measured cold plan (New Delhi -> Mussoorie, ADR 0001) is $0.345, rounded up to
     # $0.35: $10 pays for 28 of them; 25 leaves about $1.25 for replans at about $0.05 each.
     daily_plan_cap: int = 25
+    wikidata_enabled: bool = True  # famous sights from Wikidata (free, CC0) next to Google's: providers/wikidata.py
     cold_plan_worst_usd: float = 0.35
     background_budget_share: float = 0.5  # background work (rail refresh, later pre-warming) may use this much of a day
     busy_notify_email: bool = False  # reserved: "email me when it's back". Email sending doesn't exist yet; never read

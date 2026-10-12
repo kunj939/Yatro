@@ -26,7 +26,8 @@ MAX_KINDS = 2
 
 
 def _weight(p: PlaceData) -> float:
-    return 1.0 + math.log10((p.rating_count or 0) + 1)  # a sight 10,000 people reviewed counts 5x a quiet one
+    from app.providers.wikidata import fame_count
+    return 1.0 + math.log10((fame_count(p) or 0) + 1)  # a sight 10,000 people reviewed counts 5x a quiet one
 
 
 def profile(places: list[PlaceData]) -> dict[str, float]:

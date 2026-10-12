@@ -134,6 +134,9 @@ NAME_TAGS = {"fort": ["fort", "heritage"], "palace": ["palace", "heritage"], "ma
              "sanctuary": ["national_park", "nature"], "bird": ["national_park", "nature"]}
 # What a saved trip needs back when its Google content is older than 30 days (ADR 0005): no atmosphere fields.
 REFRESH_FIELDS = "id,displayName,formattedAddress,location,regularOpeningHours,businessStatus,rating,userRatingCount"
+# Interests whose places Wikidata lists well enough that a Google search for them adds little once it has answered.
+WIKIDATA_COVERS = {"fort", "palace", "temple", "spiritual", "museum", "lake", "nature", "viewpoint", "heritage",
+                   "sightseeing", "premium", "relaxed"}
 VEG_NAME_HINTS = ("pure veg", "bhojnalaya", "mishthan", "vegetarian", "sweets", "thali")
 
 
@@ -391,7 +394,7 @@ class GooglePlacesProvider(PlacesProvider):
                 return place
         return None
 
-    def attractions(self, city: PlaceData, interests: list[str]) -> list[PlaceData]:
+    def attractions(self, city: PlaceData, interests: list[str], known: list[PlaceData] | None = None) -> list[PlaceData]:
         currency = currency_for(city.lat, city.lng)  # offline, from the destination's own coordinates
         queries = [f"top tourist attractions in {city.name}"]
         # Style-level hints (from trip_styles) plus specific place tags (from the traveller's own "favourites"
@@ -405,7 +408,12 @@ class GooglePlacesProvider(PlacesProvider):
                  "heritage": "heritage sites", "nightlife": "nightlife and bars", "viewpoint": "viewpoints",
                  "sunset": "sunset points", "adventure_activities": "adventure activities",
                  "family": "family friendly attractions and kids activities"}
-        queries += [f"{extra[i]} in {city.name}" for i in dict.fromkeys(interests) if i in extra][:3]
+        # With Wikidata's famous sights already in hand (`known`, providers/wikidata.py), the searches it covers (forts,
+        # temples, museums, lakes, "places near") are skipped: only what it can't know (bars, street food, markets) is asked.
+        known = known or []
+        lean = sum(1 for k in known if (k.meta or {}).get("wiki_links", 0) >= 3) >= 10
+        wanted = [i for i in dict.fromkeys(interests) if i in extra and not (lean and i in WIKIDATA_COVERS)]
+        queries += [f"{extra[i]} in {city.name}" for i in wanted][:3]
         seen, out = set(), []
 
         def run(q: str, radius: float = 25000) -> None:
@@ -421,12 +429,12 @@ class GooglePlacesProvider(PlacesProvider):
             run(q)
         # What kind of place is it? A beach town gets "best beaches in Goa", the hills "viewpoints, valleys and treks",
         # a big city "famous landmarks and museums": the search behind the plan matches the destination.
-        for q in destination_profile.queries(destination_profile.profile(out)):
+        for q in destination_profile.queries(destination_profile.profile(out + known)):
             if not any(q in done for done in queries):
                 run(f"{q} in {city.name}")
         # A small town has few real sights of its own (Bharatpur): add the well-known places around it, so the days
         # are filled with Deeg or Fatehpur Sikri rather than neighbourhood parks.
-        if sum(1 for p in out if (p.rating_count or 0) >= 500) < 10:
+        if not lean and sum(1 for p in out if (p.rating_count or 0) >= 500) < 10:
             run(f"famous places to visit near {city.name}", radius=60000)
         return out[:32]
 

@@ -92,8 +92,13 @@ def get_providers() -> Providers:
             GooglePlacesProvider,
             GoogleTransportProvider,
         )
-        maps, places = GoogleMapsProvider(), GooglePlacesProvider()
-        hotels: HotelProvider = GoogleHotelProvider(places) if s.hotel_provider != "estimate" else DemoHotelProvider()
+        maps, google_places = GoogleMapsProvider(), GooglePlacesProvider()
+        hotels: HotelProvider = GoogleHotelProvider(google_places) if s.hotel_provider != "estimate" else DemoHotelProvider()
+        if s.wikidata_enabled:  # famous sights from Wikidata, free, next to Google's (providers/wiki_places.py)
+            from app.providers.wiki_places import WikiAwarePlaces
+            places = WikiAwarePlaces(google_places)
+        else:
+            places = google_places
         transport: TransportProvider = GoogleTransportProvider(maps, s.default_timezone)
         from app.providers.rail_chain import build as with_indian_rail_data
         transport = with_indian_rail_data(transport, places)  # RailRadar and/or IRCTC1, whichever is configured
