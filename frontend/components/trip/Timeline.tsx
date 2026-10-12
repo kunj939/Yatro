@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Coffee } from "lucide-react";
+import { ChevronDown, Coffee, Sparkles } from "lucide-react";
 import type { Itinerary, ItineraryItem } from "@/lib/types";
 import { MODE_LABEL, minutes, money, niceDate } from "@/lib/format";
 import { KIND_TONE, TimelineItem, itemIcon } from "./TimelineItem";
@@ -46,9 +46,19 @@ function CompactRow({ item, onChange, highlight, currency, near, tripId }: {
         <span className="num text-[14px] font-bold text-ink">{when}</span>
         <span className={`grid h-8 w-8 place-items-center rounded-lg ${KIND_TONE[item.kind] ?? "bg-haze text-ink"}`}><Icon className="h-4 w-4" aria-hidden /></span>
         <span className="min-w-0">
-          <span className="block truncate text-[15px] font-semibold leading-snug">{item.title}</span>
+          <span className="flex min-w-0 items-baseline gap-1.5">
+            <span className="truncate text-[15px] font-semibold leading-snug">{item.title}</span>
+            {item.meta?.source === "google" && typeof item.meta?.rating === "number" && (
+              <span className="num shrink-0 text-[12px] font-semibold text-ink-mute" title="Rating on Google Maps">★ {item.meta.rating}</span>
+            )}
+          </span>
           {(detail || travel) && (
             <span className="block truncate text-[13px] text-ink-mute">{[detail, travel].filter(Boolean).join(" · ")}</span>
+          )}
+          {item.meta?.why_go && (
+            <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[12.5px] font-medium text-signal-deep">
+              <Sparkles className="h-3 w-3 shrink-0" aria-hidden /><span className="truncate">{item.meta.why_go}</span>
+            </span>
           )}
         </span>
         <span className="flex shrink-0 items-center gap-1.5">

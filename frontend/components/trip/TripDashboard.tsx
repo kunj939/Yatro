@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, Baby, CalendarDays, Share2, ChevronDown, Clock, CloudSun, FlaskConical, History, Info, ListChecks, ListOrdered, Map as MapIcon, MapPin, Navigation, Repeat, Send, Sparkles, Users, Wallet } from "lucide-react";
+import { ArrowDown, Baby, CalendarDays, Share2, ChevronDown, Clock, CloudSun, Database, FlaskConical, History, Info, ListChecks, ListOrdered, Map as MapIcon, MapPin, Navigation, Repeat, Send, Sparkles, Users, Wallet } from "lucide-react";
 import type { Adjustment, ItineraryItem, Trip } from "@/lib/types";
 import { ApiError } from "@/lib/api";
 import { usePlanStream } from "@/lib/usePlanStream";
@@ -20,6 +20,7 @@ import { useFlags } from "@/lib/flags";
 import { InfeasibleView } from "./InfeasibleView";
 import { TripLoading } from "./TripLoading";
 import { VERIFICATION_LEGEND, VerificationBadge } from "../VerificationBadge";
+import { planSources } from "@/lib/sources";
 
 type Tab = "timeline" | "map" | "budget" | "group";
 const TABS: { key: Tab; label: string; icon: any }[] = [
@@ -292,6 +293,10 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                   </div>
                   <Timeline itinerary={it} onChange={setChanging} highlightIds={highlight} currency={trip.currency} near={trip.destination}
                             tripId={readOnly ? undefined : trip.id} view={view} day={day} />
+                  {/* Google's terms: its content shown outside a Google map carries "Google Maps", unaltered (ADR 0005) */}
+                  {planSources(it).some((s) => s.from === "Google Maps") && (
+                    <p className="mt-3 whitespace-nowrap text-right text-[12px] text-ink-mute">Place details from Google Maps</p>
+                  )}
                 </div>
                 <aside className="space-y-5">
                   <div className="hidden lg:block">
@@ -307,7 +312,12 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                   {it.weather && (
                     <SideCard icon={CloudSun} title="Weather">
                       <p>{it.weather.summary}{it.weather.max_c !== null ? `, up to ${Math.round(it.weather.max_c)}°C` : ""}{it.weather.rain_chance !== null ? `, ${it.weather.rain_chance}% chance of rain` : ""}.</p>
-                      <div className="mt-2"><VerificationBadge state={it.weather.state} /></div>
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                        <VerificationBadge state={it.weather.state} />
+                        <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer" className="text-[12px] text-ink-mute underline-offset-2 hover:underline">
+                          Weather by Open-Meteo.com
+                        </a>
+                      </div>
                     </SideCard>
                   )}
                   {canShare && (
@@ -333,6 +343,13 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                     <div className="mt-4 flex flex-wrap gap-1.5 border-t border-line pt-3">
                       {VERIFICATION_LEGEND.map((l) => <span key={l.key} title={l.hint}><VerificationBadge state={l.key} /></span>)}
                     </div>
+                  </SideCard>
+                  <SideCard icon={Database} title="Where this data comes from">
+                    <ul className="space-y-2">
+                      {planSources(it).map((s) => (
+                        <li key={s.what}><span className="block text-[13px] text-ink-mute">{s.what}</span><span className="font-medium text-ink">{s.from}</span></li>
+                      ))}
+                    </ul>
                   </SideCard>
                   {trip.versions.length > 1 && (
                     <SideCard icon={History} title="Versions">

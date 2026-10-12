@@ -65,3 +65,16 @@ def test_a_neighbourhood_park_ranks_below_a_real_sight():
     for c in (park, fort):
         score_attraction(c, inp, Decimal(5000))
     assert fort.score > park.score
+
+
+def test_why_go_explains_a_sight_in_our_words_without_google_figures():
+    from app.services.planner import why_go
+    inp = _inp()
+    inp.dest_kinds = DP.profile(GOA)
+    beach = Candidate(key="b", place=place("Colva Beach", ["beach"], 20000), kind="attraction")
+    score_attraction(beach, inp, Decimal(5000))
+    assert why_go(beach) == "One of the beaches this coast is known for"
+    fort = Candidate(key="f", place=place("Amber Fort", ["historical_landmark"], 90000), kind="attraction")
+    score_attraction(fort, _inp(), Decimal(5000))
+    assert why_go(fort) == "One of the best-known sights here"  # "(90,000 reviews)" is Google content (I6): left out
+    assert why_go(Candidate(key="r", place=place("Cafe", [], 100), kind="restaurant")) is None

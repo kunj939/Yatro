@@ -94,6 +94,27 @@ def _smaller(cands: list, keep_min: int) -> list:
     return [c for c in cands if c.pinned or id(c) in keep]
 
 
+
+def why_go(c: Candidate) -> str | None:
+    """One line on why a sight is worth the visit, for the plan: what made it rank (a destination's signature, one of
+    the best-known sights), else what it matches for this traveller. Our own words only: the review count that may
+    sit in the ranking reason is Google content (I6) and is left out, so the line never needs scrubbing."""
+    if c.kind != "attraction":
+        return None
+    # the specific reason ("one of the beaches this coast is known for") before the generic "one of the best-known sights"
+    for r in sorted(c.reasons, key=lambda r: r.startswith("one of the best-known")):
+        text = r.split(" (")[0].strip()
+        if text:
+            return text[0].upper() + text[1:]
+    if c.matched_interests:
+        return f"One of your favourites: {_join(c.matched_interests)}"
+    if c.age_note:
+        return c.age_note[0].upper() + c.age_note[1:]
+    if c.matched:
+        return f"Good for {_join(c.matched[:2])}"
+    return None
+
+
 class Planner:
     def __init__(self, db: Session, providers: Providers, reporter: StageReporter | None = None, user_id=None):
         self.db = db
@@ -712,6 +733,9 @@ class Planner:
         out = []
         if c.pinned:
             out.append({"key": "pinned", "text": "the one you asked for"})
+        go = why_go(c)
+        if go:
+            out.append({"key": "highlight", "text": go[0].lower() + go[1:]})
         cost = c.group_cost(inp.travellers)
         out.append({"key": "budget", "text": "within your budget" if cost else "free to visit, which helps your budget"})
         o, cl = PS.hours_display(c, frame.day, s.start)
@@ -871,7 +895,11 @@ class Planner:
                           "rating_count": c.place.rating_count, "tags": c.place.tags[:5], "meal": meal,
                           "veg_only": bool(c.place.restaurant and c.place.restaurant.veg_only),
                           "website": c.place.website, "key": c.key, "arrive": s.arrive.strftime("%H:%M") if s.arrive else None,
-                          "per_person": float(c.unit_cost), "leave_prev_at": leave.strftime("%H:%M")})
+                          "per_person": float(c.unit_cost), "leave_prev_at": leave.strftime("%H:%M"),
+                          # why it's worth going, in our words (no Google figures), and where the place came from
+                          "why_go": why_go(c) if s.kind in ("activity", "sunset") else None,
+                          "about": c.place.description, "source": c.place.provider,
+                          "wiki_links": (c.place.meta or {}).get("wiki_links")})
                 prev_name, prev_end = c.place.name, s.end
             fl = f.final_leg
             leg = {"distance_m": fl.distance_m if fl else None, "travel_minutes": fl.minutes if fl else None,

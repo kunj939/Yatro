@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { BedDouble, Car, ChevronDown, Clock, Coffee, ExternalLink, Footprints, Home, Landmark, Map as MapIcon, Plane, Bus, Repeat, Sunset, TrainFront, TramFront, UtensilsCrossed } from "lucide-react";
+import { BedDouble, Car, ChevronDown, Clock, Coffee, ExternalLink, Footprints, Home, Landmark, Map as MapIcon, Plane, Bus, Repeat, Sparkles, Sunset, TrainFront, TramFront, UtensilsCrossed } from "lucide-react";
 import type { ItineraryItem, TransportLeg } from "@/lib/types";
 import { endpoints } from "@/lib/api";
 import { MODE_LABEL, km, minutes, money } from "@/lib/format";
 import { VerificationBadge } from "../VerificationBadge";
+import { placeSource } from "@/lib/sources";
 
 const KIND_ICON: Record<string, any> = { activity: Landmark, meal: UtensilsCrossed, sunset: Sunset, stay: BedDouble, arrival: Home, free: Coffee };
 const MODE_ICON: Record<string, any> = { train: TrainFront, bus: Bus, flight: Plane, cab: Car, own_car: Car, walk: Footprints, transit: TramFront };
@@ -161,6 +162,7 @@ export function TimelineItem({ item, onChange, highlight, currency, near, first,
   const free = item.cost === 0 && (item.kind === "activity" || item.kind === "sunset");
   const unpublished = !!item.hours_note?.startsWith("Opening hours are not published") && !item.opening_time;
   const ticket = item.kind === "transport" && TICKET_MODES.has(item.meta?.mode) && !!item.meta?.from_name && !!item.meta?.to_name;
+  const source = placeSource(item);
   // On a ticket the route is drawn, so the subtitle keeps only what it adds ("including about 3 h at the airports").
   let subtitle = item.subtitle;
   if (ticket && subtitle) {
@@ -192,6 +194,11 @@ export function TimelineItem({ item, onChange, highlight, currency, near, first,
               </p>
               <h3 className="break-words text-[16px] font-bold leading-snug sm:text-[18px]">{item.title}</h3>
               {subtitle && <p className="mt-0.5 text-[14px] text-ink-soft">{subtitle}</p>}
+              {item.meta?.why_go && (
+                <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-signal-soft px-2.5 py-0.5 text-[13px] font-semibold text-signal-deep">
+                  <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden />{item.meta.why_go}
+                </p>
+              )}
               {item.meta?.google_expired && item.meta?.maps_url && (
                 <a href={item.meta.maps_url} target="_blank" rel="noopener noreferrer"
                    className="mt-1 inline-flex items-center gap-1 text-[13px] font-semibold text-signal-deep underline underline-offset-4">
@@ -240,6 +247,7 @@ export function TimelineItem({ item, onChange, highlight, currency, near, first,
               {unpublished && <Pill><span title={item.hours_note ?? ""}>Hours unconfirmed</span></Pill>}
               {item.kind === "transport" && item.meta?.distance_m && <Pill>{km(item.meta.distance_m)}</Pill>}
               {item.kind === "transport" && item.hours_state && <Pill>Schedule <VerificationBadge state={item.hours_state} compact /></Pill>}
+              {source && <Pill><span title="Where these details come from">{source.label}{source.detail ? ` · ${source.detail}` : ""}</span></Pill>}
             </div>
           )}
           {/* Hours that simply aren't published are a small chip, not an alarm on every sight; a real conflict
