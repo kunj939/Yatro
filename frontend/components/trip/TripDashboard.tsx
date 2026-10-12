@@ -145,7 +145,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
           )}
           {readOnly && <span className="rounded-full border border-white/25 px-2.5 py-0.5">Read-only sample</span>}
           {it && <span className="rounded-full border border-white/15 px-2.5 py-0.5">Version {it.version}</span>}
-          <span className="rounded-full border border-white/15 px-2.5 py-0.5">{trip.currency}</span>
+          <span className="hidden rounded-full border border-white/15 px-2.5 py-0.5 sm:inline">{trip.currency}</span>
           {canShare && (
             <button onClick={() => setSharing(true)} className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 font-semibold text-white transition-colors hover:bg-white/20">
               <Share2 className="h-3.5 w-3.5" aria-hidden />Share
@@ -177,12 +177,13 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
           </div>
         </div>
 
-        <p className="mt-5 flex flex-wrap items-center gap-2 text-[14px] text-white/80">
+        <p className="mt-5 flex flex-wrap items-center gap-1.5 text-[13px] text-white/80 sm:gap-2 sm:text-[14px]">
           <Chip><CalendarDays className="h-3.5 w-3.5" aria-hidden />{niceDate(trip.start_date)}{trip.end_date !== trip.start_date ? ` – ${niceDate(trip.end_date)}` : ""}</Chip>
           <Chip><Clock className="h-3.5 w-3.5" aria-hidden />{time12(trip.start_time)} – {time12(trip.end_time)}</Chip>
           <Chip><Users className="h-3.5 w-3.5" aria-hidden />{plural(trip.travellers, "traveller")}{trip.traveller_type ? ` · ${TRAVELLER_LABEL[trip.traveller_type] ?? trip.traveller_type}` : ""}</Chip>
           {!!trip.preferences?.age_groups?.length && trip.preferences.age_groups.some((a) => a !== "adults") && (
-            <Chip><Baby className="h-3.5 w-3.5" aria-hidden />{ageSummary(trip.preferences.age_groups)}</Chip>)}
+            <Chip><Baby className="h-3.5 w-3.5" aria-hidden /><span className="sm:hidden">{ageSummary(trip.preferences.age_groups, true)}</span>
+              <span className="hidden sm:inline">{ageSummary(trip.preferences.age_groups)}</span></Chip>)}
           {it && <Chip><ListChecks className="h-3.5 w-3.5" aria-hidden />{plural(it.days.reduce((a, d) => a + dayStats(d.items).stops, 0), "stop")}</Chip>}
         </p>
 
@@ -268,11 +269,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                       {it.brownout.labels.alternatives && <BrownoutNote text={it.brownout.labels.alternatives} icon={Repeat} />}
                     </div>
                   )}
-                  {!readOnly && flags.share && <WhatsAppCard trip={trip} />}
-                  <div className="mb-6 lg:hidden">
-                    <ReplanBox chips={chips} value={message} onChange={setMessage} onSend={sendMessage} busy={running}
-                               readOnly={readOnly} replansLeft={trip.replans_left} error={error} reply={reply} />
-                  </div>
+                  {!readOnly && flags.share && <div className="hidden lg:block"><WhatsAppCard trip={trip} /></div>}
                   {it.llm_status === "fallback" && (
                     <p className="mb-5 rounded-xl bg-haze-2 px-4 py-3 text-sm text-ink-soft">Trip data was collected, but AI explanation is temporarily unavailable.</p>
                   )}
@@ -297,6 +294,12 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                   {planSources(it).some((s) => s.from === "Google Maps") && (
                     <p className="mt-3 whitespace-nowrap text-right text-[12px] text-ink-mute">Place details from Google Maps</p>
                   )}
+                  {/* On a phone the plan comes first: keeping it and changing it follow the itinerary, not precede it */}
+                  <div className="mt-6 space-y-6 lg:hidden">
+                    {!readOnly && flags.share && <WhatsAppCard trip={trip} />}
+                    <ReplanBox chips={chips} value={message} onChange={setMessage} onSend={sendMessage} busy={running}
+                               readOnly={readOnly} replansLeft={trip.replans_left} error={error} reply={reply} />
+                  </div>
                 </div>
                 <aside className="space-y-5">
                   <div className="hidden lg:block">
@@ -321,7 +324,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                     </SideCard>
                   )}
                   {canShare && (
-                    <SideCard icon={Share2} title="Shared links">
+                    <SideCard icon={Share2} title="Shared links" folded>
                       <SharedLinks tripId={trip.id} refreshKey={shareTick} />
                     </SideCard>
                   )}
@@ -331,7 +334,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                       <ul className="list-disc space-y-1.5 pl-4">{it.tips.map((t, i) => <li key={i}>{t}</li>)}</ul>
                     </SideCard>
                   )}
-                  <SideCard icon={ListChecks} title="How this plan was checked">
+                  <SideCard icon={ListChecks} title="How this plan was checked" folded>
                     <ol className="space-y-1.5">
                       {it.pipeline_trace.map((s) => (
                         <li key={s.key}>
@@ -344,7 +347,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                       {VERIFICATION_LEGEND.map((l) => <span key={l.key} title={l.hint}><VerificationBadge state={l.key} /></span>)}
                     </div>
                   </SideCard>
-                  <SideCard icon={Database} title="Where this data comes from">
+                  <SideCard icon={Database} title="Where this data comes from" folded>
                     <ul className="space-y-2">
                       {planSources(it).map((s) => (
                         <li key={s.what}><span className="block text-[13px] text-ink-mute">{s.what}</span><span className="font-medium text-ink">{s.from}</span></li>
@@ -401,10 +404,22 @@ function Stat({ label, value, accent = "" }: { label: string; value: string; acc
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
-  return <span className="num inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.05] px-3 py-1">{children}</span>;
+  return <span className="num inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.05] px-2.5 py-1 sm:px-3">{children}</span>;
 }
 
-function SideCard({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) {
+function SideCard({ icon: Icon, title, children, folded = false }: { icon: any; title: string; children: React.ReactNode; folded?: boolean }) {
+  if (folded) {
+    // reference detail (how the plan was checked, data sources, links): one tap away, so the column stays short
+    return (
+      <details className="group rounded-2xl border border-line bg-paper/80 p-4 text-[14px] text-ink-soft backdrop-blur transition-colors hover:border-ink/20 sm:p-5">
+        <summary className="flex cursor-pointer list-none items-center gap-2.5 text-[16px] font-bold text-ink">
+          <span className="grid h-7 w-7 place-items-center rounded-lg bg-signal-soft"><Icon className="h-4 w-4 text-signal-deep" aria-hidden /></span>{title}
+          <ChevronDown className="ml-auto h-4 w-4 text-ink-mute transition-transform group-open:rotate-180" aria-hidden />
+        </summary>
+        <div className="mt-3">{children}</div>
+      </details>
+    );
+  }
   return (
     <section className="rounded-2xl border border-line bg-paper/80 p-5 text-[14px] text-ink-soft backdrop-blur transition-colors hover:border-ink/20">
       <h2 className="mb-2.5 flex items-center gap-2.5 text-[16px] font-bold text-ink">

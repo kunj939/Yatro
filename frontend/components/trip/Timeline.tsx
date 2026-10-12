@@ -39,15 +39,18 @@ function CompactRow({ item, onChange, highlight, currency, near, tripId }: {
     ? `${item.meta.from_name} → ${item.meta.to_name}`
     : item.opening_time ? `Open ${item.opening_time}–${item.closing_time}` : item.subtitle;
   const free = item.cost === 0 && (item.kind === "activity" || item.kind === "sunset");
+  // "06:40 train to Jaipur" sits beside "06:40": the time is already there
+  const title = item.time && item.title.startsWith(`${item.time} `)
+    ? item.title.slice(item.time.length + 1).replace(/^./, (c) => c.toUpperCase()) : item.title;
   return (
     <li className={highlight ? "bg-signal-soft/50" : ""}>
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open}
-              className="grid w-full grid-cols-[46px_32px_minmax(0,1fr)_auto] items-center gap-x-2.5 px-3.5 py-2.5 text-left transition-colors hover:bg-haze/70 sm:grid-cols-[56px_34px_minmax(0,1fr)_auto] sm:gap-x-3">
+              className="grid w-full grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-x-2.5 px-3 py-2.5 text-left transition-colors hover:bg-haze/70 sm:grid-cols-[56px_34px_minmax(0,1fr)_auto] sm:gap-x-3 sm:px-3.5">
         <span className="num text-[14px] font-bold text-ink">{when}</span>
-        <span className={`grid h-8 w-8 place-items-center rounded-lg ${KIND_TONE[item.kind] ?? "bg-haze text-ink"}`}><Icon className="h-4 w-4" aria-hidden /></span>
+        <span className={`hidden h-8 w-8 place-items-center rounded-lg sm:grid ${KIND_TONE[item.kind] ?? "bg-haze text-ink"}`}><Icon className="h-4 w-4" aria-hidden /></span>
         <span className="min-w-0">
           <span className="flex min-w-0 items-baseline gap-1.5">
-            <span className="truncate text-[15px] font-semibold leading-snug">{item.title}</span>
+            <span className="line-clamp-2 text-[15px] font-semibold leading-snug sm:truncate">{title}</span>
             {item.meta?.source === "google" && typeof item.meta?.rating === "number" && (
               <span className="num shrink-0 text-[12px] font-semibold text-ink-mute" title="Rating on Google Maps">★ {item.meta.rating}</span>
             )}
@@ -57,7 +60,7 @@ function CompactRow({ item, onChange, highlight, currency, near, tripId }: {
           )}
           {item.meta?.why_go && (
             <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[12.5px] font-medium text-signal-deep">
-              <Sparkles className="h-3 w-3 shrink-0" aria-hidden /><span className="truncate">{item.meta.why_go}</span>
+              <Sparkles className="h-3 w-3 shrink-0" aria-hidden /><span className="sm:truncate">{item.meta.why_go}</span>
             </span>
           )}
         </span>

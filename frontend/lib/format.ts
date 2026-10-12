@@ -142,9 +142,9 @@ export const TRAVELLER_LABEL: Record<string, string> = {
 export const AGE_LABEL: Record<string, string> = { kids: "Kids", teens: "Teens", adults: "Adults", seniors: "Seniors" };
 export const AGE_BAND: Record<string, string> = { kids: "0–12", teens: "13–17", adults: "18–59", seniors: "60+" };
 export const AGE_ORDER = ["kids", "teens", "adults", "seniors"] as const;
-export function ageSummary(groups: readonly string[] | undefined | null): string {
+export function ageSummary(groups: readonly string[] | undefined | null, short = false): string {
   const g = AGE_ORDER.filter((a) => groups?.includes(a));
-  return g.map((a) => `${AGE_LABEL[a]} ${AGE_BAND[a]}`).join(" · ");
+  return g.map((a) => short ? AGE_LABEL[a] : `${AGE_LABEL[a]} ${AGE_BAND[a]}`).join(" · ");
 }
 export const FOOD_LABEL: Record<string, string> = { veg: "Vegetarian", non_veg: "Non-vegetarian", both: "Veg and non-veg" };
 export const STAY_LABEL: Record<string, string> = {

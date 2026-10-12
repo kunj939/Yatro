@@ -106,7 +106,8 @@ export function WhatsAppCard({ trip }: { trip: Trip }) {
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-paper text-teal"><MessageCircle className="h-5 w-5" aria-hidden /></span>
       <div className="min-w-[12rem] flex-1">
         <p className="font-bold leading-snug">Keep this plan with you</p>
-        <p className="text-[14px] text-ink-soft">
+        <p className="text-[13px] text-ink-mute sm:hidden">WhatsApp, a PDF or email: take it with you.</p>
+        <p className="hidden text-[14px] text-ink-soft sm:block">
           {last4 ? <>WhatsApp opens with the plan ready for your number ending {last4}; you tap Send. </> : null}
           {flags.planEmails ? (user.email_plans !== false ? "New plans are also emailed to you automatically." : "Plan emails are off (Account).") : null}
         </p>
@@ -115,21 +116,21 @@ export function WhatsAppCard({ trip }: { trip: Trip }) {
         {error && <p role="alert" className="mt-1 text-[13px] font-medium text-danger">{error}</p>}
         {fallback && <p className="mt-1 text-[13px]"><a className="font-semibold underline underline-offset-4" href={fallback} target="_blank" rel="noopener noreferrer">Tap here to open WhatsApp</a></p>}
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap [&>button]:max-sm:!px-2.5 [&>button]:max-sm:!text-[13.5px]">
         {last4 && (
           <button type="button" className="btn-primary" onClick={send} disabled={busy}>
-            <MessageCircle className="h-4 w-4" aria-hidden />{busy ? "Preparing…" : "Send to my WhatsApp"}
+            <MessageCircle className="h-4 w-4" aria-hidden />{busy ? "Preparing…" : <><span className="sm:hidden">WhatsApp</span><span className="hidden sm:inline">Send to my WhatsApp</span></>}
           </button>
         )}
         <button type="button" className={last4 ? "btn-dark" : "btn-primary"} onClick={pdfTap} disabled={pdfBusy}>
           <FileText className="h-4 w-4" aria-hidden />{pdfBusy ? "Making PDF…" : pdf ? "Send PDF" : "Share PDF"}
         </button>
         <button type="button" className="btn-ghost" onClick={download} disabled={pdfBusy}>
-          <Download className="h-4 w-4" aria-hidden />Download PDF
+          <Download className="h-4 w-4" aria-hidden /><span className="sm:hidden">Download</span><span className="hidden sm:inline">Download PDF</span>
         </button>
         {flags.planEmails && (
           <button type="button" className="btn-ghost" onClick={email} disabled={mailing}>
-            <Mail className="h-4 w-4" aria-hidden />{mailing ? "Sending…" : "Email me this plan"}
+            <Mail className="h-4 w-4" aria-hidden />{mailing ? "Sending…" : <><span className="sm:hidden">Email it</span><span className="hidden sm:inline">Email me this plan</span></>}
           </button>
         )}
       </div>
