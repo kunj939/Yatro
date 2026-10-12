@@ -48,7 +48,8 @@ DEFAULT_MEAL_COST = 450
 
 # --- Attractions ----------------------------------------------------------------------
 TAG_DURATION = {"fort": 120, "palace": 90, "museum": 75, "temple": 40, "garden": 45, "park": 60, "market": 60,
-                "viewpoint": 45, "lake": 30, "landmark": 45, "zoo": 120, "adventure": 120, "gallery": 60}
+                "viewpoint": 45, "lake": 30, "landmark": 45, "zoo": 120, "adventure": 120, "gallery": 60,
+                "beach": 90, "mountain": 90, "waterfall": 60, "national_park": 180}  # Keoladeo deserves half a day
 TAG_FEE = {"fort": 100, "palace": 200, "museum": 50, "temple": 0, "garden": 30, "park": 20, "market": 0,
            "viewpoint": 0, "lake": 0, "landmark": 30, "zoo": 150, "adventure": 500, "gallery": 50}
 

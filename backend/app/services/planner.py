@@ -391,13 +391,24 @@ class Planner:
             return self._infeasible(trip, info)
         if not quality.ok:
             r.done("optimize", "The plan didn't pass our checks", status="failed")
+            # Never a dead end: next to "pick a specific place", the changes that most often make the plan pass.
+            fixes = []
+            if inp.pace != "relaxed":
+                fixes.append({"key": "relaxed_pace", "label": "Take it slower",
+                              "description": "Fewer stops a day, so each day stays in one area.", "apply": {"pace": "relaxed"}})
+            if best.frames[-1].day > best.frames[0].day:
+                shorter = inp.end.date() - timedelta(days=1)
+                fixes.append({"key": "shorter_trip", "label": f"One day fewer (back {shorter:%d %b})",
+                              "description": "A shorter trip focuses on the best of what's nearby.",
+                              "apply": {"end_date": shorter.isoformat()}})
+            fixes.append({"key": "nearby_destination", "label": "Choose a specific city",
+                          "description": "Plan around one city or town, then add nearby places to it.",
+                          "apply": {"action": "change_destination"}})
             return self._infeasible(trip, {
                 "feasible": False, "kind": "quality",
                 "message": "We couldn't build a plan we'd trust for this trip.",
                 "main_conflict": " ".join(dict.fromkeys(quality.blocking)),
-                "adjustments": [{"key": "nearby_destination", "label": "Choose a specific city",
-                                 "description": "Plan around one city or town, then add nearby places to it.",
-                                 "apply": {"action": "change_destination"}}],
+                "adjustments": FE.drop_noops(fixes, inp),
             })
         for n in quality.notes:
             self.warn(n)

@@ -28,6 +28,7 @@ class PlanInput:
     interests: list[str] = field(default_factory=list)
     age_groups: list[str] = field(default_factory=list)  # kids | teens | adults | seniors; empty = not asked (services/age_fit.py)
     avoid_tags: set[str] = field(default_factory=set)  # place tags the traveller asked to see less of ("no temples")
+    dest_kinds: dict[str, float] = field(default_factory=dict)  # beach / mountain / heritage / city…: services/destination_profile.py
     notes: str | None = None
     excluded: set[str] = field(default_factory=set)
     pinned: list[str] = field(default_factory=list)

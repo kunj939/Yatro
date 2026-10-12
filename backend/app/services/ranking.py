@@ -4,7 +4,7 @@ from __future__ import annotations
 import math
 from decimal import Decimal
 
-from app.services import age_fit
+from app.services import age_fit, destination_profile
 from app.services.engine_types import Candidate, PlanInput
 
 STYLE_TAGS: dict[str, dict[str, float]] = {
@@ -37,6 +37,12 @@ TAG_LABELS = {"sunset": "sunset views", "viewpoint": "views", "palace": "palace"
 EXPLICIT_INTEREST_WEIGHT = 1.6
 EXPLICIT_INTEREST_BONUS = 0.16  # added straight to the score, so a match surfaces even if other scores are average
 AVOID_PENALTY = 0.9  # scores run roughly 0..1.3, so this puts a place the traveller asked to avoid at the bottom
+
+
+
+def local_park_tag(c: Candidate) -> bool:
+    from app.services.planning_support import local_park  # planning_support imports this module
+    return local_park(c.place)
 
 
 def _weights(inp: PlanInput) -> dict[str, float]:
@@ -81,7 +87,10 @@ def score_attraction(c: Candidate, inp: PlanInput, activity_allowance: Decimal) 
     avoided = (tags & inp.avoid_tags) and not c.pinned  # "no temples": ranked last unless asked for by name
     ages = getattr(inp, "age_groups", None) or ()  # who is travelling (services/age_fit.py); nothing changes without it
     age_delta, _ = age_fit.fit(ages, tags)
-    c.score = round(0.35 * pref + 0.25 * quality + 0.25 * fame + 0.15 * cost_fit + must_see
+    # the destination's own character (beaches in Goa, mountains in Manali): services/destination_profile.py
+    character, kind = destination_profile.boost(getattr(inp, "dest_kinds", None) or {}, tags)
+    local = 0.5 if local_park_tag(c) and not (c.pinned or picked) else 0.0  # a neighbourhood park, ranked last
+    c.score = round(0.35 * pref + 0.25 * quality + 0.25 * fame + 0.15 * cost_fit + must_see + character - local
                     + (EXPLICIT_INTEREST_BONUS if picked else 0) + (10 if c.pinned else 0)
                     - (AVOID_PENALTY if avoided else 0) + age_delta, 4)
     c.age_note = age_fit.reason(ages, tags)
@@ -89,6 +98,8 @@ def score_attraction(c: Candidate, inp: PlanInput, activity_allowance: Decimal) 
     c.matched_interests = [TAG_LABELS.get(t, t) for t in sorted(picked, key=lambda t: -w.get(t, 0))[:2]]
     if must_see:
         c.reasons.append(f"one of the best-known sights here ({c.place.rating_count:,} reviews)")
+    if kind:
+        c.reasons.append(destination_profile.REASON[kind])
 
 
 def score_restaurant(c: Candidate, inp: PlanInput, meal_allowance_pp: Decimal) -> None:

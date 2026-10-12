@@ -31,6 +31,7 @@ from app.providers.types import (
 from app.services import fare_model as F
 from app.utils.geo import estimate_road, haversine_m
 from app.utils.locale import currency_for
+from app.services import destination_profile
 from app.utils.money import to_currency
 
 log = logging.getLogger("tripai.google")
@@ -117,15 +118,20 @@ TYPE_TAGS = {
     "hindu_temple": ["temple", "spiritual"], "church": ["spiritual"], "mosque": ["spiritual"], "place_of_worship": ["spiritual"],
     "historical_landmark": ["heritage", "landmark"], "tourist_attraction": ["landmark"], "zoo": ["zoo", "nature"],
     "amusement_park": ["adventure"], "market": ["market", "shopping"], "shopping_mall": ["shopping"],
-    "hiking_area": ["adventure", "nature"], "national_park": ["nature", "adventure"], "observation_deck": ["viewpoint", "sunset"],
-    "beach": ["nature", "romantic", "sunset"], "cafe": ["cafe"], "fine_dining_restaurant": ["fine_dining", "premium"],
+    "hiking_area": ["adventure", "nature", "mountain"], "national_park": ["nature", "adventure", "national_park"],
+    "observation_deck": ["viewpoint", "sunset", "observation"], "beach": ["nature", "romantic", "sunset", "beach"], "cafe": ["cafe"], "fine_dining_restaurant": ["fine_dining", "premium"],
     # adults only (never planned for a party with anyone under 18, services/age_fit.py); also what the "nightlife" favourite matches
     "night_club": ["nightlife"], "bar": ["nightlife"], "casino": ["nightlife"],
 }
 NAME_TAGS = {"fort": ["fort", "heritage"], "palace": ["palace", "heritage"], "mahal": ["palace", "heritage"],
              "lake": ["lake", "romantic"], "sunset": ["sunset", "viewpoint"], "view": ["viewpoint"], "point": ["viewpoint"],
              "bazaar": ["market", "street_food"], "market": ["market"], "temple": ["temple"], "mandir": ["temple"],
-             "museum": ["museum"], "garden": ["garden"], "bagh": ["garden"], "ghat": ["spiritual", "sunset"]}
+             "museum": ["museum"], "garden": ["garden"], "bagh": ["garden"], "ghat": ["spiritual", "sunset"],
+             # what a destination's character is read from (services/destination_profile.py)
+             "beach": ["beach", "sunset", "nature"], "valley": ["mountain", "nature", "viewpoint"], "peak": ["mountain", "viewpoint"],
+             "glacier": ["mountain", "nature"], "snow": ["mountain"], "trek": ["mountain", "adventure"],
+             "waterfall": ["waterfall", "nature"], " falls": ["waterfall", "nature"], "national park": ["national_park", "nature"],
+             "sanctuary": ["national_park", "nature"], "bird": ["national_park", "nature"]}
 # What a saved trip needs back when its Google content is older than 30 days (ADR 0005): no atmosphere fields.
 REFRESH_FIELDS = "id,displayName,formattedAddress,location,regularOpeningHours,businessStatus,rating,userRatingCount"
 VEG_NAME_HINTS = ("pure veg", "bhojnalaya", "mishthan", "vegetarian", "sweets", "thali")
@@ -401,15 +407,28 @@ class GooglePlacesProvider(PlacesProvider):
                  "family": "family friendly attractions and kids activities"}
         queries += [f"{extra[i]} in {city.name}" for i in dict.fromkeys(interests) if i in extra][:3]
         seen, out = set(), []
-        for q in queries:
-            for p in self._text_search(q, (city.lat, city.lng)):
+
+        def run(q: str, radius: float = 25000) -> None:
+            for p in self._text_search(q, (city.lat, city.lng), radius=radius):
                 if p["id"] in seen or p.get("businessStatus") in ("CLOSED_PERMANENTLY",):
                     continue
                 if any(t in p.get("types", []) for t in ("lodging", "restaurant", "travel_agency")):
                     continue
                 seen.add(p["id"])
                 out.append(to_place(p, "attraction", currency))
-        return out[:24]
+
+        for q in queries:
+            run(q)
+        # What kind of place is it? A beach town gets "best beaches in Goa", the hills "viewpoints, valleys and treks",
+        # a big city "famous landmarks and museums": the search behind the plan matches the destination.
+        for q in destination_profile.queries(destination_profile.profile(out)):
+            if not any(q in done for done in queries):
+                run(f"{q} in {city.name}")
+        # A small town has few real sights of its own (Bharatpur): add the well-known places around it, so the days
+        # are filled with Deeg or Fatehpur Sikri rather than neighbourhood parks.
+        if sum(1 for p in out if (p.rating_count or 0) >= 500) < 10:
+            run(f"famous places to visit near {city.name}", radius=60000)
+        return out[:32]
 
     def restaurants(self, city: PlaceData, food: str, premium: bool) -> list[PlaceData]:
         currency = currency_for(city.lat, city.lng)

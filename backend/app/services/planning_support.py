@@ -1,6 +1,7 @@
 """Helpers for the planner: input building, candidate construction, day frames, catalog persistence."""
 from __future__ import annotations
 
+import re
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
@@ -12,6 +13,7 @@ from app.models.catalog import Hotel, Place, Restaurant
 from app.models.trip import Trip
 from app.providers.types import HotelData, PlaceData, TransportData
 from app.services import age_fit
+from app.services import destination_profile
 from app.services import fare_model as F
 from app.services.engine_types import Candidate, DayFrame, PlanInput
 from app.services.feasibility import BOARDING_BUFFER, EXIT_BUFFER, Combo
@@ -67,17 +69,36 @@ def provider_state(place: PlaceData) -> str:
     return "demo" if place.provider == "demo" else "verified_provider"
 
 
+_LOCAL_AREA = re.compile(r"\b(block|sector|nagar|colony|phase|ward|society|enclave|vihar|puram|pocket|layout|extension|scheme)\b", re.I)
+_SIGHT_TYPES = {"national_park", "tourist_attraction", "historical_landmark", "amusement_park", "zoo", "botanical_garden"}
+
+
+def local_park(p: PlaceData) -> bool:
+    """A neighbourhood park ("C Block Park", "Deendayal Nagar Park", "rajesh pilot park"): somewhere locals walk, not a
+    sight to travel for. A park that is a known attraction with plenty of visitors (Lodhi Garden) is not one."""
+    types = set(p.types or [])
+    if not ({"park", "playground", "dog_park"} & types or " park" in f" {p.name.lower()}"):
+        return False
+    n = p.rating_count or 0
+    if _SIGHT_TYPES & types and n >= 1000:
+        return False
+    return bool(_LOCAL_AREA.search(p.name)) or n < 1000
+
+
 def weak_place(p: PlaceData, city: str | None) -> bool:
-    """Places that are rarely real sights: barely reviewed, or named after the city itself
+    """Places that are rarely real sights: barely reviewed, a neighbourhood park, or named after the city itself
     ("JAIPUR MARKET", "Rishikesh - The City Of Love") without many visitors."""
     n = p.rating_count
     if n is not None and n < 50:
+        return True
+    if local_park(p):
         return True
     return bool(city) and city.lower() in p.name.lower() and (n or 0) < 1500
 
 
 def attraction_candidates(places: list[PlaceData], inp: PlanInput, activity_allowance: Decimal,
                           city: str | None = None) -> list[Candidate]:
+    inp.dest_kinds = destination_profile.profile(places)  # beach / mountain / heritage / city: lifts matching sights
     strong = [p for p in places if p.provider_place_id in inp.pinned or not weak_place(p, city)]
     if len(strong) >= 6:
         places = strong  # small towns keep the weaker ones rather than an empty plan
