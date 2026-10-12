@@ -37,7 +37,7 @@ class TripCreate(APIModel):
     end_date: date | None = None
     start_time: time = time(7, 0)
     end_time: time = time(22, 0)
-    budget: Decimal = Field(gt=0, le=Decimal("10000000"))
+    budget: Decimal = Field(gt=0, le=Decimal("9999999999"))  # fits Numeric(12, 2); rupiah, dong and won budgets run to millions
     travellers: int = Field(default=1, ge=1, le=20)
     traveller_type: TravellerType = "solo"
     age_groups: list[AgeGroup] = Field(default_factory=list, max_length=4,
@@ -95,7 +95,7 @@ class TripCreate(APIModel):
 
 class PreferencesPatch(APIModel):
     """Partial update used by replans and the infeasibility 'apply' buttons."""
-    budget: Decimal | None = Field(default=None, gt=0, le=Decimal("10000000"))
+    budget: Decimal | None = Field(default=None, gt=0, le=Decimal("9999999999"))  # fits Numeric(12, 2); rupiah, dong and won budgets run to millions
     travellers: int | None = Field(default=None, ge=1, le=20)
     start_date: date | None = None
     end_date: date | None = None
@@ -146,13 +146,13 @@ class ReplanRequest(APIModel):
 class MemberCreate(APIModel):
     name: str = Field(min_length=1, max_length=80)
     email: str | None = Field(default=None, max_length=255)
-    budget: Decimal | None = Field(default=None, ge=0, le=Decimal("10000000"))
+    budget: Decimal | None = Field(default=None, ge=0, le=Decimal("9999999999"))  # fits Numeric(12, 2); rupiah, dong and won budgets run to millions
     food_pref: Food | None = None
 
 
 class MemberUpdate(APIModel):
     name: str | None = Field(default=None, min_length=1, max_length=80)
-    budget: Decimal | None = Field(default=None, ge=0, le=Decimal("10000000"))
+    budget: Decimal | None = Field(default=None, ge=0, le=Decimal("9999999999"))  # fits Numeric(12, 2); rupiah, dong and won budgets run to millions
     food_pref: Food | None = None
 
 

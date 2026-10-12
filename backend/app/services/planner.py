@@ -291,7 +291,7 @@ class Planner:
         if mc.total > inp.budget:
             r.done("prices", f"Minimum realistic cost {fmt_money(mc.total, inp.currency)} exceeds {fmt_money(inp.budget, inp.currency)}", status="failed")
             any_mode = self._cheapest_any_mode(inp, origin, dest, options, modes) if not local else None
-            cheapest_stay = min((F.stay_nightly(t) * F.stay_units(t, inp.travellers) for t in FE.STAY_ORDER),
+            cheapest_stay = min((to_currency(F.stay_nightly(t), inp.currency) * F.stay_units(t, inp.travellers) for t in FE.STAY_ORDER),
                                 default=Decimal(0)) * mc.nights if hotel else Decimal(0)
             acts = sum((c.group_cost(inp.travellers) for c in attractions[:4]), Decimal(0))
             return self._infeasible(trip, FE.budget_infeasible(inp, mc, any_mode, cheapest_stay, acts))
@@ -434,7 +434,7 @@ class Planner:
                 mc = FE.MinCost(best.combo.cost, tot["stay"], tot["food"], tot["local"], best.combo.nights, rooms,
                                 best.combo.outbound.mode if best.combo.outbound else None)
                 any_mode = self._cheapest_any_mode(inp, origin, dest, options, modes) if not local else None
-                cheapest_stay = min((F.stay_nightly(t) * F.stay_units(t, inp.travellers) for t in FE.STAY_ORDER),
+                cheapest_stay = min((to_currency(F.stay_nightly(t), inp.currency) * F.stay_units(t, inp.travellers) for t in FE.STAY_ORDER),
                                     default=Decimal(0)) * mc.nights if best.hotel else Decimal(0)
                 acts = sum((c.group_cost(inp.travellers) for c in attractions[:4]), Decimal(0))
                 info = FE.budget_infeasible(inp, mc, any_mode, cheapest_stay, acts)

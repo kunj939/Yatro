@@ -51,7 +51,7 @@ export function BudgetInput({ value, onChange, travellers, days, currency }: {
       <label htmlFor="budget" className="text-sm font-semibold">Total budget for everyone</label>
       <div className="relative mt-1.5">
         <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-2xl font-bold text-ink-mute">{symbol}</span>
-        <input id="budget" type="number" inputMode="numeric" min={min} max={10000000} step={min}
+        <input id="budget" type="number" inputMode="numeric" min={min} max={9999999999} step={min}
                className="field num py-4 text-3xl font-bold" style={{ paddingLeft: `${1.6 + symbol.length * 0.95}rem` }}
                value={Number.isFinite(value) && value > 0 ? value : ""}
                onChange={(e) => onChange(Math.max(0, Math.round(Number(e.target.value))))} />

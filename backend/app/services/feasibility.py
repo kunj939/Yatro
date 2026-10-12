@@ -20,7 +20,7 @@ from app.services import fare_model as F
 from app.services.budget_engine import BudgetLine, buffer_pct
 from app.services.engine_types import PlanInput
 from app.utils.geo import haversine_m
-from app.utils.money import fmt_money, round_rupees
+from app.utils.money import fmt_money, round_rupees, to_currency
 
 LOCAL_TRIP_KM = 60
 INTERCITY_MODES = ("train", "bus", "cab", "own_car", "flight")
@@ -686,7 +686,8 @@ def budget_infeasible(inp: PlanInput, mc: MinCost, cheapest_any_mode: Decimal | 
     adjustments = []
     if inp.stay in STAY_ORDER and mc.nights > 0:
         for t in STAY_ORDER[STAY_ORDER.index(inp.stay) + 1:]:
-            new_stay = F.stay_nightly(t) * F.stay_units(t, inp.travellers) * mc.nights
+            # fare_model's rates are in rupees; mc.stay is in the trip's currency (Rp in Bali)
+            new_stay = to_currency(F.stay_nightly(t), inp.currency) * F.stay_units(t, inp.travellers) * mc.nights
             if new_stay >= mc.stay:
                 continue  # e.g. two hostel beds cost the same as one budget room
             if need - mc.stay + new_stay <= budget or t == STAY_ORDER[-1]:
@@ -708,7 +709,7 @@ def budget_infeasible(inp: PlanInput, mc: MinCost, cheapest_any_mode: Decimal | 
         shorter = inp.end.date() - timedelta(days=1)
         per_night = mc.stay / mc.nights
         adjustments.append({"key": "shorter_trip", "label": f"One night fewer (back {shorter:%d %b})",
-                            "description": f"Saves about {fmt_money(per_night + mc.food / (mc.nights + 1), inp.currency)}.",
+                            "description": f"Saves about {fmt_money(round_rupees(per_night + mc.food / (mc.nights + 1)), inp.currency)}.",
                             "saves": float(round_rupees(per_night + mc.food / (mc.nights + 1))),
                             "apply": {"end_date": shorter.isoformat()}})
     adjustments.append({"key": "nearby_destination", "label": "Pick a closer destination",

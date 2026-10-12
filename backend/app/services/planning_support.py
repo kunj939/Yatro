@@ -128,7 +128,7 @@ def hotel_candidates(places: list[PlaceData], inp: PlanInput, centre: tuple[floa
         if key in inp.excluded and key not in inp.pinned:
             continue
         h = p.hotel or HotelData(tier=inp.stay)
-        rate = h.nightly_rate if h.nightly_rate is not None else F.stay_nightly(inp.stay)
+        rate = h.nightly_rate if h.nightly_rate is not None else to_currency(F.stay_nightly(inp.stay), inp.currency)
         c = Candidate(key=key, place=p, kind="hotel", unit_cost=rate, cost_state=h.rate_state, duration=0,
                       pinned=key in inp.pinned)
         dist_km = haversine_m(p.lat, p.lng, *centre) / 1000
