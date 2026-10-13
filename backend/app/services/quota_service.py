@@ -41,6 +41,12 @@ def plus_active(sub: Subscription) -> bool:
     return end > datetime.now(UTC)
 
 
+def _first_month(db: Session, user: User, price: int) -> int | None:
+    from app.services import referral_service
+    pct = referral_service.plus_discount(db, user)
+    return round(price * (100 - pct) / 100) if pct else None
+
+
 def quota_status(db: Session, user: User) -> dict:
     s = get_settings()
     sub = get_subscription(db, user)
@@ -51,7 +57,9 @@ def quota_status(db: Session, user: User) -> dict:
             "free_plans_used": min(user.free_plans_used, free_total), "free_plans_left": left,
             "trip_credits": sub.trip_credits, "can_plan": plus or left > 0 or sub.trip_credits > 0,
             "current_period_end": sub.current_period_end.isoformat() if sub.current_period_end and plus else None,
-            "prices": {"plus_monthly_inr": s.plus_price_inr, "one_trip_inr": s.one_trip_price_inr},
+            "prices": {"plus_monthly_inr": s.plus_price_inr, "one_trip_inr": s.one_trip_price_inr,
+                       # a friend's invite: their first month of Plus is cheaper (ADR 0012)
+                       "plus_first_month_inr": _first_month(db, user, s.plus_price_inr)},
             "payments_mode": s.payments_mode}
 
 
@@ -107,6 +115,8 @@ def upgrade(db: Session, user: User, product: str) -> dict:
     sub = get_subscription(db, user)
     now = datetime.now(UTC)
     if product == "plus":
+        from app.services import referral_service
+        referral_service.use_plus_discount(db, user)  # the invite discount is for the first month only
         sub.plan, sub.status = "plus", "active"
         sub.current_period_end = now + timedelta(days=30)
         sub.provider, sub.provider_ref = "mock", f"mock_plus_{int(now.timestamp())}"

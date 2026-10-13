@@ -354,9 +354,9 @@ def controls(db: Session) -> dict:
                          "on": killswitch.killed(sw.name), "source": killswitch.source(sw.name),
                          "reason": row.reason if row else None, "by": row.updated_by if row else None,
                          "at": _iso(row.updated_at) if row else None})
-    defaults = {"brownout_level": s.brownout_level, "free_trip_plans": s.free_trip_plans, "daily_plan_cap": s.daily_plan_cap}
-    effective = {"brownout_level": brownout.base_level(), "free_trip_plans": runtime.free_trip_plans(),
-                 "daily_plan_cap": runtime.number("daily_plan_cap", s.daily_plan_cap)}
+    defaults = {k: getattr(s, k) for k in runtime.NUMBERS}  # every live number has a setting of the same name
+    effective = {k: runtime.number(k, defaults[k]) for k in runtime.NUMBERS}
+    effective.update(brownout_level=brownout.base_level(), free_trip_plans=runtime.free_trip_plans())
     numbers = []
     for n in runtime.NUMBERS.values():
         row = _row(db, n.key)

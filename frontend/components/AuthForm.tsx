@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, Eye, EyeOff, Mail, ShieldCheck, Smartphone } from "lucide-react";
+import { ArrowLeft, Check, Eye, EyeOff, Gift, Mail, ShieldCheck, Smartphone } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ApiError, endpoints, type SentCode } from "@/lib/api";
 import { brand } from "@/lib/brand";
@@ -72,6 +72,15 @@ export function AuthForm({ initial = "register", onDone, note, onSwitch }: {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  // a friend's invite (ADR 0012): ?ref=CODE on the link they sent, kept if the person wanders off and comes back
+  const [refCode, setRefCode] = useState("");
+  useEffect(() => {
+    try {
+      const fromLink = new URLSearchParams(window.location.search).get("ref");
+      if (fromLink) window.localStorage.setItem("yatro.ref", fromLink);
+      setRefCode((fromLink || window.localStorage.getItem("yatro.ref") || "").toUpperCase());
+    } catch { /* storage unavailable: the field still works */ }
+  }, []);
 
   const phone = `${cc}${mobile.replace(/\D/g, "").replace(/^0+/, "")}`;
   const targets: Record<Channel, string> = { email: email.trim().toLowerCase(), phone };
@@ -141,7 +150,8 @@ export function AuthForm({ initial = "register", onDone, note, onSwitch }: {
     setBusy(true);
     try {
       await signUp({ name: name.trim(), email: email.trim(), phone, password, password_confirm: confirm,
-                     email_code: codes.email });
+                     email_code: codes.email, ...(refCode.trim() ? { referral_code: refCode.trim() } : {}) });
+      try { window.localStorage.removeItem("yatro.ref"); } catch { /* fine */ }
       onDone?.();
     } catch (err) { fail(err); } finally { setBusy(false); }
   }
@@ -304,6 +314,11 @@ export function AuthForm({ initial = "register", onDone, note, onSwitch }: {
              hint={confirm && confirm === password ? <span className="flex items-center gap-1.5 text-teal-deep"><Check className="h-3.5 w-3.5" aria-hidden />Passwords match</span> : undefined}>
         <PasswordInput id="auth-confirm" value={confirm} onChange={setConfirm} show={showPw} onToggle={() => setShowPw(!showPw)}
                        autoComplete="new-password" invalid={!!fieldErrors.password_confirm} />
+      </Field>
+      <Field id="auth-ref" label="Invite code (optional)"
+             hint={refCode ? <span className="flex items-center gap-1.5 text-teal-deep"><Gift className="h-3.5 w-3.5" aria-hidden />A friend invited you: extra free plans are added when you sign up.</span> : "Got a code from a friend? You both get free trip plans."}>
+        <input id="auth-ref" className="field num uppercase tracking-widest" value={refCode} maxLength={16}
+               onChange={(e) => setRefCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} autoComplete="off" placeholder="e.g. PRIYA7K3Q" />
       </Field>
       {banner}
       <button type="submit" className="btn-primary w-full !py-3" disabled={busy}>

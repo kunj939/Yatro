@@ -47,6 +47,13 @@ def overview(_: User = Depends(admin_user), db: Session = Depends(get_db)):
     return A.overview(db)
 
 
+@router.get("/referrals")
+def referrals(_: User = Depends(admin_user), db: Session = Depends(get_db)):
+    from app.services import referral_service
+    return {"referrals": referral_service.admin_list(db), "rewards": referral_service.rewards(),
+            "enabled": referral_service.enabled()}
+
+
 # --- users -----------------------------------------------------------------------------------------------------------------
 
 @router.get("/users")

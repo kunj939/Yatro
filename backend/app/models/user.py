@@ -29,6 +29,7 @@ class User(IdMixin, TimestampMixin, Base):
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
     # Email the person their own plan when a new one is ready (services/plan_email.py). On by default; they can switch it off in Account.
     email_plans: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true(), nullable=False)
+    referral_code: Mapped[str | None] = mapped_column(String(16), unique=True, index=True)  # made on first use (ADR 0012)
 
     subscription: Mapped[Subscription | None] = relationship(back_populates="user", uselist=False,
                                                                cascade="all, delete-orphan")

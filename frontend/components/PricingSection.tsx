@@ -4,7 +4,7 @@ import { Reveal } from "./Reveal";
 import { brand } from "@/lib/brand";
 
 const PLANS = [
-  { key: "free", name: "Free", price: "₹0", unit: "", lead: "Take it for a spin.", features: [`${brand.freePlans} trip plans, lifetime`, "Unlimited changes to those trips", "Alternatives, budget and group split"], cta: "Start free", href: "/plan" },
+  { key: "free", name: "Free", price: "₹0", unit: "", lead: "Take it for a spin.", features: [`${brand.freePlans} trip plans, lifetime`, "Unlimited changes to those trips", "Alternatives, budget and group split", "Invite friends: you both get free plans"], cta: "Start free", href: "/plan" },
   { key: "plus", name: "Plus", price: "₹99", unit: "/month", lead: "For people who are always on the move.", features: ["Unlimited trip plans", "Unlimited changes", "Everything in Free"], cta: "Get Plus", href: "/account?upgrade=plus", featured: true },
   { key: "one", name: "One trip", price: "₹49", unit: "/trip", lead: "Just this one trip.", features: ["1 extra trip plan", "Unlimited changes to it", "No subscription"], cta: "Buy one trip", href: "/account?upgrade=one_trip" },
 ];

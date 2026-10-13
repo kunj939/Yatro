@@ -526,6 +526,9 @@ def run_plan(db: Session, providers: Providers, user: User, trip: Trip, *, repor
         if result.status == "ready" and not is_replan:  # the first plan of a trip: email it to its owner (background; never affects the plan)
             from app.services import plan_email
             plan_email.after_plan(user.id, trip.id)
+            from app.services import referral_service  # a friend's first plan is what earns their inviter's reward
+            referral_service.on_first_plan(db, user)
+            db.commit()
         return result
 
 

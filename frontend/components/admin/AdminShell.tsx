@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { notFound, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, Map as MapIcon, ScrollText, ShieldCheck, SlidersHorizontal, Users, Workflow } from "lucide-react";
+import { Gift, LayoutDashboard, Map as MapIcon, ScrollText, ShieldCheck, SlidersHorizontal, Users, Workflow } from "lucide-react";
 import { Navbar } from "../Navbar";
 import { useAuth } from "@/lib/auth";
 import { admin } from "@/lib/admin";
@@ -14,6 +14,7 @@ const NAV = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/trips", label: "Trips", icon: MapIcon },
   { href: "/admin/plans", label: "Plans", icon: Workflow },
+  { href: "/admin/referrals", label: "Referrals", icon: Gift },
   { href: "/admin/controls", label: "Controls", icon: SlidersHorizontal },
   { href: "/admin/audit", label: "Audit log", icon: ScrollText },
 ];

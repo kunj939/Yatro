@@ -47,7 +47,15 @@ const qs = (o: Record<string, string | number | undefined | null>) => {
   return s ? `?${s}` : "";
 };
 
+export interface AdminReferral {
+  id: string; created_at: string; code: string; status: "joined" | "rewarded" | "capped";
+  inviter: { id: string; name: string | null; email: string | null }; friend: { id: string; name: string | null; email: string | null };
+  friend_credits: number; inviter_credits: number; discount_pct: number; discount_used: boolean; rewarded_at: string | null;
+}
+
 export const admin = {
+  referrals: () => api<{ referrals: AdminReferral[]; enabled: boolean;
+    rewards: { friend_plans: number; inviter_plans: number; plus_discount_pct: number; monthly_cap: number } }>("/api/admin/referrals"),
   me: () => api<{ id: string; name: string; email: string; role: "owner" | "admin" }>("/api/admin/me"),
   overview: () => api<Overview>("/api/admin/overview"),
   users: (o: { q?: string; status?: string; plan?: string; sort?: string; page?: number; page_size?: number }) =>

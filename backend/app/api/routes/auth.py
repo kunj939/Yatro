@@ -26,7 +26,7 @@ from app.schemas.auth import (
     UpiUpdate,
     UserOut,
 )
-from app.services import quota_service
+from app.services import quota_service, referral_service
 from app.services import verification_codes as V
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -132,6 +132,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
             raise _field_error("phone", PHONE_TAKEN, "phone_taken", 409)
         raise AppError(EMAIL_TAKEN, code="email_taken", status_code=409)
     quota_service.get_subscription(db, user)
+    referral_service.attach(db, user, body.referral_code)  # a friend's code: their welcome bonus now, the inviter's later
     db.commit()
     return _auth_response(db, user)
 

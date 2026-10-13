@@ -13,6 +13,7 @@ from app.models.rail import (  # noqa: F401
     RailTrainReport,
 )
 from app.models.plan_job import PlanJob, PlanRefund  # noqa: F401
+from app.models.referral import Referral  # noqa: F401
 from app.models.share import ShareLink  # noqa: F401
 from app.models.trip import (  # noqa: F401
                              Alternative,

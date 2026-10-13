@@ -104,7 +104,12 @@ export interface Trip extends TripCard {
 export interface Quota {
   plan: string; status: string; free_plans_total: number; free_plans_used: number; free_plans_left: number;
   trip_credits: number; can_plan: boolean; current_period_end: string | null;
-  prices: { plus_monthly_inr: number; one_trip_inr: number }; payments_mode: string;
+  prices: { plus_monthly_inr: number; one_trip_inr: number; plus_first_month_inr?: number | null }; payments_mode: string;
+}
+/** Invite friends (ADR 0012): the signed-in user's code and how it's going. */
+export interface ReferralCard {
+  enabled: boolean; code: string; link: string; invited: number; rewarded: number; plans_earned: number; invited_by: string | null;
+  rewards: { friend_plans: number; inviter_plans: number; plus_discount_pct: number; monthly_cap: number };
 }
 export interface User {
   id: string; name: string; email: string; free_plans_used: number;

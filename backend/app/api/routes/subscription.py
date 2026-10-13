@@ -15,6 +15,15 @@ from app.services import quota_service
 router = APIRouter(prefix="/subscription", tags=["subscription"])
 
 
+@router.get("/referrals")
+def my_referrals(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """The Invite friends card: my code and link, the offer, and how many friends joined (ADR 0012)."""
+    from app.services import referral_service
+    out = referral_service.summary(db, user)
+    db.commit()  # the code is made the first time it's asked for
+    return out
+
+
 class UpgradeRequest(BaseModel):
     product: Literal["plus", "one_trip"]
 

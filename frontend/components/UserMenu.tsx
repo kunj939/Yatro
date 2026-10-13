@@ -25,7 +25,7 @@ export function UserMenu({ dark = false }: { dark?: boolean }) {
   const plan = quota?.plan === "plus" ? "Plus" : "Free";
   const left = quota
     ? quota.plan === "plus" ? "Unlimited plans"
-      : `${quota.free_plans_left} of ${quota.free_plans_total} free plans left${quota.trip_credits ? ` · ${quota.trip_credits} bought` : ""}`
+      : `${quota.free_plans_left} of ${quota.free_plans_total} free plans left${quota.trip_credits ? ` · ${quota.trip_credits} extra` : ""}`
     : null;
 
   return (

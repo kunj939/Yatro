@@ -206,9 +206,10 @@ def test_trips_list_detail_and_delete(client, owner):
 
 def test_controls_list_and_validate(client, owner):
     c = client.get("/api/admin/controls", headers=owner).json()
-    assert {s["name"] for s in c["switches"]} == {"signups", "plans", "sms", "sharing", "ai_narration", "plan_emails"}
+    assert {s["name"] for s in c["switches"]} == {"signups", "plans", "sms", "sharing", "ai_narration", "plan_emails", "referrals"}
     assert all(s["people_see"] and s["effect"] for s in c["switches"])
-    assert {n["key"] for n in c["numbers"]} == {"brownout_level", "free_trip_plans", "daily_plan_cap"}
+    assert {n["key"] for n in c["numbers"]} == {"brownout_level", "free_trip_plans", "daily_plan_cap", "referral_reward_friend",
+                                               "referral_reward_inviter", "referral_plus_discount_pct", "referral_monthly_cap"}
     assert _put(client, owner, "/controls/switches/nope", on=True).status_code == 404
     assert _put(client, owner, "/controls/settings/brownout_level", value=9).status_code == 422
     assert _put(client, owner, "/controls/settings/nope", value=1).status_code == 404

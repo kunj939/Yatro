@@ -1,5 +1,5 @@
 import type {
-  HighlightPlace, PlanEvent, Quota, ShareLink, ShareResult, SharedTrip, Suggestion, Trip, TripCard, User } from "./types";
+  HighlightPlace, PlanEvent, Quota, ReferralCard, ShareLink, ShareResult, SharedTrip, Suggestion, Trip, TripCard, User } from "./types";
 
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
 const TOKEN_KEY = "tripai.token";
@@ -92,6 +92,7 @@ export interface AuthResult { access_token: string; user: User; subscription: Qu
 export interface SentCode { channel: string; sent_to: string; expires_in: number; resend_in: number; dev_code?: string | null }
 export interface SignUp {
   name: string; email: string; phone: string; password: string; password_confirm: string; email_code: string; phone_code?: string;
+  referral_code?: string;  // a friend's invite code; a wrong one is ignored, never refused
 }
 
 export const endpoints = {
@@ -107,6 +108,7 @@ export const endpoints = {
   createTrip: (body: unknown) => api<Trip>("/api/trips", { method: "POST", json: body }),
   deleteTrip: (id: string) => api<void>(`/api/trips/${id}`, { method: "DELETE" }),
   subscription: () => api<Quota>("/api/subscription"),
+  referrals: () => api<ReferralCard>("/api/subscription/referrals"),
   upgrade: (product: "plus" | "one_trip") => api<Quota>("/api/subscription/upgrade", { method: "POST", json: { product } }),
   cancel: () => api<Quota>("/api/subscription/cancel", { method: "POST" }),
   autocomplete: (q: string) => api<{ results: Suggestion[]; message?: string }>(`/api/places/autocomplete?q=${encodeURIComponent(q)}`),

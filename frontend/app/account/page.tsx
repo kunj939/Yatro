@@ -10,6 +10,7 @@ import { ApiError, endpoints } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useFlags } from "@/lib/flags";
 import { validUpi } from "@/lib/upi";
+import { InviteCard } from "@/components/InviteCard";
 import { inr, plural } from "@/lib/format";
 
 type Product = "plus" | "one_trip";
@@ -151,7 +152,14 @@ function Account() {
         </div>
         <div className="flex flex-col rounded-2xl border-2 border-signal bg-paper p-6">
           <p className="font-bold">Plus</p>
-          <p className="num mt-1 text-3xl font-bold">{inr(price("plus"))}<span className="text-base font-medium text-ink-mute"> /month</span></p>
+          {quota.prices.plus_first_month_inr && !plus ? (
+            <>
+              <p className="num mt-1 text-3xl font-bold">{inr(quota.prices.plus_first_month_inr)}<span className="text-base font-medium text-ink-mute"> first month</span></p>
+              <p className="num text-sm text-ink-mute">then {inr(price("plus"))}/month · your friend&apos;s invite discount</p>
+            </>
+          ) : (
+            <p className="num mt-1 text-3xl font-bold">{inr(price("plus"))}<span className="text-base font-medium text-ink-mute"> /month</span></p>
+          )}
           <ul className="mt-2 flex-1 space-y-1 text-ink-soft">
             {["Unlimited trip plans", "Group expense splitting", "Cancel any time"].map((f) => (
               <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-teal" aria-hidden />{f}</li>
@@ -162,6 +170,8 @@ function Account() {
             : <button className="btn-primary mt-5" onClick={() => setCheckout("plus")}>Upgrade to Plus</button>}
         </div>
       </section>
+
+      <InviteCard />
 
       <PlanEmailSection />
 

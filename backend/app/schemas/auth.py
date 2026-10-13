@@ -31,6 +31,7 @@ class RegisterRequest(APIModel):
     phone: str = Field(min_length=6, max_length=24)
     email_code: str = Field(min_length=4, max_length=10)
     phone_code: str | None = Field(default=None, min_length=4, max_length=10)  # only used when REQUIRE_PHONE_CODE is on
+    referral_code: str | None = Field(default=None, max_length=32)  # a friend's invite code (ADR 0012); a wrong one is ignored
 
     @field_validator("password")
     @classmethod
