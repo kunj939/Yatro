@@ -32,6 +32,8 @@ QUESTION = re.compile(
 CHAT_SYSTEM = """You are the Yaitro assistant for ONE planned trip. The trip is given to you as data.
 
 Decide what the traveller wants:
+- A price for ONE item ("this cab is ₹358, make it 200") can't be set by hand: answer with what that price is
+  based on and the changes that would lower it ("make it cheaper", "no cab", a budget for the whole trip).
 - action "change": they want something in the plan changed (budget, dates, number of days, start or end time,
   places to add or skip, pace, food, stay, transport, number of people). Leave "answer" empty: the planner does it.
 - action "answer": anything else. Answer in at most 4 short sentences, using ONLY the trip data. Quote times,
@@ -92,9 +94,19 @@ def respond(db: Session, providers: Providers, user, trip: Trip, message: str, h
     from app.services import trip_service as TS
     message = message.strip()[:1000]
     ctx, candidates = TS.intent_inputs(trip)
-    rules = intent_service.rule_intent(message, candidates, ctx)
-    if rules.has_change() and not QUESTION.search(message):
-        return {"action": "change"}
+    # Text pasted from the plan ("Cab to Jaipur Jn (JP) / catch the train leaving at 20:10") is what the message is
+    # about, not a request: only the traveller's own words can change the plan.
+    copied, own = pasted_items(trip, message)
+    rules = intent_service.rule_intent(own, candidates, ctx) if own else intent_service.Intent()
+    if copied and rules.budget_change and not intent_service._TRIP_MONEY.search(own.lower()):
+        rules.budget_change, rules.item_price = None, rules.item_price or "item"  # "₹358, make it under 200"
+    if not copied:
+        rules.item_price = rules.item_price or intent_service.rule_intent(message, candidates, ctx).item_price
+    if rules.item_price and not rules.has_change():  # "the cab is ₹358, make it 200": one item, not the budget
+        item = copied[0] if copied else None
+        return {"action": "answer", "text": item_price_answer(trip, rules.item_price, message, item), "by": "rules"}
+    if rules.has_change() and not QUESTION.search(own):
+        return {"action": "change", "message": own} if copied else {"action": "change"}
     llm = providers.llm
     if llm.live:
         convo = [LLMMessage("system", CHAT_SYSTEM), LLMMessage("system", "TRIP DATA:\n" + trip_brief(trip))]
@@ -107,8 +119,8 @@ def respond(db: Session, providers: Providers, user, trip: Trip, message: str, h
             result = llm.complete(convo, json_schema=CHAT_SCHEMA, temperature=0.2, max_tokens=350)
             log_usage(db, llm, "chat", user_id=user.id, trip_id=trip.id, result=result)
             data = result.data or {}
-            if data.get("action") == "change":
-                return {"action": "change"}
+            if data.get("action") == "change" and (own or not copied):  # pasted text alone is a question
+                return {"action": "change", "message": own} if copied else {"action": "change"}
             if data.get("answer"):
                 return {"action": "answer", "text": data["answer"].strip(), "by": "ai"}
         except ProviderUnavailable as exc:
@@ -118,13 +130,91 @@ def respond(db: Session, providers: Providers, user, trip: Trip, message: str, h
             log.warning("chat model call failed", exc_info=True)
     # No model: a question the rules can answer ("when is my train?" mentions a train but asks, not changes) is
     # answered; anything else the rules read as a change goes to the planner.
-    answer = rule_answer(trip, message)
-    if rules.has_change() and not (QUESTION.search(message) and answer != ONLY_THIS_TRIP):
-        return {"action": "change"}
+    if copied and not rules.has_change():
+        return {"action": "answer", "text": describe(trip, copied[0]), "by": "rules"}
+    answer = rule_answer(trip, own or message)
+    if rules.has_change() and not (QUESTION.search(own) and answer != ONLY_THIS_TRIP):
+        return {"action": "change", "message": own} if copied else {"action": "change"}
     return {"action": "answer", "text": answer, "by": "rules"}
 
 
+_CARD_LABELS = re.compile(r"(?im)^\s*(?:travel|stay|food|meal|activity|sunset|why this\??|swap|directions|day \d+[^\n]*)\s*$")
+
+
+def pasted_items(trip: Trip, message: str) -> tuple[list[dict], str]:
+    """Plan items whose text is in the message, and what is left of the message without it."""
+    rest, hits = message, []
+    for d in _days(trip):
+        for i in d["items"]:
+            texts = [i["title"], i.get("subtitle"), i.get("explanation"), *(i.get("reasons") or [])]
+            for s in sorted({s.strip() for s in texts if isinstance(s, str) and len(s.strip()) >= 8}, key=len, reverse=True):
+                if s in rest:
+                    rest = rest.replace(s, " ")
+                    if all(h["id"] != i["id"] for h in hits):
+                        hits.append(i)
+    if not hits:
+        return [], message
+    rest = _CARD_LABELS.sub(" ", rest)
+    return hits, re.sub(r"\s+", " ", rest).strip(" .,-\n")
+
+
+def _cost(i: dict) -> float:
+    return (i.get("cost") or 0) + (i.get("travel_cost") or 0)
+
+
+def _price_basis(i: dict) -> str:
+    estimated = "estimated" in (i.get("cost_state") or "") or i.get("leg_state") == "estimated"
+    return "an estimate for the distance, as there's no live fare for it" if estimated else "the listed fare"
+
+
+def describe(trip: Trip, i: dict) -> str:
+    """One plan item in a sentence or two: when, what, what it costs and why."""
+    when = i.get("time")
+    head = i["title"] if when and i["title"].startswith(when) else f"{when or 'Time to be confirmed'}: {i['title']}"
+    bits = [head + (f", {nice(i['start_at'][:10])}" if i.get("start_at") else "") + "."]
+    if i.get("subtitle"):
+        bits.append(i["subtitle"].rstrip(".") + ".")
+    if _cost(i):
+        bits.append(f"{fmt_money(_cost(i), trip.currency)} for the group ({_price_basis(i)}).")
+    bits.append("Ask me anything about it, or tell me what to change.")
+    return " ".join(bits)
+
+
+def nice(iso: str) -> str:
+    return date.fromisoformat(iso).strftime("%a %d %b").replace(" 0", " ")
+
+
 # --- answers without a model ------------------------------------------------------------------------------------------
+_KIND_WORDS = {"cab": ("cab", "taxi", "auto", "rickshaw"), "ticket": ("train", "flight", "bus", "express"),
+               "train": ("train", "express", "rail"), "flight": ("flight", "air"), "bus": ("bus",),
+               "hotel": ("hotel", "stay", "check-in", "room"), "meal": ("lunch", "dinner", "breakfast", "cafe"),
+               "entry": ("entry", "ticket")}
+_FIX = {"cab": "“no cab” to plan the trip without cabs",
+        "ticket": "“by train” or “by bus”, or a different train by name",
+        "train": "a different train by name, or “by bus”",
+        "flight": "“by train” or “by bus”, or travel on another date",
+        "bus": "“by train”, or a different time",
+        "hotel": "“budget hotel”, “hostel” or “oyo”",
+        "meal": "“make it cheaper” for simpler places to eat",
+        "entry": "“skip <the place>” to leave it out"}
+
+
+def item_price_answer(trip: Trip, kind: str, message: str, item: dict | None = None) -> str:
+    """Name the item the traveller means, say where its price comes from, and how to get it lower."""
+    if item is None:
+        words = _KIND_WORDS.get(kind, ())
+        for d in _days(trip):
+            for i in d["items"]:
+                if _cost(i) and any(w in i["title"].lower() or w == (i.get("travel_mode") or "") for w in words):
+                    item = item or i
+    if item is not None and kind == "item":
+        t = f"{item['title']} {item.get('travel_mode') or ''} {item['kind']}".lower()
+        kind = next((k for k, ws in _KIND_WORDS.items() if k != "ticket" and any(w in t for w in ws)), "item")
+    head = f"{item['title']} is {fmt_money(_cost(item), trip.currency)} in the plan: {_price_basis(item)}. " if item else ""
+    return (head + "I can't set one item's price by hand, because the plan has to stay true to what it really costs. "
+            f"To pay less, tell me {_FIX.get(kind, '“make it cheaper”')}, or “make it cheaper” for the whole trip.")
+
+
 _DAY = re.compile(r"\b(?:day|din)\s*(\d{1,2})\b|\b(\d{1,2})(?:st|nd|rd|th)?\s*(?:day|din)\b", re.I)
 
 
@@ -142,9 +232,6 @@ def rule_answer(trip: Trip, message: str) -> str:
         if when and title.startswith(when):  # a ticket's title already starts with its time
             return title
         return f"{when or 'time to be confirmed'} {title}"
-
-    def nice(iso: str) -> str:
-        return date.fromisoformat(iso).strftime("%a %d %b").replace(" 0", " ")
 
     hit = _DAY.search(m)
     if hit:

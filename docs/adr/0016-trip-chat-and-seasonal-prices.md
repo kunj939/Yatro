@@ -72,3 +72,24 @@ prices only. Live and verified prices already include it.
 
 **Consequences.** Plans in busy seasons cost more and say why. A budget that fitted before may now be refused with
 fixes, which is the honest answer. The scenario sweep runs in Diwali week (7 Nov 2026) and still passes.
+
+## Addendum: one item's price, and text pasted from the plan
+
+**Context.** A traveller pasted a cab card into the chat and wrote "₹358, reduce it under 200INR". The reader took
+₹200 as the whole trip's budget and "Cab ... catch the train leaving at 20:10" as "cab and train only, start at 20:10".
+The re-plan then failed on budget and on time.
+
+**Decision.**
+
+- **One item's price.** A price next to one item (cab, taxi, auto, ticket, fare, train, flight, bus, hotel, room, meal,
+  entry) is not the trip budget, unless the message also names the trip's money (budget, total, trip, per person...).
+  The reader sets `item_price` instead of `budget_change`. The chat answers with that item, where its price comes from
+  (listed fare or distance estimate), and the changes that would lower it. The model is told the same, and its budget
+  reading is dropped when the rules see an item price.
+- **Modes named in passing.** A mode becomes "only this mode" only with a cue: "by", "via", "only", "sirf", "take",
+  "use", "prefer", "se", "chahiye", "instead", or a message of one or two words ("train"). "Cab to the station"
+  changes nothing.
+- **Pasted plan text.** Titles, subtitles and reasons of plan items found in a message are taken out. Only the
+  traveller's own words are read for a change, and only those words go to `/replan` (`{action: "change", message}`).
+  Pasted text alone is answered with that item's details.
+- **Trip length.** The reader and the model accept trips up to `MAX_DAYS`, not 8 days.

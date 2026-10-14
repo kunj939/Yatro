@@ -54,7 +54,7 @@ export function TripChat({ tripId, chips, busy, readOnly, replansLeft, onChange 
       const out = await endpoints.chat(tripId, message, history);
       if (out.action === "change") {
         setMsgs((m) => [...m, { role: "assistant", text: "On it: updating your plan…", pending: true }]);
-        const result = await onChange(message);
+        const result = await onChange(out.message || message);  // without any text pasted from the plan
         setMsgs((m) => [...m.filter((x) => !x.pending), { role: "assistant", text: result }]);
         say(result);
       } else {

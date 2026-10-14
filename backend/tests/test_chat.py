@@ -27,6 +27,27 @@ def test_changes_go_to_the_planner_and_questions_get_answers(client, plus_user):
     app.dependency_overrides.clear()
 
 
+def test_one_items_price_and_pasted_plan_text_never_change_the_trip(client, plus_user):  # noqa: F811
+    """A traveller pasted a cab card and asked for it under ₹200: that is one cab, not a ₹200 trip, and the card's own
+    words ("catch the train leaving at 20:10") are not a new start time or a train-only trip."""
+    trip_id = _planned_trip(client, plus_user)
+    trip = client.get(f"/api/trips/{trip_id}", headers=plus_user).json()
+    items = [i for d in trip["itinerary"]["days"] for i in d["items"]]
+    priced = next(i for i in items if (i.get("cost") or 0) + (i.get("travel_cost") or 0) > 0 and i["kind"] == "transport")
+
+    cab = _ask(client, plus_user, trip_id, "cab is ₹358, reduce it under 200INR. kyuki itna jyada nhi lagta")
+    assert cab["action"] == "answer" and "can't set one item's price" in cab["text"]
+    pasted = _ask(client, plus_user, trip_id, f"{priced['title']}\n₹358 reduce it under 200INR")
+    assert pasted["action"] == "answer" and pasted["text"].startswith(priced["title"])
+    card = "\n".join(s for s in ("Travel", priced["title"], priced.get("subtitle")) if s)
+    about = _ask(client, plus_user, trip_id, card)
+    assert about["action"] == "answer" and priced["title"] in about["text"]
+    change = _ask(client, plus_user, trip_id, f"{priced['title']}\nadd one more day")
+    assert change == {"action": "change", "message": "add one more day"}  # only their own words go to the planner
+    assert _ask(client, plus_user, trip_id, "budget 20000 kar do")["action"] == "change"  # the trip's money still is
+    app.dependency_overrides.clear()
+
+
 def test_only_the_owner_can_chat(client, plus_user):  # noqa: F811
     from .conftest import register
     trip_id = _planned_trip(client, plus_user)

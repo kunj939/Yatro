@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import ProviderUnavailable
 from app.providers.base import LLMProvider
+from app.schemas.trip import MAX_DAYS
 from app.providers.types import LLMMessage
 from app.services.llm_service import FACT_RULE, log_usage
 
@@ -97,6 +98,7 @@ class Intent:
     unsupported: list[str] = field(default_factory=list)  # understood, but the planner can't do it
     ignored: list[str] = field(default_factory=list)  # parts of the text nothing recognised
     reply: str | None = None  # the model's own one-line answer, shown when nothing could be changed
+    item_price: str | None = None  # "the cab is ₹358, make it 200": a price for one item, not the trip budget
     source: str = "rules"
 
     def has_change(self) -> bool:
@@ -108,7 +110,7 @@ class Intent:
                     or self.add_place_names or self.interests or self.avoid_tags or self.train_names)
 
     def is_empty(self) -> bool:
-        return not (self.has_change() or self.unknown_skips or self.needs or self.unsupported)
+        return not (self.has_change() or self.unknown_skips or self.needs or self.unsupported or self.item_price)
 
     def as_dict(self) -> dict:
         """The shape the first, keyword-only version returned; kept for callers that still read it."""
@@ -182,7 +184,7 @@ def _read_length(t: str, it: Intent) -> None:
                       rf"(?:a\s+)?(?P<n>\d+|{_WORDNUM})\s*[- ]?\s*(?:day|days|din)\b", t))
     if m:
         total = _num(m.group("n"))
-        if total and 1 <= total <= 8:
+        if total and 1 <= total <= MAX_DAYS:
             it.days_total = total
     elif re.search(r"\b(?:day trip|daytrip|same day|one day trip|sirf ek din|ek din ka)\b", t):
         it.days_total = 1
@@ -204,6 +206,23 @@ _SET = r"under|within|upto|up to|at most|max(?:imum)?|not more than|tak|total|se
 _BUDGET_CUE = re.compile(r"\bbudget\b|₹|\brs\b|\binr\b|\brupee|\brupaye|\bpaisa|\bpaise|\bkharcha|\bkharch\b|\bspend|"
                          r"\bcost\b|\bafford|\bunder\b|\bwithin\b|\bupto\b|\bup to\b|\bat most\b|\bmax(?:imum)?\b|"
                          r"\bhazaa?r\b|\blakh|\blac\b|\d\s?k\b|\bper (?:person|head|pax)\b|\bpp\b")
+
+
+_ITEM = {"cab": r"cabs?|taxis?|uber|ola|auto|autos|rickshaws?|tuk ?tuks?", "ticket": r"tickets?|fares?|seats?",
+         "train": r"trains?", "flight": r"flights?", "bus": r"buses|bus", "hotel": r"hotels?|rooms?",
+         "meal": r"meals?|lunch|dinner|breakfast|thali", "entry": r"entry|entrance|admission"}
+_TRIP_MONEY = re.compile(r"\b(?:budget|total|overall|whole|trip|plan|kharcha|kharch|poora|pura|puri|sab|everything|"
+                         r"per person|per head|pp|each)\b")
+
+
+def _item_priced(t: str) -> str | None:
+    """The kind of item a price is about ("the cab is too costly, under 200"), or None when it's the trip's money."""
+    if _TRIP_MONEY.search(t):
+        return None
+    for kind, words in _ITEM.items():
+        if re.search(rf"\b(?:{words})\b", t):
+            return kind
+    return None
 
 
 def _read_budget(t: str, it: Intent, ctx: dict) -> None:
@@ -252,6 +271,10 @@ def _read_budget(t: str, it: Intent, ctx: dict) -> None:
         mode = "decrease"
     else:
         mode = "set"
+    kind = _item_priced(t)
+    if kind:  # "cab ₹358, reduce it under 200" is about one cab, not a ₹200 trip
+        it.item_price = kind
+        return
     if re.search(r"\b(?:per person|per head|pp|each|per pax|a head|prati vyakti)\b", t):
         value *= max(1, int(ctx.get("travellers") or 1))
     it.budget_change = {"mode": mode, "amount": value}
@@ -453,6 +476,12 @@ _NEG_BEFORE_MODE = re.compile(r"(?:no|not|avoid|without|skip|don'?t|dont|except|
 _ADD_WORDS = re.compile(r"\b(?:also|too|as well|bhi|add|include|allow|plus|or)\b")
 
 
+_ONLY_BEFORE = re.compile(r"\b(?:by|via|only|sirf|just|take|taking|use|using|prefer|switch to|go by|travel by|want|"
+                          r"need|chahiye|in|on|book)\W+(?:(?:a|an|the)\W+)?$")
+_ONLY_AFTER = re.compile(r"\W*(?:se|only|hi|chahiye|please|pls|karo|kar do|instead|wala|wali|me|mein|is fine|"
+                         r"would be|works|better)\b")
+
+
 def _read_transport(clauses: list[tuple[str, str]], it: Intent) -> None:
     for _, c in clauses:
         found = []
@@ -460,7 +489,13 @@ def _read_transport(clauses: list[tuple[str, str]], it: Intent) -> None:
             for m in re.finditer(rf"\b(?:{words})\b", c):
                 before, after = c[:m.start()], c[m.end():]
                 neg = bool(_NEG_BEFORE_MODE.search(before)) or bool(re.match(r"\W*(?:nahi|nahin|mat|hata)\b", after))
-                found.append((mode, "remove" if neg else ("add" if _ADD_WORDS.search(c) else "only")))
+                if neg:
+                    found.append((mode, "remove"))
+                elif _ADD_WORDS.search(c):
+                    found.append((mode, "add"))
+                elif _ONLY_BEFORE.search(before) or _ONLY_AFTER.match(after) or len(c.split()) <= 2:
+                    found.append((mode, "only"))
+                # else: a mode named in passing ("cab to the station", "catch the train at 20:10") changes nothing
         for mode, how in found:
             {"remove": it.transport_remove, "add": it.transport_add, "only": it.transport_only}[how].append(mode)
     if re.search(r"\b(?:any mode|any transport|whatever (?:is )?(?:best|cheapest)|let you choose|koi bhi (?:mode|transport)|you choose)\b", " ".join(c for _, c in clauses)):
@@ -749,6 +784,8 @@ def _rule_core(message: str, candidates: list[dict], ctx: dict) -> Intent:
     _read_travellers(t, it)
     _read_style_pace_food_stay(t, clauses, it)
     _read_transport(clauses, it)
+    if it.item_price:  # "the cab is too costly" names the cab to price it, not to ask for more cabs
+        it.transport_only, it.transport_add = [], []
     _read_trains(clauses, it, ctx)
     _read_places_and_interests(clauses, candidates, dest_tokens, it, ctx)
     _read_unsupported(t, it, ctx)
@@ -784,6 +821,9 @@ a request can hold several changes; fill in every field that applies and leave t
   days_total sets the whole trip length ("make it 3 days").
 - transport_modes lists the modes meant; transport_action says whether they replace the current ones ("only"), join
   them ("add") or are taken away ("remove").
+- A price for ONE item (a cab, a ticket, a hotel room, a meal: "the cab is ₹358, make it under 200") is NOT the trip
+  budget: leave budget_change null. Text copied from the plan ("Cab to Jaipur Jn, catch the train at 20:10") names
+  modes without asking for them: leave transport_modes empty.
 - train_names: specific trains asked for by name or number ("Double Decker", "Shatabdi", "12985"); train_direction says
   which way ("outbound", "return", or null for both). Asking for a named train is NOT a reason to restrict
   transport_modes: leave the other modes alone.
@@ -844,7 +884,7 @@ def _from_model(data: dict, candidates: list[dict]) -> Intent:
                 it.budget_change = {"mode": bc["mode"], "amount": amount}
         except (TypeError, ValueError):
             pass
-    for name, lo, hi in (("days_total", 1, 8), ("travellers", 1, 20)):
+    for name, lo, hi in (("days_total", 1, MAX_DAYS), ("travellers", 1, 20)):
         try:
             v = int(data.get(name)) if data.get(name) is not None else None
             if v is not None and lo <= v <= hi:
@@ -852,7 +892,7 @@ def _from_model(data: dict, candidates: list[dict]) -> Intent:
         except (TypeError, ValueError):
             pass
     try:
-        it.extend_days = max(-6, min(6, int(data.get("extend_days") or 0)))
+        it.extend_days = max(1 - MAX_DAYS, min(MAX_DAYS - 1, int(data.get("extend_days") or 0)))
     except (TypeError, ValueError):
         it.extend_days = 0
     if data.get("pace") in PACES:
@@ -902,6 +942,9 @@ def _merge(ai: Intent, rules: Intent) -> Intent:
     out.exclude_place_ids = [i for i in out.exclude_place_ids if i not in out.include_place_ids]
     out.interests = [t for t in out.interests if t not in out.avoid_tags]
     out.reply = ai.reply
+    out.item_price = rules.item_price
+    if rules.item_price and not rules.budget_change:
+        out.budget_change = None  # one item's price, whatever the model made of it
     out.ignored = rules.ignored if not ai.has_change() else []
     return out
 

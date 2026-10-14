@@ -98,6 +98,22 @@ def test_what_nothing_recognised_is_reported_not_dropped():
     assert "Plan a trip" in read("I want to go to Jaipur instead").unsupported[0]
 
 
+def test_one_items_price_is_not_the_trip_budget():
+    for message, kind in (("Cab to Jaipur Jn ₹358 reduce it under 200INR", "cab"), ("hotel under 3000", "hotel"),
+                          ("the train ticket is too costly, make it under ₹500", "ticket")):
+        got = read(message)
+        assert got.budget_change is None and got.item_price == kind and not got.has_change(), message
+    assert read("trip budget under 3000").budget_change == {"mode": "set", "amount": 3000.0}
+
+
+def test_a_mode_named_in_passing_is_not_a_mode_change():
+    for message in ("Cab to Jaipur Jn (JP)", "From the hotel to catch the train", "the cab was late"):
+        got = read(message)
+        assert not (got.transport_only or got.transport_add or got.transport_remove), message
+    assert read("go by train").transport_only == ["train"] and read("train").transport_only == ["train"]
+    assert read("make it a 12 day trip").days_total == 12  # trips run up to 30 nights
+
+
 def test_numbers_that_are_not_money_are_left_alone():
     for message in ("add 2 more days", "start at 9 and see 4 places", "for 4 people", "5 stars hotel"):
         assert read(message).budget_change is None, message
