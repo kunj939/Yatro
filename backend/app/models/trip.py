@@ -46,6 +46,8 @@ class Trip(IdMixin, TimestampMixin, Base):
     quota_source: Mapped[str | None] = mapped_column(String(20))  # free | plus | credit
     plan_count: Mapped[int] = mapped_column(Integer, default=0)
     replan_count: Mapped[int] = mapped_column(Integer, default=0)
+    # secret in the calendar feed URL (ADR 0015); null = no feed
+    calendar_token: Mapped[str | None] = mapped_column(String(48), unique=True, index=True)
 
     preferences: Mapped[TripPreferences] = relationship(back_populates="trip", uselist=False,
                                                           cascade="all, delete-orphan")

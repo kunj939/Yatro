@@ -88,6 +88,7 @@ export async function streamEvents(path: string, body: unknown, onEvent: (e: Pla
   if (buffer.trim()) onEvent(JSON.parse(buffer) as PlanEvent);
 }
 
+export interface CalendarLinks { feed_url: string; webcal_url: string; google_url: string; outlook_url: string }
 export interface AuthResult { access_token: string; user: User; subscription: Quota }
 export interface SentCode { channel: string; sent_to: string; expires_in: number; resend_in: number; dev_code?: string | null }
 export interface SignUp {
@@ -136,6 +137,16 @@ export const endpoints = {
   updateShare: (id: string, sid: string, body: { show_budget?: boolean; include_split?: boolean; expires?: "default" | "never"; extend_days?: number }) =>
     api<ShareLink>(`/api/trips/${id}/shares/${sid}`, { method: "PATCH", json: body }),
   revokeShare: (id: string, sid: string) => api<void>(`/api/trips/${id}/shares/${sid}`, { method: "DELETE" }),
+  // Calendar (ADR 0015): a feed calendars subscribe to, so a changed plan updates there too; or a one-off .ics file
+  calendarOn: (id: string) => api<CalendarLinks>(`/api/trips/${id}/calendar`, { method: "POST" }),
+  calendarOff: (id: string) => api<void>(`/api/trips/${id}/calendar`, { method: "DELETE" }),
+  calendarFile: async (id: string): Promise<string> => {
+    let res: Response;
+    try { res = await fetch(`${API_URL}/api/trips/${id}/calendar.ics`, { headers: headers(false), cache: "no-store" }); }
+    catch { throw new ApiError(0, "network", "Can't reach Yaitro right now. Check your internet and try again in a moment."); }
+    if (!res.ok) throw await toError(res);
+    return res.text();
+  },
   shared: (token: string) => api<SharedTrip>(`/api/share/${encodeURIComponent(token)}`),
   // the signed-in person's OWN UPI ID (null removes it); nobody else's is ever stored
   // "Email me this plan" now, and whether new plans are emailed automatically (the person's own choice)

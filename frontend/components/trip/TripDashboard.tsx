@@ -16,6 +16,7 @@ import { GroupMembers } from "./GroupMembers";
 import { ExpenseSplitter } from "./ExpenseSplitter";
 import { ShareSheet, SharedLinks } from "./ShareSheet";
 import { WhatsAppCard } from "./WhatsAppCard";
+import { TakeAlong } from "./TakeAlong";
 import { useFlags } from "@/lib/flags";
 import { InfeasibleView } from "./InfeasibleView";
 import { TripLoading } from "./TripLoading";
@@ -310,6 +311,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                     </div>
                   )}
                   {!readOnly && flags.share && <div className="hidden lg:block"><WhatsAppCard trip={trip} /></div>}
+                  {!readOnly && <div className="hidden lg:block"><TakeAlong trip={trip} /></div>}
                   {it.llm_status === "fallback" && (
                     <p className="mb-5 rounded-xl bg-haze-2 px-4 py-3 text-sm text-ink-soft">Trip data was collected, but AI explanation is temporarily unavailable.</p>
                   )}
@@ -339,6 +341,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                   {/* On a phone the plan comes first: keeping it and changing it follow the itinerary, not precede it */}
                   <div className="mt-6 space-y-6 lg:hidden">
                     {!readOnly && flags.share && <WhatsAppCard trip={trip} />}
+                    {!readOnly && <TakeAlong trip={trip} />}
                     <ReplanBox chips={chips} value={message} onChange={setMessage} onSend={sendMessage} busy={running}
                                readOnly={readOnly} replansLeft={trip.replans_left} error={error} reply={reply} />
                   </div>

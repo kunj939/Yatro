@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import admin, auth, demo, places, share, subscription, system, trips
+from app.api.routes import admin, auth, calendar, demo, places, share, subscription, system, trips
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
@@ -63,7 +63,8 @@ def create_app() -> FastAPI:
                        allow_headers=["Authorization", "Content-Type", "X-Request-Id", "Idempotency-Key"],
                        expose_headers=["X-Request-Id"])
     register_error_handlers(app)
-    for r in (system.router, admin.router, auth.router, trips.router, share.router, places.router, subscription.router, demo.router):
+    for r in (system.router, admin.router, auth.router, trips.router, share.router, calendar.router, places.router,
+              subscription.router, demo.router):
         app.include_router(r, prefix=settings.api_prefix)
 
     return app

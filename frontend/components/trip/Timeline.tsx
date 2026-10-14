@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Coffee, Sparkles } from "lucide-react";
+import { ChevronDown, Coffee, Navigation, Sparkles } from "lucide-react";
 import type { Itinerary, ItineraryItem } from "@/lib/types";
 import { MODE_LABEL, minutes, money, niceDate } from "@/lib/format";
+import { dayRouteUrl } from "@/lib/tripLinks";
 import { KIND_TONE, TimelineItem, itemIcon } from "./TimelineItem";
 
 /** What a day costs and how many real stops it has — shared by the day headers and the overview strip. */
@@ -126,6 +127,12 @@ export function Timeline({ itinerary, onChange, highlightIds = [], currency, nea
                 {st.first && <div><dt className="text-xs text-ink-mute">Hours</dt><dd className="font-bold">{st.first}–{st.last}</dd></div>}
                 <div><dt className="text-xs text-ink-mute">Day cost</dt><dd className="font-bold">{money(st.cost, currency)}</dd></div>
               </dl>
+              {dayRouteUrl(d.items) && (
+                <a href={dayRouteUrl(d.items)!} target="_blank" rel="noopener noreferrer"
+                   className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-signal px-3.5 py-2 text-[13px] font-semibold text-on-signal transition-all hover:-translate-y-px sm:w-auto">
+                  <Navigation className="h-3.5 w-3.5" aria-hidden />Day route in Maps
+                </a>
+              )}
             </header>
             {view === "compact" ? (
               <ol className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-paper">

@@ -5,6 +5,7 @@ import { BedDouble, Car, ChevronDown, Clock, Coffee, ExternalLink, Footprints, H
 import type { ItineraryItem, TransportLeg } from "@/lib/types";
 import { endpoints } from "@/lib/api";
 import { MODE_LABEL, km, minutes, money } from "@/lib/format";
+import { directionsUrl } from "@/lib/tripLinks";
 import { VerificationBadge } from "../VerificationBadge";
 import { placeSource } from "@/lib/sources";
 
@@ -158,7 +159,7 @@ export function TimelineItem({ item, onChange, highlight, currency, near, first,
   const reasons = item.reasons.filter((r) => !(item.explanation ?? "").toLowerCase().includes(r.text.toLowerCase()));
   const major = ["activity", "meal", "sunset", "transport", "stay"].includes(item.kind) && !(item.kind === "stay" && !item.cost);
   const mappable = ["activity", "meal", "sunset", "stay"].includes(item.kind) && !item.meta?.google_expired; // an expired stop has its own link (I6)
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(near ? `${item.title}, ${near}` : item.title)}`;
+  const mapsUrl = directionsUrl(item) ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(near ? `${item.title}, ${near}` : item.title)}`;
   const free = item.cost === 0 && (item.kind === "activity" || item.kind === "sunset");
   const unpublished = !!item.hours_note?.startsWith("Opening hours are not published") && !item.opening_time;
   const ticket = item.kind === "transport" && TICKET_MODES.has(item.meta?.mode) && !!item.meta?.from_name && !!item.meta?.to_name;
@@ -269,7 +270,7 @@ export function TimelineItem({ item, onChange, highlight, currency, near, first,
               {mappable && (
                 <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
                    className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-[13px] font-semibold text-ink-soft transition-all hover:-translate-y-px hover:border-ink/30 hover:text-ink">
-                  <MapIcon className="h-3.5 w-3.5" aria-hidden />Open in Maps<ExternalLink className="h-3 w-3" aria-hidden />
+                  <MapIcon className="h-3.5 w-3.5" aria-hidden />Directions<ExternalLink className="h-3 w-3" aria-hidden />
                 </a>
               )}
             </div>
