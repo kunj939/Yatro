@@ -1,9 +1,9 @@
 // Change the product name, tagline or contact details here — every page reads from this file.
 export const brand = {
-  name: "Yatro",
+  name: "Yaitro",
   tagline: "Trips that actually fit",
-  description: "Tell us where, when and how much. Yatro plans the whole trip with real train times, real opening hours and prices that fit your budget. If something can't work, we say so. No made-up stuff.",
-  supportEmail: "hello@yatro.in",
+  description: "Tell us where, when and how much. Yaitro plans the whole trip with real train times, real opening hours and prices that fit your budget. If something can't work, we say so. No made-up stuff.",
+  supportEmail: "hello@yaitro.com",
   currency: "INR",
   freePlans: 1,  // new free trip plans every month: keep in step with FREE_TRIP_PLANS on the backend (ADR 0013)
   get freePlansText() { return this.freePlans === 1 ? "1 free plan" : `${this.freePlans} free plans`; },

@@ -48,7 +48,7 @@ def routes(live: bool) -> list[dict]:
 
 
 def setup_env(mode: str) -> Path:
-    db = Path(tempfile.mkdtemp(prefix=f"yatro-baseline-{mode}-")) / "baseline.db"
+    db = Path(tempfile.mkdtemp(prefix=f"yaitro-baseline-{mode}-")) / "baseline.db"
     os.environ.update({"DATABASE_URL": f"sqlite:///{db}", "RATE_LIMIT_ENABLED": "false", "FREE_TRIP_PLANS": "500",
                        "TELEMETRY_ENABLED": "true", "SMTP_HOST": "", "SMS_PROVIDER": "console", "OTP_RESEND_SECONDS": "0",
                        "ENVIRONMENT": "development", "LOG_LEVEL": "WARNING"})

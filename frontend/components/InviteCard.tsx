@@ -15,7 +15,7 @@ export function InviteCard() {
   const r = card.rewards;
   const offer = [r.friend_plans ? `${r.friend_plans} free trip plan${r.friend_plans === 1 ? "" : "s"}` : null,
                  r.plus_discount_pct ? `${r.plus_discount_pct}% off their first month of Plus` : null].filter(Boolean).join(" and ");
-  const message = `Planning a trip? Yatro plans the whole thing to fit your budget. Sign up with my code ${card.code}${offer ? ` and get ${offer}` : ""}: ${card.link}`;
+  const message = `Planning a trip? Yaitro plans the whole thing to fit your budget. Sign up with my code ${card.code}${offer ? ` and get ${offer}` : ""}: ${card.link}`;
 
   async function copy(what: string, text: string) {
     try { await navigator.clipboard.writeText(text); setCopied(what); setTimeout(() => setCopied(null), 1800); } catch { /* select by hand */ }

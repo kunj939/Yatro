@@ -56,7 +56,7 @@ def test_a_new_plan_is_emailed_to_its_owner_once_and_a_replan_is_not(client, out
     me = _me(client, h)
     trip = _plan(client, h)
     assert len(outbox) == 1 and outbox[0]["to"] == me["email"]
-    assert "Jaipur" in outbox[0]["subject"] and outbox[0]["subject"].startswith("✈️ Your Yatro plan is ready")
+    assert "Jaipur" in outbox[0]["subject"] and outbox[0]["subject"].startswith("✈️ Your Yaitro plan is ready")
     r = client.post(f"/api/trips/{trip['id']}/replan", headers=h, json={"message": "make it more relaxed"})
     assert r.status_code == 200
     assert len(outbox) == 1  # a re-plan does not email again
@@ -169,7 +169,7 @@ def test_the_whatsapp_text_is_richer_but_keeps_its_promises(client):
     h = register(client)
     trip = _plan(client, h)
     t = client.post(f"/api/trips/{trip['id']}/share", json={}, headers=h).json()["text"]
-    assert t.startswith("*🧳 ") and "_Planned with Yatro_ ✨" in t and "📅 *Day 1" in t and "💰 *Total ≈" in t and "🔗 Full plan: " in t
+    assert t.startswith("*🧳 ") and "_Planned with Yaitro_ ✨" in t and "📅 *Day 1" in t and "💰 *Total ≈" in t and "🔗 Full plan: " in t
     assert "━━━" in t and len(t) <= share_service.TEXT_LIMIT
     assert re.search(r"(🚆|🚌|✈️|🚕|🚗|🚇)", t)  # travel has its icon
 
@@ -230,7 +230,7 @@ def test_the_mailer_builds_a_proper_two_part_message_and_logs_in(monkeypatch):
     monkeypatch.setattr(s, "smtp_port", 587)
     monkeypatch.setattr(s, "smtp_user", "me@example.test")
     monkeypatch.setattr(s, "smtp_password", "app-password")
-    monkeypatch.setattr(s, "smtp_from", "Yatro <hello@example.test>")
+    monkeypatch.setattr(s, "smtp_from", "Yaitro <hello@example.test>")
     seen = {}
 
     class Fake:
@@ -245,7 +245,7 @@ def test_the_mailer_builds_a_proper_two_part_message_and_logs_in(monkeypatch):
     mailer.send_mail("to@example.com", "✈️ Hi", "plain body", "<p>html body</p>")
     m = seen["msg"]
     assert seen["tls"] and seen["login"] == ("me@example.test", "app-password") and (seen["host"], seen["port"]) == ("smtp.example.test", 587)
-    assert m["To"] == "to@example.com" and m["Subject"] == "✈️ Hi" and "hello@example.test" in m["From"] and m["From"].startswith("Yatro")
+    assert m["To"] == "to@example.com" and m["Subject"] == "✈️ Hi" and "hello@example.test" in m["From"] and m["From"].startswith("Yaitro")
     assert m.get_body(("plain",)).get_content().strip() == "plain body" and "<p>html body</p>" in m.get_body(("html",)).get_content()
 
 

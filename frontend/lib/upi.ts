@@ -1,4 +1,4 @@
-/** UPI payment links (ADR 0006). Yatro never touches the money: this only builds a link that opens the person's own UPI
+/** UPI payment links (ADR 0006). Yaitro never touches the money: this only builds a link that opens the person's own UPI
  *  app with the payee, amount and note filled in. A payee's UPI ID typed here lives in the browser only. */
 export const UPI_RE = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
 

@@ -53,7 +53,7 @@ const s = StyleSheet.create({
 function Footer({ url }: { url: string }) {
   return (
     <View style={s.footer} fixed>
-      <Text>Planned with <Text style={{ color: LIME }}>Yatro</Text> · <Link src={url} style={{ color: SOFT, textDecoration: "none" }}>{url.replace(/^https?:\/\//, "")}</Link></Text>
+      <Text>Planned with <Text style={{ color: LIME }}>Yaitro</Text> · <Link src={url} style={{ color: SOFT, textDecoration: "none" }}>{url.replace(/^https?:\/\//, "")}</Link></Text>
       <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
     </View>
   );
@@ -63,7 +63,7 @@ function Brand() {
   return (
     <View style={s.brand}>
       <Text style={s.logo}>Y</Text>
-      <Text style={{ fontFamily: "Head", fontSize: 16 }}>Yatro</Text>
+      <Text style={{ fontFamily: "Head", fontSize: 16 }}>Yaitro</Text>
     </View>
   );
 }
@@ -96,7 +96,7 @@ export function TripPdf({ view, url }: { view: SharedTrip; url: string }) {
   const stops = it.days.reduce((n, d) => n + shown(d.items).length, 0);
   const anyEstimate = it.days.some((d) => d.items.some((i) => i.cost && i.cost_state !== "verified_official" && i.cost_state !== "verified_provider"));
   return (
-    <Document title={it.title || trip.title} author="Yatro" subject="Trip plan" creator="Yatro">
+    <Document title={it.title || trip.title} author="Yaitro" subject="Trip plan" creator="Yaitro">
       <Page size="A4" style={s.page}>
         <View style={{ position: "absolute", top: -120, right: -120, width: 340, height: 340, borderRadius: 170, backgroundColor: "#1a2a0d" }} fixed />
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>

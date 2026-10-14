@@ -4,7 +4,7 @@ import type { SharedTrip } from "@/lib/types";
 
 // The picture WhatsApp (and Telegram, iMessage, Slack…) shows when a share link is sent: the trip as a card, in the
 // site's own dark-and-lime look, so the chat gets something you'd tap rather than a wall of text.
-export const alt = "A trip planned with Yatro";
+export const alt = "A trip planned with Yaitro";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -42,7 +42,7 @@ function Brand() {
     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
       <div style={{ display: "flex", width: 46, height: 46, borderRadius: 12, background: "#151a17", alignItems: "center",
         justifyContent: "center", color: LIME, fontSize: 32, fontFamily: "Head" }}>Y</div>
-      <div style={{ display: "flex", fontFamily: "Serif", fontStyle: "italic", fontSize: 40, color: "white" }}>Yatro</div>
+      <div style={{ display: "flex", fontFamily: "Serif", fontStyle: "italic", fontSize: 40, color: "white" }}>Yaitro</div>
     </div>
   );
 }
@@ -108,7 +108,7 @@ function Fallback() {
       <Brand />
       <div style={{ display: "flex", flexDirection: "column", marginTop: "auto", marginBottom: "auto" }}>
         <div style={{ display: "flex", fontFamily: "Head", fontSize: 76, color: "white", letterSpacing: -2 }}>A trip planned with</div>
-        <div style={{ display: "flex", fontFamily: "Serif", fontStyle: "italic", fontSize: 96, color: LIME }}>Yatro.</div>
+        <div style={{ display: "flex", fontFamily: "Serif", fontStyle: "italic", fontSize: 96, color: LIME }}>Yaitro.</div>
         <div style={{ display: "flex", fontSize: 30, color: "rgba(255,255,255,0.7)", marginTop: 18 }}>
           Travel, stays, sights and meals that fit the budget. Tap to open the plan.
         </div>
@@ -121,11 +121,11 @@ export default async function Image({ params }: { params: Promise<{ token: strin
   const { token } = await params;
   const v = await fetchShared(token);
   const words = v ? JSON.stringify(v.itinerary.days.map((d) => d.label)) + (v.itinerary.title || v.trip.title) : "";
-  const text = `Yatro A trip planned with Trip plan days stops travellers each more Tap to open the full day-by-day plan ${words} 0123456789 ·–…+,.:₹€$£`;
+  const text = `Yaitro A trip planned with Trip plan days stops travellers each more Tap to open the full day-by-day plan ${words} 0123456789 ·–…+,.:₹€$£`;
   const [head, body, serif, money] = await Promise.all([
     font("Bricolage+Grotesque", "wght@800", text),
     font("Plus+Jakarta+Sans", "wght@600", text + "JanFebMarAprMayJunJulAugSepOctNovDecMonTueWedThuFriSatSun"),
-    font("Instrument+Serif", "ital@1", "Yatro."),
+    font("Instrument+Serif", "ital@1", "Yaitro."),
     font("Noto+Sans", "wght@600", "₹€$£"),
   ]);
   const fonts = [

@@ -43,15 +43,15 @@ export function ProofBand() {
   );
 }
 
-/* ---------------------------------------------------------------- Chatbot vs Yatro */
+/* ---------------------------------------------------------------- Chatbot vs Yaitro */
 
 // One plain sentence per side, per topic. The left column is what a general-purpose chatbot does; the right is what this engine does.
 const COMPARE = [
-  { topic: "Prices", Icon: Wallet, bot: "Guesses from stale data.", yatro: "Real fares from live timetables. Estimates are always labelled." },
-  { topic: "Opening hours", Icon: Clock, bot: "Might send you to a closed gate.", yatro: "Checked for the day and hour you'll land up there." },
-  { topic: "Your budget", Icon: ShieldCheck, bot: "“Around ₹5,000, probably.”", yatro: "Every ticket, meal and auto added up. Never over budget." },
-  { topic: "Who is travelling", Icon: Users, bot: "The same plan for everyone.", yatro: "Picks that suit the kids, the adults and the grandparents." },
-  { topic: "A plan that can't work", Icon: AlertTriangle, bot: "Makes one up anyway.", yatro: "Tells you why, and the quickest fix." },
+  { topic: "Prices", Icon: Wallet, bot: "Guesses from stale data.", yaitro: "Real fares from live timetables. Estimates are always labelled." },
+  { topic: "Opening hours", Icon: Clock, bot: "Might send you to a closed gate.", yaitro: "Checked for the day and hour you'll land up there." },
+  { topic: "Your budget", Icon: ShieldCheck, bot: "“Around ₹5,000, probably.”", yaitro: "Every ticket, meal and auto added up. Never over budget." },
+  { topic: "Who is travelling", Icon: Users, bot: "The same plan for everyone.", yaitro: "Picks that suit the kids, the adults and the grandparents." },
+  { topic: "A plan that can't work", Icon: AlertTriangle, bot: "Makes one up anyway.", yaitro: "Tells you why, and the quickest fix." },
 ];
 
 export function WhyDifferent() {
@@ -73,7 +73,7 @@ export function WhyDifferent() {
             <div className="flex items-center gap-2 bg-signal-soft/50 px-6 py-4 text-signal-deep"><Sparkles className="h-4 w-4" aria-hidden />{brand.name}</div>
           </div>
           <ul className="divide-y divide-line">
-            {COMPARE.map(({ topic, Icon, bot, yatro }) => (
+            {COMPARE.map(({ topic, Icon, bot, yaitro }) => (
               <li key={topic} className="grid md:grid-cols-[1fr_1.3fr_1.7fr]">
                 <p className="flex items-center gap-3 px-5 pb-1 pt-5 text-[17px] font-bold md:px-6 md:py-5">
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-haze-2 text-ink-soft"><Icon className="h-[18px] w-[18px]" aria-hidden /></span>
@@ -85,7 +85,7 @@ export function WhyDifferent() {
                 </p>
                 <p className="flex items-start gap-2.5 bg-signal-soft/30 px-5 pb-5 pt-2 text-[15px] font-medium leading-snug text-ink md:bg-signal-soft/40 md:px-6 md:py-5">
                   <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-teal-soft text-teal"><Check className="h-3 w-3" strokeWidth={3} aria-hidden /></span>
-                  <span><span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-[0.12em] text-signal-deep md:hidden">{brand.name}</span>{yatro}</span>
+                  <span><span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-[0.12em] text-signal-deep md:hidden">{brand.name}</span>{yaitro}</span>
                 </p>
               </li>
             ))}

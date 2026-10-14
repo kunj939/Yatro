@@ -10,7 +10,7 @@ export async function buildTripPdf(token: string, url: string): Promise<File> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const blob = await pdf(createElement(TripPdf, { view, url }) as any).toBlob();
   const name = (view.itinerary.title || view.trip.title).replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "").slice(0, 60) || "trip";
-  return new File([blob], `${name}-Yatro.pdf`, { type: "application/pdf" });
+  return new File([blob], `${name}-Yaitro.pdf`, { type: "application/pdf" });
 }
 
 /** Hand the PDF to the phone's share menu (pick WhatsApp and it goes as a file). Where a browser can't share files,

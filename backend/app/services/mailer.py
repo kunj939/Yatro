@@ -33,7 +33,7 @@ def send_mail(to: str, subject: str, text: str, html: str | None = None) -> None
     msg["Subject"] = subject
     sender = s.smtp_from or s.smtp_user or f"no-reply@{s.smtp_host}"
     name, addr = parseaddr(sender)
-    msg["From"] = formataddr((name or "Yatro", addr)) if addr else sender
+    msg["From"] = formataddr((name or "Yaitro", addr)) if addr else sender
     msg["To"] = to
     msg.set_content(text)
     if html:

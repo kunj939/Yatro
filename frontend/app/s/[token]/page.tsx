@@ -35,7 +35,7 @@ export default function SharedTripPage() {
   return (
     <main className="min-h-screen">
       <header className="container-x flex items-center justify-between py-5">
-        <Link href="/" className="group" aria-label="Yatro home"><Logo /></Link>
+        <Link href="/" className="group" aria-label="Yaitro home"><Logo /></Link>
         <Link href="/plan" className="btn-primary !py-2">Plan your own</Link>
       </header>
 
@@ -104,7 +104,7 @@ export default function SharedTripPage() {
                 <a className="inline-flex items-center gap-1 whitespace-nowrap underline underline-offset-4" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">Google Maps<ExternalLink className="h-3 w-3" aria-hidden /></a>
               </p>
             )}
-            <p>Made with Yatro. This page is private to the people who have the link and may stop working when its owner ends it.</p>
+            <p>Made with Yaitro. This page is private to the people who have the link and may stop working when its owner ends it.</p>
           </footer>
         </div>
       )}

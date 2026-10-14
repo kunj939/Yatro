@@ -20,7 +20,7 @@ from pathlib import Path
 
 import httpx
 
-STATE = Path(tempfile.gettempdir()) / "yatro-verify-crash.json"
+STATE = Path(tempfile.gettempdir()) / "yaitro-verify-crash.json"
 results: list[tuple[str, bool, str]] = []
 
 

@@ -233,7 +233,7 @@ def share_text(view: dict, url: str, limit: int = TEXT_LIMIT) -> str:
     d0, d1 = date.fromisoformat(t["start_date"]), date.fromisoformat(t["end_date"])
     span = f"{d0:%a %d %b}" if d0 == d1 else f"{d0:%d %b}–{d1:%d %b}"
     who = f"{t['travellers']} traveller{'s' if t['travellers'] != 1 else ''}"
-    head = [f"*🧳 {it['title'] or t['title']}* · {span} · {who}", "_Planned with Yatro_ ✨", ""]
+    head = [f"*🧳 {it['title'] or t['title']}* · {span} · {who}", "_Planned with Yaitro_ ✨", ""]
     items = [i for d in it["days"] for i in d["items"]]
     tips = [_short(x) for x in (it.get("tips") or [])[:3]]
 
@@ -299,6 +299,6 @@ def card_text(view: dict, url: str) -> str:
 def wa_link(text: str, phone: str | None = None) -> str:
     """wa.me link with the text ready to send. Without a number the person picks the chat. With a number (only ever the signed-in
     person's OWN saved mobile) it opens their chat with that number, so the plan is one tap from being in their own WhatsApp.
-    Either way it only OPENS WhatsApp with the message typed: the person taps Send, and Yatro sends nothing itself (I9)."""
+    Either way it only OPENS WhatsApp with the message typed: the person taps Send, and Yaitro sends nothing itself (I9)."""
     digits = "".join(ch for ch in (phone or "") if ch.isdigit())
     return (f"https://wa.me/{digits}" if digits else "https://wa.me/") + "?text=" + quote(text, safe="")

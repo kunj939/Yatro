@@ -20,7 +20,7 @@ const SPLITS = [
 
 type Settlement = Trip["expense_summary"]["settlements"][number];
 
-/** The payment helpers under one "A pays B" row (ADR 0006). Yatro never touches the money, and never keeps anyone's UPI ID
+/** The payment helpers under one "A pays B" row (ADR 0006). Yaitro never touches the money, and never keeps anyone's UPI ID
  *  but their own: a payee's ID typed here lives in this component's state and goes nowhere. */
 function PayHelp({ x, trip, ownerId }: { x: Settlement; trip: Trip; ownerId: string | undefined }) {
   const { user } = useAuth();
@@ -68,7 +68,7 @@ function PayHelp({ x, trip, ownerId }: { x: Settlement; trip: Trip; ownerId: str
             <input id={`upi-${x.to_member_id}`} className="field max-w-[240px] !py-1.5" placeholder={`${x.to_name}'s UPI ID (name@bank)`} value={upi}
                    onChange={(e) => setUpi(e.target.value)} autoComplete="off" autoCapitalize="none" spellCheck={false} />
             {validUpi(upi)
-              ? <a className="btn-primary !px-4 !py-1.5" href={upiLink({ payee: upi, name: x.to_name, amount: x.amount, note: `Yatro: ${trip.title}`.slice(0, 60) })}>Open UPI app</a>
+              ? <a className="btn-primary !px-4 !py-1.5" href={upiLink({ payee: upi, name: x.to_name, amount: x.amount, note: `Yaitro: ${trip.title}`.slice(0, 60) })}>Open UPI app</a>
               : <span className="text-ink-mute">Not saved or sent anywhere.</span>}
           </div>
         )}

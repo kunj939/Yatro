@@ -34,7 +34,7 @@ def main() -> None:
     ap.add_argument("--latency-mix", action="store_true",
                     help="realistic mix: 94%% 300-800 ms, 5%% 3-5 s, 1%% a 6 s timeout that fails the call")
     args = ap.parse_args()
-    db = Path(tempfile.mkdtemp(prefix="yatro-load-")) / "load.db"
+    db = Path(tempfile.mkdtemp(prefix="yaitro-load-")) / "load.db"
     os.environ.update({"DATABASE_URL": os.environ.get("LOAD_DATABASE_URL") or f"sqlite:///{db}", "RATE_LIMIT_ENABLED": "false", "FREE_TRIP_PLANS": "5000",
                        "TELEMETRY_ENABLED": "false", "SMTP_HOST": "", "SMS_PROVIDER": "console", "OTP_RESEND_SECONDS": "0",
                        "ENVIRONMENT": "development", "LOG_LEVEL": "ERROR", "DEMO_MODE": "true", "LLM_PROVIDER": "template",

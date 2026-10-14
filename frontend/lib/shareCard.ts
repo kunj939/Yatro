@@ -2,7 +2,7 @@ import { API_URL } from "./api";
 import type { SharedTrip } from "./types";
 
 /** The public view of a shared trip, fetched on the server for the link preview (WhatsApp, Telegram, iMessage…).
- * A preview crawler waits only a few seconds, so a slow or sleeping backend gives `null` and the generic Yatro card
+ * A preview crawler waits only a few seconds, so a slow or sleeping backend gives `null` and the generic Yaitro card
  * instead of no card at all. */
 export async function fetchShared(token: string): Promise<SharedTrip | null> {
   try {

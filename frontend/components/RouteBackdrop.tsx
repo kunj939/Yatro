@@ -1,5 +1,5 @@
 /** The page sits on one colour; this is the only thing behind it — a transit network that drifts very slowly,
- *  like a map being panned. Grounded in what Yatro does rather than a decorative gradient, and kept far enough
+ *  like a map being panned. Grounded in what Yaitro does rather than a decorative gradient, and kept far enough
  *  back that text never competes with it. Fixed, so it stays put while the page scrolls past. */
 const LINES = [
   { d: "M-40 180 L220 180 L360 320 L700 320 L840 180 L1180 180 L1320 320 L1560 320", w: 2.2, o: 0.5, dur: "48s" },

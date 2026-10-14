@@ -35,7 +35,7 @@ function UpiSection() {
       <h2 id="upi-title" className="text-lg font-bold">Your UPI ID</h2>
       <p className="mt-1 text-[15px] text-ink-soft">
         Optional. Lets you copy a payment request in a trip&apos;s settle-up. Only you can add it, it is never shown on a shared page,
-        and Yatro never stores anyone else&apos;s UPI ID.
+        and Yaitro never stores anyone else&apos;s UPI ID.
       </p>
       <form className="mt-4 flex flex-wrap items-start gap-3" onSubmit={(e) => { e.preventDefault(); if (!bad) save(value.trim() || null); }}>
         <div className="min-w-[220px] flex-1">
@@ -164,7 +164,7 @@ function Account() {
             <p className="num mt-1 text-3xl font-bold">{inr(price("plus"))}<span className="text-base font-medium text-ink-mute"> /month</span></p>
           )}
           <ul className="mt-2 flex-1 space-y-1 text-ink-soft">
-            {["Unlimited trip plans", "Priority when Yatro is busy", "Group expense splitting"].map((f) => (
+            {["Unlimited trip plans", "Priority when Yaitro is busy", "Group expense splitting"].map((f) => (
               <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-teal" aria-hidden />{f}</li>
             ))}
           </ul>

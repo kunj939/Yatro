@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth";
 
 const SECTIONS = [
   { id: "try", label: "Try it" },
-  { id: "features", label: "Why Yatro" },
+  { id: "features", label: "Why Yaitro" },
   { id: "pricing", label: "Pricing" },
 ];
 
@@ -111,7 +111,7 @@ export function Navbar() {
         <nav aria-label="Main"
              className={`nav-island relative mx-auto flex items-center gap-3 rounded-full pl-4 pr-2 text-ink transition-all duration-500 ease-out md:gap-4 md:pl-6 ${
                scrolled ? "h-14 max-w-5xl md:h-[60px]" : "h-14 max-w-6xl md:h-16"}`}>
-          <Link href="/" aria-label="Yatro home" className="group mr-auto shrink-0 rounded-lg"><Logo /></Link>
+          <Link href="/" aria-label="Yaitro home" className="group mr-auto shrink-0 rounded-lg"><Logo /></Link>
 
           <div ref={lineRef} onMouseLeave={rest} className="relative hidden h-full items-center md:flex">
             {/* the line, the part already travelled, then the train */}

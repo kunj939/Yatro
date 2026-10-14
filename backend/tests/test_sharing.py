@@ -259,7 +259,7 @@ def test_the_text_has_place_names_a_link_and_whatsapp_formatting(client, seeded)
     j, token = _share(client, seeded["auth"], seeded["trip_id"])
     view = _public(client, token).json()
     text = j["text"]
-    assert text.startswith("*") and "_Planned with Yatro_" in text and f"Full plan: {j['url']}" in text
+    assert text.startswith("*") and "_Planned with Yaitro_" in text and f"Full plan: {j['url']}" in text
     named = [i["title"] for d in view["itinerary"]["days"] for i in d["items"] if i["kind"] in ("activity", "meal")]
     assert named and all(t in text for t in named)  # real names, never "Stop 1"
     assert "Stop 1" not in text and "Total ≈" in text and "(est.)" in text
@@ -293,9 +293,9 @@ def test_a_long_trip_is_shortened_to_fit_a_message():
             "itinerary": {"title": "Long", "days": [{**day, "index": n, "label": f"Day {n + 1}", "date": f"2026-10-{17 + n}"}
                                                     for n in range(4)], "total_cost": 100000, "cost_per_person": 50000},
             "google": {"attribution": share_service.ATTRIBUTION}}
-    text = share_service.share_text(view, "https://yatro.example/s/abc")
+    text = share_service.share_text(view, "https://yaitro.example/s/abc")
     assert len(text) <= share_service.TEXT_LIMIT and "see the link" in text
-    assert text.endswith(f"_{share_service.ATTRIBUTION}_") and "Full plan: https://yatro.example/s/abc" in text
+    assert text.endswith(f"_{share_service.ATTRIBUTION}_") and "Full plan: https://yaitro.example/s/abc" in text
 
 
 # --- UPI IDs (ADR 0006, decision 3) -------------------------------------------------------------------------------------
@@ -335,7 +335,7 @@ def test_the_upi_switch_turns_the_feature_off(client):
     finally:
         s.upi_links_enabled = True
 
-# --- send the plan to my own WhatsApp (the user's saved mobile, one tap; Yatro sends nothing) ----------------------------------------------
+# --- send the plan to my own WhatsApp (the user's saved mobile, one tap; Yaitro sends nothing) ----------------------------------------------
 
 def test_the_plan_can_be_opened_in_the_owners_own_whatsapp_chat(client):
     from urllib.parse import quote

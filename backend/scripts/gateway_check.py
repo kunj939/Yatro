@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-os.environ.update({"DATABASE_URL": f"sqlite:///{Path(tempfile.mkdtemp(prefix='yatro-gw-')) / 'gw.db'}", "LOG_LEVEL": "ERROR",
+os.environ.update({"DATABASE_URL": f"sqlite:///{Path(tempfile.mkdtemp(prefix='yaitro-gw-')) / 'gw.db'}", "LOG_LEVEL": "ERROR",
                    "ENVIRONMENT": "test", "IRCTC1_ASSUME_EXHAUSTED": "false"})
 sys.path.insert(0, str(ROOT))
 os.chdir(ROOT)

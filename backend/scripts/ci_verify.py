@@ -403,7 +403,7 @@ def step_backup() -> None:
     rc, out = run(["pg_dump", "--version"], child_env(guard=False))
     major = int(re.search(r"(\d+)", out.split("pg_dump")[-1]).group(1)) if rc == 0 else 0
     record(s, "pg_dump is version 16 or newer (same as the server)", major >= 16, out.strip())
-    d = Path(tempfile.mkdtemp(prefix="yatro-backups-"))
+    d = Path(tempfile.mkdtemp(prefix="yaitro-backups-"))
     old, recent = d / "tripai-20200101-000000.dump", d / "tripai-20260101-000000.dump"
     for f, days in ((old, 20), (recent, 3)):
         f.write_bytes(b"x")

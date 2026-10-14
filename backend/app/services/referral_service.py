@@ -1,7 +1,7 @@
 """Invite a friend (ADR 0012), on the pattern the big consumer apps settled on (Dropbox, Uber, Airbnb):
 
 - both sides get something: the friend straight away (extra free plans, and a discount on their first month of Plus),
-  the inviter when the friend has actually used Yatro (their first plan is ready), not when they merely sign up;
+  the inviter when the friend has actually used Yaitro (their first plan is ready), not when they merely sign up;
 - one inviter per account, ever (a unique key), and a monthly cap per inviter, so rewards can't be farmed;
 - rewards are trip credits, the same thing a "one trip" purchase gives, so nothing else in the quota changes;
 - every number, and the whole programme, is a live admin setting (/admin -> Controls).
@@ -43,7 +43,7 @@ def code_for(db: Session, user: User) -> str:
     (PRIYA7K3Q), easy to say and type."""
     if user.referral_code:
         return user.referral_code
-    stem = "".join(ch for ch in (user.name or "").upper() if ch.isascii() and ch.isalpha())[:5] or "YATRO"
+    stem = "".join(ch for ch in (user.name or "").upper() if ch.isascii() and ch.isalpha())[:5] or "YAITRO"
     for _ in range(8):
         code = stem + "".join(secrets.choice(ALPHABET) for _ in range(4))
         if db.scalar(select(User.id).where(User.referral_code == code)) is None:

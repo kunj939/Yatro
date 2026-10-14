@@ -23,7 +23,7 @@ log = logging.getLogger("tripai.wikidata")
 
 SPARQL = "https://query.wikidata.org/sparql"
 # Wikimedia asks for a User-Agent naming the tool and a way to reach its owner; without one it answers 403.
-USER_AGENT = "YatroTripPlanner/1.0 (https://yatro.vercel.app; hello@yatro.in)"
+USER_AGENT = "YaitroTripPlanner/1.0 (https://yatro.vercel.app; hello@yaitro.com)"
 
 # Wikidata class -> our place tags (the same tags Google types become, providers/google.py).
 TYPES: dict[str, list[str]] = {

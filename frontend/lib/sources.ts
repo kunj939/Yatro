@@ -28,6 +28,6 @@ export function planSources(it: Itinerary): { what: string; from: string }[] {
   const train = items.find((i) => i.kind === "transport" && i.meta?.mode === "train");
   if (train) out.push({ what: "Train times", from: train.meta?.provenance_label ?? "Indian Railways timetable data, labelled on each train" });
   if (it.weather) out.push({ what: "Weather forecast", from: "Open-Meteo.com" });
-  out.push({ what: "Costs", from: "Yatro estimates, unless marked Verified" });
+  out.push({ what: "Costs", from: "Yaitro estimates, unless marked Verified" });
   return out;
 }

@@ -7,7 +7,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { brand } from "@/lib/brand";
 
 const COLUMNS = [
-  { title: "Product", links: [["Plan my trip", "/plan"], ["Budget demo", "/#try"], ["Why Yatro", "/#features"], ["Pricing", "/#pricing"]] },
+  { title: "Product", links: [["Plan my trip", "/plan"], ["Budget demo", "/#try"], ["Why Yaitro", "/#features"], ["Pricing", "/#pricing"]] },
   { title: "Account", links: [["Sign in", "/login"], ["Create account", "/register"], ["My trips", "/trips"], ["My account", "/account"]] },
 ];
 const POPULAR = ["Agra", "Goa", "Rishikesh", "Udaipur", "Dubai", "Bali", "Kyoto", "Paris"];

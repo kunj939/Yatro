@@ -79,7 +79,7 @@ class Settings(BaseSettings):
     smtp_port: int = 587  # 587 = STARTTLS, 465 = SSL
     smtp_user: str | None = None
     smtp_password: str | None = None
-    smtp_from: str | None = None  # e.g. "Yatro <no-reply@yatro.app>"; defaults to smtp_user
+    smtp_from: str | None = None  # e.g. "Yaitro <no-reply@yaitro.com>"; defaults to smtp_user
     sms_provider: Literal["auto", "twilio", "fast2sms", "console"] = "auto"
     twilio_account_sid: str | None = None
     twilio_auth_token: str | None = None

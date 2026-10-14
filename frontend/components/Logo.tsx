@@ -1,6 +1,6 @@
 import { brand } from "@/lib/brand";
 
-/** Two routes converging into one — which is both a junction and the Y of Yatro. */
+/** Two routes converging into one — which is both a junction and the Y of Yaitro. */
 export function LogoMark({ className = "h-8 w-8" }: { className?: string }) {
   return (
     <svg viewBox="0 0 40 40" className={className} aria-hidden="true">

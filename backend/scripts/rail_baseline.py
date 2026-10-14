@@ -41,7 +41,7 @@ class NoPlaces:
 
 
 def main() -> None:
-    db = Path(tempfile.mkdtemp(prefix="yatro-rail-baseline-")) / "rail.db"
+    db = Path(tempfile.mkdtemp(prefix="yaitro-rail-baseline-")) / "rail.db"
     os.environ.update({"DATABASE_URL": f"sqlite:///{db}", "TELEMETRY_ENABLED": "true", "LOG_LEVEL": "WARNING",
                        "RAIL_REFRESH_DAILY_CAP": "0"})
     sys.path.insert(0, str(ROOT))

@@ -86,7 +86,7 @@ export function HeroStory() {
   return (
     <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
          onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
-      <h1 className="sr-only">Yatro: trips planned around your budget</h1>
+      <h1 className="sr-only">Yaitro: trips planned around your budget</h1>
       <div className="relative">
       <div className="grid">
         {STORIES.map((s, n) => {

@@ -10,7 +10,7 @@ import { remember, remembered, tokenOf } from "./ShareSheet";
 import { buildTripPdf, savePdf, sendPdf } from "@/lib/tripPdf";
 
 /** "Send this plan to my WhatsApp": one tap makes a private link (budget hidden, ends 30 days after the trip), builds the message and
- *  opens WhatsApp on the person's OWN saved mobile number with it typed in. They tap Send in WhatsApp themselves: Yatro cannot and does
+ *  opens WhatsApp on the person's OWN saved mobile number with it typed in. They tap Send in WhatsApp themselves: Yaitro cannot and does
  *  not send WhatsApp messages (that would need the paid WhatsApp Business API, which is not used; ADR 0006, invariant I9). */
 export function WhatsAppCard({ trip }: { trip: Trip }) {
   const { user } = useAuth();

@@ -33,7 +33,7 @@ from app.gateway.errors import BudgetExhausted
 from app.models.user import VerificationCode
 
 log = logging.getLogger("tripai.verification")
-BRAND = "Yatro"
+BRAND = "Yaitro"
 
 
 # --- Mobile numbers -------------------------------------------------------------------------------------------------

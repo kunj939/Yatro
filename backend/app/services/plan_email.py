@@ -5,7 +5,7 @@
 * Goes only to the account's own email, only if they have not switched plan emails off (Account page) and the admin switch `plan_emails`
   is on. It never delays or fails a plan: it runs after the plan is saved, in the background, and every failure is just logged (I3).
 * The "Open your plan" button points at the private trip page (it needs sign-in). The WhatsApp button is a wa.me link to the person's OWN saved
-  number with the message typed in; they tap Send, Yatro sends nothing (I9).
+  number with the message typed in; they tap Send, Yaitro sends nothing (I9).
 """
 from __future__ import annotations
 
@@ -84,7 +84,7 @@ def render(trip, user) -> tuple[str, str, str]:
     who = f"{t['travellers']} traveller{'s' if t['travellers'] != 1 else ''}"
     title = it["title"] or t["title"]
     url = trip_url(trip)
-    subject = f"✈️ Your Yatro plan is ready: {title} · {span}"
+    subject = f"✈️ Your Yaitro plan is ready: {title} · {span}"
     text = _plain(share_service.share_text(view, url, limit=EMAIL_TEXT_LIMIT))
 
     days_html = []
@@ -123,7 +123,7 @@ def render(trip, user) -> tuple[str, str, str]:
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef0f6"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px">
 <tr><td style="background:{NIGHT};border-radius:22px 22px 0 0;padding:30px 28px 26px">
-<div style="font:700 13px/1 {FONT};letter-spacing:.14em;text-transform:uppercase;color:{LIME}">Yatro · your plan is ready ✨</div>
+<div style="font:700 13px/1 {FONT};letter-spacing:.14em;text-transform:uppercase;color:{LIME}">Yaitro · your plan is ready ✨</div>
 <div style="font:800 28px/1.15 {FONT};color:#fff;padding-top:14px">🧳 {H.escape(title)}</div>
 <div style="font:500 14px/1.5 {FONT};color:#c9ced8;padding-top:10px">📅 {H.escape(span)} &nbsp;·&nbsp; 👥 {H.escape(who)} &nbsp;·&nbsp; 📍 {H.escape(t["destination"])}</div>
 </td></tr>
@@ -136,7 +136,7 @@ def render(trip, user) -> tuple[str, str, str]:
 <tr><td style="background:{PAPER};padding:18px 22px 30px;border-radius:0 0 22px 22px">
 <div style="border-top:1px solid {LINE};padding-top:16px;font:400 12px/1.6 {FONT};color:{MUTE}">
 Costs marked (est.) are estimates; train times and fares come from real timetables where we have them and say so where we don't.
-<div style="padding-top:6px">You get this because you made a plan on Yatro. <a href="{H.escape(get_settings().public_app_url.rstrip("/"), quote=True)}/account" style="color:{MUTE}">Turn plan emails off</a>.</div>
+<div style="padding-top:6px">You get this because you made a plan on Yaitro. <a href="{H.escape(get_settings().public_app_url.rstrip("/"), quote=True)}/account" style="color:{MUTE}">Turn plan emails off</a>.</div>
 {attribution}</div></td></tr>
 </table></td></tr></table></body></html>"""
     return subject, text, html

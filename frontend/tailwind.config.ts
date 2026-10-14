@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-/* Yatro — Modern Transit.
+/* Yaitro — Modern Transit.
  *
  * Every colour is a CSS variable (see app/globals.css), so light and dark are one definition swapped at the
  * root rather than a `dark:` variant on every element.

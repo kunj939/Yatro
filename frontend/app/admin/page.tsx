@@ -30,7 +30,7 @@ export default function AdminOverview() {
   const { data: o, error, busy, reload } = useLoad(() => admin.overview(), []);
   return (
     <>
-      <PageHeader title="Overview" text="How Yatro is doing right now. Today resets at midnight, India time." actions={<RefreshButton onClick={reload} busy={busy} />} />
+      <PageHeader title="Overview" text="How Yaitro is doing right now. Today resets at midnight, India time." actions={<RefreshButton onClick={reload} busy={busy} />} />
       {error && <ErrorBox text={error} retry={reload} />}
       {!o && !error && <Loading />}
       {o && (
