@@ -20,7 +20,7 @@ export function safeNext(next: string | null, fallback = "/trips"): string {
 const COPY: Record<Mode, { title: string; lead: string }> = {
   login: { title: "Welcome back", lead: "Pick up where you left off. Sign in with your email or mobile number." },
   register: { title: "Create your account",
-              lead: `Make an account. You get ${brand.freePlans} free trip plans every month, and we'll confirm your email with a quick code.` },
+              lead: `Make an account. You get ${brand.freePlansText} every month, and we'll confirm your email with a quick code.` },
 };
 
 function Inner({ mode }: { mode: Mode }) {
@@ -50,7 +50,7 @@ function Inner({ mode }: { mode: Mode }) {
             Travel, stay, sights and meals. Checked timings. Prices that fit your budget.
           </p>
           <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-ink-mute">
-            <li className="inline-flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-teal" aria-hidden />{brand.freePlans} free plans a month</li>
+            <li className="inline-flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-teal" aria-hidden />{brand.freePlansText} a month</li>
             <li className="inline-flex items-center gap-1.5"><Clock3 className="h-4 w-4 text-teal" aria-hidden />Done in under a minute</li>
             <li className="inline-flex items-center gap-1.5"><CreditCard className="h-4 w-4 text-teal" aria-hidden />No card. No catch.</li>
           </ul>

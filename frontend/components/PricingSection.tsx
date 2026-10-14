@@ -18,7 +18,7 @@ export function PricingSection() {
   const yearly = billing === "yearly";
   const plans = [
     { key: "free", name: "Free", price: "₹0", unit: "", lead: "Take it for a spin, every month.",
-      features: [`${brand.freePlans} new trip plans every month`, "Unlimited changes to them", "PDF and WhatsApp sharing", "Invite friends: you both get free plans"],
+      features: [`${brand.freePlans === 1 ? "1 new trip plan" : `${brand.freePlans} new trip plans`} every month`, "Unlimited changes to it", "PDF and WhatsApp sharing", "Invite friends: you both get free plans"],
       cta: "Start free", href: "/plan" },
     { key: "plus", name: "Plus", price: yearly ? `₹${brand.plusYearly}` : `₹${brand.plusMonthly}`, unit: yearly ? "/year" : "/month",
       note: yearly ? `About ₹${YEARLY_PER_MONTH} a month · save ${SAVING}%` : "Cancel any time",
