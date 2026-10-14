@@ -1,16 +1,20 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BedDouble, Calculator, CalendarCheck, Landmark, PenLine, Search, Share2, Train, Utensils, Wallet, Wrench } from "lucide-react";
 import { brand } from "@/lib/brand";
 import { Reveal } from "../Reveal";
+import { DESTINATION_PHOTOS, TRAIN_PHOTO } from "@/lib/photos";
+
+const photo = (city: string) => DESTINATION_PHOTOS.find((d) => d.city === city)!;
 
 // "Why Yaitro", in plain words: what you give, what it does, what you get. Written for someone who has never heard of
 // the product and opened the page cold (friends said the hero alone didn't tell them).
 const STEPS = [
-  { Icon: PenLine, title: "You tell us 3 things",
+  { Icon: PenLine, img: photo("Leh"), title: "You tell us 3 things",
     text: "Where you're going, your dates, and your budget. Add who's coming (kids, grandparents, friends) and what you like." },
-  { Icon: Search, title: `${brand.name} searches and does the maths`,
+  { Icon: Search, img: TRAIN_PHOTO, title: `${brand.name} searches and does the maths`,
     text: "It checks real train and flight timings, distances, opening hours, fares, food and stay prices, and adds up every rupee." },
-  { Icon: CalendarCheck, title: "You get a day-by-day plan",
+  { Icon: CalendarCheck, img: photo("Agra"), title: "You get a day-by-day plan",
     text: "Hour by hour: when to leave, how to get there, what to see, where to eat and sleep, and what each thing costs." },
 ];
 
@@ -41,20 +45,24 @@ export function WhatItDoes() {
         </Reveal>
 
         <ol className="mt-12 grid gap-4 md:grid-cols-3">
-          {STEPS.map(({ Icon, title, text }, i) => (
-            <Reveal as="li" key={title} delay={i * 90}
-                    className="spotlight relative rounded-2xl border border-line bg-paper/70 p-6 backdrop-blur md:p-7">
-              <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-signal text-on-signal"><Icon className="h-5 w-5" aria-hidden /></span>
-                <span className="num text-[13px] font-bold uppercase tracking-[0.14em] text-ink-mute">Step {i + 1}</span>
+          {STEPS.map(({ Icon, img, title, text }, i) => (
+            <Reveal as="li" key={title} delay={i * 90} className="card card-hover relative overflow-hidden">
+              <div className="relative h-40 overflow-hidden">
+                <Image src={img.src} alt={img.alt} fill sizes="(min-width: 768px) 360px, 100vw" className="kenburns object-cover"
+                       style={{ animationDelay: `${-i * 5}s` }} />
+                <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
+                <span className="absolute bottom-3 left-4 rounded-full bg-white/95 px-3 py-1 text-[12px] font-bold uppercase tracking-[0.12em] text-[#10131a]">Step {i + 1}</span>
               </div>
-              <h3 className="mt-5 text-[20px] font-bold leading-snug text-ink">{title}</h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">{text}</p>
+              <div className="p-6">
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-signal-soft text-signal-deep"><Icon className="h-5 w-5" aria-hidden /></span>
+                <h3 className="mt-4 text-[20px] font-bold leading-snug text-ink">{title}</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">{text}</p>
+              </div>
             </Reveal>
           ))}
         </ol>
 
-        <Reveal delay={120} className="mt-6 rounded-2xl border border-line bg-paper/70 p-6 backdrop-blur md:p-8">
+        <Reveal delay={120} className="mt-6 card rounded-2xl p-6 md:p-8">
           <h3 className="text-[18px] font-bold text-ink">What you get in every plan</h3>
           <ul className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
             {IN_EVERY_PLAN.map(({ Icon, text }) => (

@@ -76,8 +76,9 @@ body {
   @apply bg-haze text-ink antialiased;
   transition: background-color 180ms ease, color 180ms ease;
 }
-/* Headlines in Bricolage Grotesque (character), everything else in Plus Jakarta Sans (easy reading). */
-h1, h2, .text-display, .text-title { font-family: "Bricolage Grotesque", "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.025em; }
+/* Headlines in Inter Tight, everything else in Inter: plain, even and easy to read, the way product sites are set. */
+h1, h2, h3, .text-display, .text-title { font-family: "Inter Tight", Inter, system-ui, sans-serif; letter-spacing: -0.028em; }
+h3 { letter-spacing: -0.012em; }
 body {
   letter-spacing: -0.006em;
 }
@@ -108,11 +109,13 @@ section[id] { scroll-margin-top: 96px; }
   /* The accent: the one phrase that matters in a headline, in an italic serif against the bold sans. Pair it with
      .highlight (the brand gradient, light or dark theme) or .highlight-night (on panels that are always dark). The
      padding stops the italic's last stroke being clipped by the gradient's text clip. */
-  .accent { font-family: "Instrument Serif", Georgia, "Times New Roman", serif; font-style: italic; font-weight: 400;
-            letter-spacing: -0.005em; font-size: 1.1em; line-height: 1; padding: 0 0.12em 0.08em 0.02em; margin-right: -0.08em; }
+  .accent { font-family: "Inter Tight", Inter, system-ui, sans-serif; font-style: normal; font-weight: 800;
+            letter-spacing: -0.03em; padding: 0 0.04em 0.06em 0; }
   .wordmark { font-family: "Instrument Serif", Georgia, "Times New Roman", serif; font-style: italic; font-weight: 400;
               letter-spacing: -0.01em; }
-  .headline-font { font-family: "Bricolage Grotesque", "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.03em; }
+  .headline-font { font-family: "Inter Tight", Inter, system-ui, sans-serif; letter-spacing: -0.03em; }
+  /* One card look for the landing page: solid white, a hairline edge and a soft two-layer shadow. */
+  .card { @apply rounded-2xl border border-line/80 bg-paper; box-shadow: 0 1px 2px rgb(var(--shadow) / 0.05), 0 12px 32px -16px rgb(var(--shadow) / 0.18); }
 
   /* Cards that catch the light: a thin glow on the edge that follows the pointer, a faint wash inside, and a soft
      highlight along the top edge at rest. SpotlightTracker (one listener for the page) writes the pointer position
@@ -209,6 +212,9 @@ section[id] { scroll-margin-top: 96px; }
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .marquee { animation: marquee 38s linear infinite; }
 .marquee-wrap:hover .marquee { animation-play-state: paused; }
+/* Photos that drift slowly, like a short travel clip, rather than sitting still. */
+@keyframes kenburns { from { transform: scale(1.02) translate(0, 0); } to { transform: scale(1.14) translate(-2%, -1.5%); } }
+.kenburns { animation: kenburns 16s ease-in-out infinite alternate; transform-origin: center; }
 .mask-x { -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent); }
 
 @keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
@@ -248,7 +254,7 @@ section[id] { scroll-margin-top: 96px; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .train-run, .window-blink, .board-live, .marquee, .float-y { animation: none; }
+  .train-run, .window-blink, .board-live, .marquee, .float-y, .kenburns { animation: none; }
   .ys-line { stroke-dashoffset: 0; animation: none; }
   .ys-stop { opacity: 1; animation: none; }
   .ys-budget { transform: scaleX(0.84); animation: none; }

@@ -51,7 +51,7 @@ export function PricingSection() {
               {p.featured ? (
                 // A gradient edge around the featured plan, drawn by a 1px padded wrapper.
                 <div className="group relative flex w-full rounded-[20px] bg-gradient-to-b from-signal via-signal/40 to-spark/60 p-px shadow-glow transition-transform duration-300 hover:-translate-y-1 lg:-my-4">
-                  <div className="flex w-full flex-col rounded-[19px] bg-[#0f1219]/90 p-7 text-white backdrop-blur lg:py-11">
+                  <div className="flex w-full flex-col rounded-[19px] bg-[#0f1219] p-7 text-white lg:py-11">
                     <div className="flex items-center justify-between">
                       <p className="text-lg font-bold">{p.name}</p>
                       <span className="rounded-full bg-[rgb(190_255_74)] px-2.5 py-1 text-[12px] font-bold uppercase tracking-wider text-[#0b0d0c]">{yearly ? "Best value" : "Recommended"}</span>
@@ -68,7 +68,7 @@ export function PricingSection() {
                   </div>
                 </div>
               ) : (
-                <div className="spotlight card-hover flex w-full flex-col rounded-[20px] border border-line bg-paper/50 p-7 backdrop-blur">
+                <div className="spotlight card-hover flex w-full flex-col card rounded-[20px] p-7">
                   <p className="text-lg font-bold">{p.name}</p>
                   <p className="mt-1 text-ink-mute">{p.lead}</p>
                   <p className="num mt-6"><span className="text-5xl font-extrabold">{p.price}</span><span className="text-ink-mute">{p.unit}</span></p>

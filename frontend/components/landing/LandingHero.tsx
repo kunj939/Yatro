@@ -1,18 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, Clock3, CreditCard, MapPin } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, BadgeCheck, Clock3, CreditCard } from "lucide-react";
 import { Navbar } from "../Navbar";
 import { HeroStory } from "./HeroStory";
 import { LiveBoard } from "./LiveBoard";
 import { brand } from "@/lib/brand";
+import { DESTINATION_PHOTOS } from "@/lib/photos";
 
-// India and abroad, alternating, so neither reads as an afterthought.
-const DESTINATIONS = [
-  ["Agra", "Uttar Pradesh"], ["Dubai", "UAE"], ["Jaipur", "Rajasthan"], ["Bali", "Indonesia"],
-  ["Goa", "India"], ["Kyoto", "Japan"], ["Rishikesh", "Uttarakhand"], ["Istanbul", "Türkiye"],
-  ["Varanasi", "Uttar Pradesh"], ["Singapore", "Singapore"], ["Udaipur", "Rajasthan"], ["Santorini", "Greece"],
-  ["Munnar", "Kerala"], ["Bangkok", "Thailand"], ["Leh", "Ladakh"], ["Paris", "France"],
-  ["Darjeeling", "West Bengal"], ["Kathmandu", "Nepal"], ["Hampi", "Karnataka"], ["Edinburgh", "Scotland"],
-];
 
 export function LandingHero() {
   return (
@@ -30,7 +24,7 @@ export function LandingHero() {
             <Link href="/plan" className="btn-primary shine group !rounded-full !px-6 !py-3 !text-[16px]">
               Build my trip<ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
             </Link>
-            <Link href="/#try" className="btn-ghost !rounded-full !bg-paper/40 !px-6 !py-3 !text-[16px] backdrop-blur">Try the budget demo</Link>
+            <Link href="/#try" className="btn-ghost !rounded-full !px-6 !py-3 !text-[16px]">Try the budget demo</Link>
           </div>
           <ul className="fade-up mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-ink-mute" style={{ ["--d" as string]: "320ms" }}>
             <li className="inline-flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-teal" aria-hidden />{brand.freePlansText} a month</li>
@@ -44,19 +38,30 @@ export function LandingHero() {
         </div>
       </div>
 
-      {/* Where people are heading: each pill opens the planner with that destination filled in. */}
-      <div className="marquee-wrap mask-x relative overflow-hidden border-y border-line/70 bg-paper/40 py-4 backdrop-blur-sm">
+      {/* Where people are heading: photo cards that drift past; each opens the planner with that place filled in. */}
+      <div className="marquee-wrap mask-x relative overflow-hidden py-6">
         <p className="sr-only">Popular destinations</p>
-        <ul className="marquee flex w-max gap-3">
-          {[...DESTINATIONS, ...DESTINATIONS].map(([city, country], i) => (
-            <li key={i} aria-hidden={i >= DESTINATIONS.length || undefined}>
-              <Link href={`/plan?to=${encodeURIComponent(city)}`} tabIndex={i >= DESTINATIONS.length ? -1 : undefined}
-                    className="group inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-line bg-paper px-4 py-2 text-[14px] font-medium text-ink transition-all duration-200 hover:-translate-y-0.5 hover:border-signal/50 hover:shadow-glow">
-                <MapPin className="h-3.5 w-3.5 text-ink-mute transition-colors group-hover:text-signal" aria-hidden />
-                {city}<span className="text-ink-mute">{country}</span>
-              </Link>
-            </li>
-          ))}
+        <ul className="marquee flex w-max gap-4">
+          {[...DESTINATION_PHOTOS, ...DESTINATION_PHOTOS].map((d, i) => {
+            const copy = i >= DESTINATION_PHOTOS.length;
+            return (
+              <li key={i} aria-hidden={copy || undefined}>
+                <Link href={`/plan?to=${encodeURIComponent(d.city)}`} tabIndex={copy ? -1 : undefined}
+                      className="card group relative block h-40 w-60 overflow-hidden !rounded-2xl transition-transform duration-300 hover:-translate-y-1">
+                  <Image src={d.src} alt={copy ? "" : d.alt} fill sizes="240px" className="kenburns object-cover"
+                         style={{ animationDelay: `${-(i % DESTINATION_PHOTOS.length) * 2}s` }} />
+                  <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                  <span className="absolute inset-x-3.5 bottom-3 flex items-end justify-between gap-2 text-white">
+                    <span>
+                      <span className="block text-[16px] font-semibold leading-tight">{d.city}</span>
+                      <span className="block text-[12px] text-white/75">{d.country}</span>
+                    </span>
+                    <span className="rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-[#10131a] opacity-0 transition-opacity duration-300 group-hover:opacity-100">Plan this</span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </header>

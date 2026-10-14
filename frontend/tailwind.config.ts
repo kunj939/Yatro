@@ -31,8 +31,8 @@ const config: Config = {
         danger: { DEFAULT: v("danger"), soft: v("danger-soft") },
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', '"Segoe UI"', "system-ui", "-apple-system", "sans-serif"],
-        display: ['"Bricolage Grotesque"', '"Plus Jakarta Sans"', "system-ui", "sans-serif"],
+        sans: ["Inter", '"Segoe UI"', "system-ui", "-apple-system", "sans-serif"],
+        display: ['"Inter Tight"', "Inter", "system-ui", "sans-serif"],
       },
       fontSize: {
         display: ["clamp(2.35rem, 4.4vw, 3.5rem)", { lineHeight: "1.04", letterSpacing: "-0.03em" }],

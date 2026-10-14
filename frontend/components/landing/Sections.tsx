@@ -66,7 +66,7 @@ export function WhyDifferent() {
           </p>
         </Reveal>
 
-        <Reveal delay={80} className="spotlight mx-auto mt-12 max-w-5xl overflow-hidden rounded-3xl border border-line bg-paper/45 backdrop-blur">
+        <Reveal delay={80} className="spotlight mx-auto mt-12 max-w-5xl overflow-hidden card rounded-3xl">
           <div className="hidden grid-cols-[1fr_1.3fr_1.7fr] border-b border-line text-[13px] font-semibold uppercase tracking-[0.12em] md:grid">
             <div className="px-6 py-4" />
             <div className="flex items-center gap-2 px-6 py-4 text-ink-mute"><Bot className="h-4 w-4" aria-hidden />Normal chatbot</div>
@@ -139,7 +139,7 @@ export function BudgetAware() {
           <span className="eyebrow">Budget, sorted</span>
           <h2 id="budget-heading" className="mt-5 text-title font-bold">Your budget is <span className="accent highlight">a promise</span>, not a guess</h2>
           <p className="mt-4 text-lg leading-relaxed text-ink-soft">Train fares, tickets, every auto ride and a small safety cushion, all added up before you see the plan. <span className="font-semibold text-ink">If your limit is ₹5,000, ₹5,001 never happens.</span></p>
-          <div ref={bar} className="spotlight mt-8 rounded-2xl border border-line bg-paper/70 p-5 backdrop-blur">
+          <div ref={bar} className="spotlight mt-8 card rounded-2xl p-5">
             <div className="flex items-baseline justify-between text-sm">
               <span className="text-ink-mute">Udaipur weekend for two</span>
               <span className="num font-semibold">{inr(CAT_TOTAL)}</span>
@@ -319,7 +319,7 @@ export function GroupSection() {
           <p className="mt-3 text-lg font-semibold text-ink">From bakchodi to boarding pass.</p>
         </Reveal>
         <Reveal delay={120} className="min-w-0">
-          <div className="spotlight rounded-2xl border border-line bg-paper/50 p-6 shadow-[0_30px_80px_-40px_rgb(var(--shadow)/0.55)] backdrop-blur md:p-8">
+          <div className="spotlight card rounded-2xl p-6 md:p-8">
             <div className="flex items-baseline justify-between gap-3">
               <p className="font-semibold">Dinner at Pinch of Spice, Agra, paid by {PAYER}</p>
               <p className="num text-xl font-bold">{inr(BILL)}</p>
@@ -368,7 +368,7 @@ export function FinalCTA() {
     <section className="py-24">
       <div className="container-x">
         <Reveal>
-          <div className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-[#0c0f16]/70 px-6 backdrop-blur py-14 text-white md:px-14 md:py-20">
+          <div className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-[#0c0f16] px-6 py-14 text-white md:px-14 md:py-20">
             <div aria-hidden className="absolute -left-20 -top-32 -z-10 h-80 w-80 rounded-full bg-[rgb(190_255_74/0.22)] blur-3xl" />
             <div aria-hidden className="absolute -bottom-32 right-0 -z-10 h-80 w-96 rounded-full bg-[rgb(45_212_230/0.18)] blur-3xl" />
             <div>

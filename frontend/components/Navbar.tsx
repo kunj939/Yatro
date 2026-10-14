@@ -9,8 +9,8 @@ import { UserMenu } from "./UserMenu";
 import { useAuth } from "@/lib/auth";
 
 const SECTIONS = [
-  { id: "try", label: "Try it" },
   { id: "features", label: "Why Yaitro" },
+  { id: "try", label: "Try it" },
   { id: "pricing", label: "Pricing" },
 ];
 

@@ -6,7 +6,7 @@ import { Logo } from "./Logo";
 import { brand } from "@/lib/brand";
 
 const COLUMNS = [
-  { title: "Product", links: [["Plan my trip", "/plan"], ["Budget demo", "/#try"], ["Why Yaitro", "/#features"], ["Pricing", "/#pricing"]] },
+  { title: "Product", links: [["Plan my trip", "/plan"], ["Why Yaitro", "/#features"], ["Budget demo", "/#try"], ["Pricing", "/#pricing"]] },
   { title: "Account", links: [["Sign in", "/login"], ["Create account", "/register"], ["My trips", "/trips"], ["My account", "/account"]] },
 ];
 const POPULAR = ["Agra", "Goa", "Rishikesh", "Udaipur", "Dubai", "Bali", "Kyoto", "Paris"];
