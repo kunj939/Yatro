@@ -16,6 +16,18 @@ export function dayStats(items: ItineraryItem[]) {
 }
 
 export type PlanView = "compact" | "detailed";
+/** Which days to show: all, one day (its index), or one week ("w0" is days 1-7). */
+export type DayFilter = number | "all" | `w${number}`;
+/** A trip longer than a week reads week by week. */
+export const isWeekly = (it: Itinerary) => it.days.length > 7;
+export const weekOf = (n: number) => Math.floor(n / 7);
+/** The days of week `w` (0-based) and what they add up to, for the week headers and the overview cards. */
+export function weekStats(it: Itinerary, w: number) {
+  const days = it.days.slice(w * 7, w * 7 + 7);
+  const totals = days.map((d) => dayStats(d.items));
+  return { days, first: days[0]?.date, last: days[days.length - 1]?.date,
+           stops: totals.reduce((a, s) => a + s.stops, 0), cost: totals.reduce((a, s) => a + s.cost, 0) };
+}
 
 /** One line per stop: time, what, a line of the useful detail, the cost. Tap it for everything the full card shows (hours, why this,
  *  swap, sources). A long day reads in one screen instead of five. */
@@ -80,16 +92,29 @@ function CompactRow({ item, onChange, highlight, currency, near, tripId }: {
 
 export function Timeline({ itinerary, onChange, highlightIds = [], currency, near, tripId, view = "detailed", day = "all" }: {
   itinerary: Itinerary; onChange?: (i: ItineraryItem) => void; highlightIds?: string[]; currency?: string; near?: string; tripId?: string;
-  view?: PlanView; day?: number | "all";
+  view?: PlanView; day?: DayFilter;
 }) {
-  const days = day === "all" ? itinerary.days : itinerary.days.filter((d) => d.index === day);
+  const weekly = isWeekly(itinerary);
+  const days = day === "all" ? itinerary.days
+    : typeof day === "string" ? itinerary.days.filter((_, n) => weekOf(n) === Number(day.slice(1)))
+    : itinerary.days.filter((d) => d.index === day);
   return (
     <div className={view === "compact" ? "space-y-8" : "space-y-12"}>
-      {days.map((d) => {
+      {days.map((d, shownAt) => {
         const st = dayStats(d.items);
         const n = itinerary.days.findIndex((x) => x.index === d.index);
+        const weekHead = weekly && (n % 7 === 0 || shownAt === 0) ? weekStats(itinerary, weekOf(n)) : null;
         return (
-          <section key={d.index} id={`day-${d.index}`} className="scroll-mt-40" aria-label={`${d.label}, ${niceDate(d.date)}`}>
+          <div key={d.index}>
+          {weekHead && (
+            <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-signal pb-2">
+              <h2 className="text-[22px] font-extrabold tracking-tight">Week {weekOf(n) + 1}</h2>
+              <p className="num text-sm text-ink-mute">
+                {niceDate(weekHead.first!)} – {niceDate(weekHead.last!)} · {weekHead.days.length} days · {weekHead.stops} stops · {money(weekHead.cost, currency)}
+              </p>
+            </div>
+          )}
+          <section id={`day-${d.index}`} className="scroll-mt-40" aria-label={`${d.label}, ${niceDate(d.date)}`}>
             <header className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-line bg-paper/70 px-4 py-3 backdrop-blur sm:px-5">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-signal text-lg font-extrabold text-on-signal">{n + 1}</span>
               <div className="min-w-[8.5rem] flex-1">
@@ -117,6 +142,7 @@ export function Timeline({ itinerary, onChange, highlightIds = [], currency, nea
               </ol>
             )}
           </section>
+          </div>
         );
       })}
     </div>

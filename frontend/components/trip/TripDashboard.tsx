@@ -6,8 +6,8 @@ import { ArrowDown, Baby, CalendarDays, Share2, ChevronDown, Clock, CloudSun, Da
 import type { Adjustment, ItineraryItem, Trip } from "@/lib/types";
 import { ApiError } from "@/lib/api";
 import { usePlanStream } from "@/lib/usePlanStream";
-import { MODE_LABEL, TRAVELLER_LABEL, ageSummary, money, niceDate, plural, reopenAt, time12 } from "@/lib/format";
-import { Timeline, dayStats, type PlanView } from "./Timeline";
+import { MODE_LABEL, TRAVELLER_LABEL, ageSummary, currencySymbol, money, niceDate, plural, reopenAt, setDisplayCurrency, time12 } from "@/lib/format";
+import { Timeline, dayStats, isWeekly, weekOf, weekStats, type DayFilter, type PlanView } from "./Timeline";
 import { itemIcon } from "./TimelineItem";
 import { AlternativeDrawer } from "./AlternativeDrawer";
 import { BudgetPanel } from "./BudgetPanel";
@@ -56,9 +56,17 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
   const [shareTick, setShareTick] = useState(0); // bumps when a link is made, so the Shared links list reloads
   // How the plan reads: one line per stop (compact, the default) or full cards; and one day at a time or all of them.
   const [view, setView] = useState<PlanView>("compact");
-  const [day, setDay] = useState<number | "all">("all");
+  const [day, setDay] = useState<DayFilter>("all");
   useEffect(() => { try { const v = localStorage.getItem("yatro.planView"); if (v === "detailed" || v === "compact") setView(v); } catch { /* storage unavailable */ } }, []);
   const chooseView = (v: PlanView) => { setView(v); try { localStorage.setItem("yatro.planView", v); } catch { /* storage unavailable */ } };
+  // Prices in the destination's money (how the plan is costed) or, roughly, in the money of the starting point.
+  const home = trip.home_currency && trip.home_rate ? { code: trip.home_currency, rate: trip.home_rate } : null;
+  const [inHome, setInHome] = useState(false);
+  useEffect(() => { try { setInHome(localStorage.getItem("yaitro.homeMoney") === "1"); } catch { /* storage unavailable */ } }, []);
+  const chooseMoney = (h: boolean) => { setInHome(h); try { localStorage.setItem("yaitro.homeMoney", h ? "1" : "0"); } catch { /* storage unavailable */ } };
+  // Set while rendering, so every price below (header, timeline, budget, alternatives) comes out in the chosen money.
+  setDisplayCurrency(home && inHome ? { from: trip.currency, to: home.code, rate: home.rate } : null);
+  useEffect(() => () => setDisplayCurrency(null), []);
   const flags = useFlags();
   const canShare = !readOnly && !!trip.itinerary && flags.share;
   const { shown, running, queued, run } = usePlanStream();
@@ -123,9 +131,9 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
   const used = it ? Math.min(100, (it.total_cost / Math.max(1, trip.budget)) * 100) : 0;
   const over = !!it && it.remaining < 0;
   const ModeIcon = firstTransport ? itemIcon(firstTransport) : Navigation;
-  function jumpTo(n: number) {
+  function jumpTo(n: DayFilter) {
     setTab("timeline");
-    setDay(n);  // show just that day; "All days" brings the rest back
+    setDay(n);  // show just that day (or week); "All days" brings the rest back
     setTimeout(() => document.getElementById("plan-top")?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
   }
 
@@ -145,7 +153,20 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
           )}
           {readOnly && <span className="rounded-full border border-white/25 px-2.5 py-0.5">Read-only sample</span>}
           {it && <span className="rounded-full border border-white/15 px-2.5 py-0.5">Version {it.version}</span>}
-          <span className="hidden rounded-full border border-white/15 px-2.5 py-0.5 sm:inline">{trip.currency}</span>
+          {home ? (
+            <span className="inline-flex items-center rounded-full border border-white/15 p-0.5" role="group" aria-label="Show prices in">
+              {([[false, trip.currency], [true, home.code]] as [boolean, string][]).map(([h, code]) => (
+                <button key={code} type="button" aria-pressed={inHome === h} onClick={() => chooseMoney(h)}
+                        title={h ? `Roughly, at ${currencySymbol(home.code)}${home.rate.toFixed(home.rate < 10 ? 2 : 1)} per ${trip.currency}` : "As the plan is priced"}
+                        className={`rounded-full px-2.5 py-0.5 font-semibold transition-colors ${inHome === h ? "bg-[rgb(190_255_74)] text-[#0b0d0c]" : "text-white/75 hover:text-white"}`}>
+                  {currencySymbol(code) !== code ? `${currencySymbol(code)} ${code}` : code}
+                </button>
+              ))}
+            </span>
+          ) : (
+            <span className="hidden rounded-full border border-white/15 px-2.5 py-0.5 sm:inline">{trip.currency}</span>
+          )}
+          {home && inHome && <span className="text-white/55">≈ approximate</span>}
           {canShare && (
             <button onClick={() => setSharing(true)} className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 font-semibold text-white transition-colors hover:bg-white/20">
               <Share2 className="h-3.5 w-3.5" aria-hidden />Share
@@ -204,7 +225,26 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
       </header>
 
       {/* Day-by-day overview: tap a day to jump to it */}
-      {it && it.days.length > 1 && (
+      {/* A trip longer than a week: one card per week instead of one per day */}
+      {it && isWeekly(it) && (
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:overflow-x-auto sm:pb-1">
+          {Array.from({ length: weekOf(it.days.length - 1) + 1 }, (_, w) => {
+            const wk = weekStats(it, w);
+            return (
+              <button key={w} type="button" onClick={() => jumpTo(`w${w}`)}
+                      className="card group min-w-0 flex-1 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-signal/50 sm:min-w-[210px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-[0.12em] text-signal-deep">Week {w + 1}</span>
+                  <ArrowDown className="h-3.5 w-3.5 text-ink-mute transition-transform group-hover:translate-y-0.5" aria-hidden />
+                </div>
+                <p className="mt-1 font-semibold">{niceDate(wk.first!)} – {niceDate(wk.last!)}</p>
+                <p className="num mt-2 text-sm text-ink-mute">{plural(wk.days.length, "day")} · {plural(wk.stops, "stop")} · {money(wk.cost, trip.currency)}</p>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {it && it.days.length > 1 && !isWeekly(it) && (
         <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:overflow-x-auto sm:pb-1">
           {it.days.map((d, n) => {
             const st = dayStats(d.items);
@@ -276,7 +316,9 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                   <div id="plan-top" className="mb-4 flex scroll-mt-28 flex-wrap items-center justify-between gap-3">
                     {it.days.length > 1 ? (
                       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Show which days">
-                        {([["all", "All days"], ...it.days.map((d, n) => [d.index, `Day ${n + 1}`])] as [number | "all", string][]).map(([v, l]) => (
+                        {([["all", "All days"], ...(isWeekly(it)
+                            ? Array.from({ length: weekOf(it.days.length - 1) + 1 }, (_, w) => [`w${w}`, `Week ${w + 1}`])
+                            : it.days.map((d, n) => [d.index, `Day ${n + 1}`]))] as [DayFilter, string][]).map(([v, l]) => (
                           <button key={String(v)} type="button" aria-pressed={day === v} onClick={() => setDay(v)} className={day === v ? "chip-on !py-1.5" : "chip-off !py-1.5"}>{l}</button>
                         ))}
                       </div>

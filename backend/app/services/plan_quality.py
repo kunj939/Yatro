@@ -149,12 +149,17 @@ def review(frames: list[DayFrame], dest_point: tuple[float, float], arrival_poin
     full = [f for f in frames if f.end - f.start >= FULL_DAY]
     empty = [f for f in full if not any(s.kind in ("activity", "sunset") for s in f.stops)]
     rep.empty_days = len(empty)
-    if full and len(empty) * 2 > len(full):
+    long_trip = len(frames) > 8  # more than a week: free days are normal, so they are noted, never a reason to refuse
+    if full and len(empty) * 2 > len(full) and not long_trip:
         rep.only_empty_days = not rep.blocking
         rep.blocking.append(f"{len(empty)} of {len(full)} full days have nothing planned: not enough suitable places "
                             "were found near the destination.")
     elif empty:
         dates = [f"{f.day:%a %d %b}" for f in empty]  # dates, not numbers: the plan's day labels skip a train-only day
-        rep.notes.append(f"{_days_text(dates)} {'is' if len(dates) == 1 else 'are'} kept free: nothing else fitted "
-                         "your time and budget.")
+        if long_trip and len(dates) > 3:
+            rep.notes.append(f"{len(dates)} days are kept free to rest or explore on your own: the best places near the "
+                             "destination are already in the plan.")
+        else:
+            rep.notes.append(f"{_days_text(dates)} {'is' if len(dates) == 1 else 'are'} kept free: nothing else fitted "
+                             "your time and budget.")
     return rep

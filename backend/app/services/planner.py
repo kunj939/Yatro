@@ -220,7 +220,7 @@ class Planner:
                 self.no_timetable = missing
                 why = f" ({rail_issue})" if rail_issue and "train" in missing else ""
                 self.warn(f"No {' or '.join(missing)} timetable was available for {origin.name} to {dest.name}"
-                          f"{why}. TripAI never invents services.")
+                          f"{why}. Yaitro never invents services.")
             combos = FE.rank_combos(FE.build_combos(options, inp, origin, dest), inp)
             if not combos and missing:
                 # Nothing the traveller chose is available: say so, and offer to widen the choice
@@ -261,7 +261,9 @@ class Planner:
         meal_pp = inp.budget * Decimal("0.25") / Decimal(3 * max(1, inp.travellers))
         # The age hint goes first: with children or older travellers the pool should hold places that suit them (still at most
         # three extra searches, so a trip's worst-case cost is unchanged; it displaces the third style/favourite hint, if any)
-        found_places = self.p.places.attractions(dest, [*age_fit.search_hints(inp.age_groups), *inp.styles, *inp.interests])
+        # A trip longer than a week needs more than the city's top sights: the day trips around it go first in the hints.
+        long_trip = ["day_trips"] if inp.days > 7 else []
+        found_places = self.p.places.attractions(dest, [*long_trip, *age_fit.search_hints(inp.age_groups), *inp.styles, *inp.interests])
         found_restaurants = self.p.places.restaurants(dest, inp.effective_food, "premium" in inp.styles)
         found_places = self._with_named_places(found_places, found_restaurants, inp, dest)
         attractions = PS.attraction_candidates(found_places, inp, act_allow, city=dest.name.split(",")[0])

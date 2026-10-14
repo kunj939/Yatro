@@ -107,7 +107,7 @@ export function HeroStory() {
       </div>
       {/* The headline changes; this line doesn't. It says plainly what the product is, for someone who's never heard of it. */}
       <p className="mt-5 max-w-[48ch] text-[17px] leading-relaxed text-ink-soft">
-        <span className="font-semibold text-ink">{brand.name} is an AI trip planner.</span> Tell it where, when and your budget.
+        <span className="font-semibold text-ink">{brand.name} is a trip planner.</span> Tell it where, when and your budget.
         It checks real trains, places and prices, does the maths, and gives you a day-by-day plan that fits.
       </p>
     </div>

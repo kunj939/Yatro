@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=(".env", "../.env"), env_file_encoding="utf-8", extra="ignore")
 
     # --- App -------------------------------------------------------------
-    app_name: str = "TripAI"
+    app_name: str = "Yaitro"
     environment: Literal["development", "test", "production"] = "development"
     log_level: str = "INFO"
     api_prefix: str = "/api"

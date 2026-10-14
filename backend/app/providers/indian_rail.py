@@ -1,6 +1,6 @@
 """Indian Railways timetables from the third-party "IRCTC1" API on RapidAPI.
 
-One of two Indian Railways timetable sources TripAI can use (see rail_chain.py, which tries this alongside
+One of two Indian Railways timetable sources Yaitro can use (see rail_chain.py, which tries this alongside
 railradar.py and Google has none of its own). Everything shown is what the timetable says: train name,
 number, departure and arrival. Fares are estimated from distance and class (marked "Estimated"). If the API
 is unavailable or the quota is used up, no train is offered from here (never invented) — the chain moves on
@@ -108,7 +108,7 @@ class IndianRailProvider:
         self.cache.save_timetable(frm, to, day.weekday(), rows)
         return tag_rows(rows, SourceKind.LIVE_API)
 
-    # --- Conversion into TripAI transport options --------------------------------------------------------------
+    # --- Conversion into Yaitro transport options --------------------------------------------------------------
     def _options(self, rows: list[dict], direction: str, day: date, home: PlaceData, frm_pt, to_pt,
                  frm_name: str, to_name: str) -> list[TransportData]:
         out: list[TransportData] = []
@@ -156,7 +156,7 @@ class IndianRailProvider:
         if rows and not out:
             log.warning("IRCTC1: %d trains returned but none could be read (first item keys: %s)",
                         len(rows), list(rows[0])[:15])
-            self.last_issue = "the train timetable came back in a format TripAI couldn't read"
+            self.last_issue = "the train timetable came back in a format Yaitro couldn't read"
         elif skipped:
             log.info("IRCTC1: skipped %d incomplete rows", skipped)
         return out

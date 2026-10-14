@@ -39,7 +39,7 @@ export function WhatItDoes() {
             Your whole trip, planned and priced <span className="accent highlight whitespace-nowrap">in one minute.</span>
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-ink-soft">
-            {brand.name} is an AI trip planner. Planning a trip usually means 20 open tabs and a calculator.
+            {brand.name} is a trip planner. Planning a trip usually means 20 open tabs and a calculator.
             {" "}{brand.name} does the searching and the maths for you, and hands you a plan you can actually follow.
           </p>
         </Reveal>

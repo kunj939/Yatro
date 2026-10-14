@@ -26,8 +26,8 @@ from app.core import telemetry
 from app.services.engine_types import StageReporter
 from app.services.interest_tags import INTEREST_LABELS, expand_chips
 from app.services.planner import Planner, PlanResult
-from app.utils.locale import locale_for
-from app.utils.money import D, fmt_money
+from app.utils.locale import currency_for, locale_for
+from app.utils.money import D, approx_rate, fmt_money
 
 log = logging.getLogger("tripai.trips")
 
@@ -666,6 +666,13 @@ def trip_card(t: Trip) -> dict:
             "created_at": t.created_at.isoformat()}
 
 
+def _home_money(t: Trip) -> dict:
+    """The starting point's currency and a rough rate, so a Delhi -> Dubai plan can also be read in rupees."""
+    home = currency_for(t.origin_lat, t.origin_lng) if t.origin_lat is not None and t.origin_lng is not None else None
+    rate = approx_rate(t.currency, home)
+    return {"home_currency": home if rate else None, "home_rate": float(rate) if rate else None}
+
+
 def trip_out(t: Trip, *, read_only: bool = False) -> dict:
     p = t.preferences
     it = t.current_itinerary
@@ -675,7 +682,7 @@ def trip_out(t: Trip, *, read_only: bool = False) -> dict:
         "origin_detail": {"name": t.origin_name, "place_id": t.origin_place_id, "lat": t.origin_lat, "lng": t.origin_lng},
         "destination_detail": {"name": t.destination_name, "place_id": t.destination_place_id,
                                "lat": t.destination_lat, "lng": t.destination_lng},
-        "currency": t.currency, "timezone": t.timezone,
+        "currency": t.currency, "timezone": t.timezone, **_home_money(t),
         "preferences": {"traveller_type": p.traveller_type, "age_groups": p.age_groups or [],
                         "transport_modes": p.transport_modes, "food": p.food,
                         "trip_styles": p.trip_styles, "stay": p.stay, "pace": p.pace, "notes": p.notes,

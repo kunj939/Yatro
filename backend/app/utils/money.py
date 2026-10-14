@@ -32,6 +32,17 @@ APPROX_INR_TO: dict[str, Decimal] = {
 }
 
 
+def approx_rate(from_currency: str | None, to_currency: str | None) -> Decimal | None:
+    """Rough units of `to_currency` per one `from_currency` (AED -> INR about 22.7), from the same table as the
+    estimates. Only for showing a plan's prices in the traveller's home money as an approximation; None if unknown."""
+    def per_inr(c: str | None) -> Decimal | None:
+        return Decimal(1) if c == "INR" else APPROX_INR_TO.get(c or "")
+    a, b = per_inr(from_currency), per_inr(to_currency)
+    if not a or not b or from_currency == to_currency:
+        return None
+    return (b / a).quantize(Decimal("0.0001"))
+
+
 def D(value) -> Decimal:
     if isinstance(value, Decimal):
         return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)

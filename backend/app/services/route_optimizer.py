@@ -205,6 +205,9 @@ class DayScheduler:
         self._ride = Decimal(0)
         self.warnings: list[str] = []
         self.factor = DURATION_FACTOR.get(inp.pace, 1.0)
+        # A trip longer than a week spreads its sights over all the days (two or three a day) instead of packing the
+        # first days and leaving the rest empty.
+        self.spread = max(2, -(-len(attractions) // max(1, inp.days - 1))) if inp.days > 7 else None
         self.tp = TRAVEL_PENALTY
         self.force_first: str | None = None
         self.meal_history: set[str] = set()
@@ -221,6 +224,17 @@ class DayScheduler:
         if not stops:
             return frame.start, frame.start_point
         return stops[-1].end, stops[-1].point
+
+    def _fit(self, frame: DayFrame, stops: list[Stop], stop: Stop) -> bool:
+        """Add `stop` and re-time the day. If it doesn't fit after all (an opening-hours or meal-window clash that
+        only shows once everything before it is timed, which long trips hit), take it back out so every planned
+        stop keeps real times, and say no."""
+        stops.append(stop)
+        if simulate(frame, stops, self.travel, check_end=False)[0]:
+            return True
+        stops.pop()
+        simulate(frame, stops, self.travel, check_end=False)
+        return False
 
     def pick_sunset_spot(self, frame: DayFrame) -> Stop | None:
         _, sunset = sun_times(frame.day, frame.start_point[0], frame.start_point[1])
@@ -378,8 +392,9 @@ class DayScheduler:
         if sunset:
             self.used.add(sunset.cand.key)
         stops: list[Stop] = []
+        rejected: set[str] = set()  # tried today and didn't fit once timed
         activities = 0
-        max_acts = MAX_ACTIVITIES.get(self.inp.pace, 5)
+        max_acts = min(MAX_ACTIVITIES.get(self.inp.pace, 5), self.spread or 99)
         for _ in range(24):
             t, p = self._state_after(frame, stops)
             meal = pending[0] if pending else None
@@ -391,9 +406,7 @@ class DayScheduler:
                     pending.pop(0)
                     chosen = self._best_meal(frame, meal, t, p, spent, last=not pending and not sunset,
                                              pending=pending)
-                    if chosen:
-                        stops.append(chosen)
-                        simulate(frame, stops, self.travel, check_end=False)
+                    if chosen and self._fit(frame, stops, chosen):
                         spent += self._cost(chosen.cand, chosen.leg)
                         self.used.add(chosen.cand.key)
                     else:
@@ -407,7 +420,7 @@ class DayScheduler:
                 reserve += sunset.cand.group_cost(self.inp.travellers) + self.travel.leg(p, sunset.point).cost
             if activities < max_acts:
                 for c in self.attractions:
-                    if c.key in self.used:
+                    if c.key in self.used or c.key in rejected:
                         continue
                     leg = self.travel.leg(p, c.point)
                     if stops and leg.distance_m > HOP_LIMIT_M:
@@ -447,9 +460,10 @@ class DayScheduler:
                     if val > best_val:
                         best, best_val, best_leg, _best_start = c, val, leg, start
             if best:
-                stops.append(Stop(kind="activity", cand=best, name=best.place.name, duration=self._duration(best),
-                                  day_index=frame.index))
-                simulate(frame, stops, self.travel, check_end=False)
+                if not self._fit(frame, stops, Stop(kind="activity", cand=best, name=best.place.name,
+                                                    duration=self._duration(best), day_index=frame.index)):
+                    rejected.add(best.key)
+                    continue
                 spent += self._cost(best, best_leg)
                 self.used.add(best.key)
                 activities += 1
@@ -461,9 +475,8 @@ class DayScheduler:
                 leg = self.travel.leg(p, sunset.point)
                 affordable = spent + self._cost(sunset.cand, leg) + self._meal_reserve(pending) <= self._cap
                 near = not stops or leg.distance_m <= HOP_LIMIT_M
-                if near and t + mm(leg.minutes) <= sunset.anchor - mm(15) and (affordable or sunset.cand.pinned):
-                    stops.append(sunset)
-                    simulate(frame, stops, self.travel, check_end=False)
+                if (near and t + mm(leg.minutes) <= sunset.anchor - mm(15) and (affordable or sunset.cand.pinned)
+                        and self._fit(frame, stops, sunset)):
                     spent += self._cost(sunset.cand, sunset.leg)
                 else:
                     self.used.discard(sunset.cand.key)
@@ -475,9 +488,7 @@ class DayScheduler:
                 meal = pending.pop(0)
                 chosen = self._best_meal(frame, meal, t, p, spent, last=not pending, allow_wait=True,
                                          pending=pending)
-                if chosen:
-                    stops.append(chosen)
-                    simulate(frame, stops, self.travel, check_end=False)
+                if chosen and self._fit(frame, stops, chosen):
                     spent += self._cost(chosen.cand, chosen.leg)
                     self.used.add(chosen.cand.key)
                 else:

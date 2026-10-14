@@ -37,7 +37,7 @@ def demo_date(today: date | None = None) -> date:
 def _demo_user(db: Session) -> User:
     user = db.scalar(select(User).where(User.email == DEMO_EMAIL))
     if user is None:
-        user = User(email=DEMO_EMAIL, name="TripAI sample", is_active=False,
+        user = User(email=DEMO_EMAIL, name="Yaitro sample", is_active=False,
                     password_hash=hash_password(secrets.token_urlsafe(32)))
         db.add(user)
         db.flush()

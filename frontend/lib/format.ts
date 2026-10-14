@@ -16,7 +16,16 @@ const CURRENCY_LOCALE: Record<string, string> = {
 
 /** Same idea as inr(), but in the trip's own currency (the header, budget and timeline all use this once a
  * trip has been planned) rather than always assuming rupees. Falls back to inr() for INR or an unknown code. */
+// The trip page can show a plan's prices in the traveller's home money (Delhi -> Dubai read in rupees). While it does,
+// every amount in the trip's currency is converted here at the rough rate, so no component needs to know.
+let displayFx: { from: string; to: string; rate: number } | null = null;
+export function setDisplayCurrency(fx: { from: string; to: string; rate: number } | null) { displayFx = fx; }
+
 export function money(value: number | null | undefined, currency: string | null | undefined): string {
+  if (displayFx && currency === displayFx.from && value !== null && value !== undefined && !Number.isNaN(value)) {
+    value = Math.round(value * displayFx.rate);
+    currency = displayFx.to;
+  }
   if (!currency || currency === "INR") return inr(value);
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   try {

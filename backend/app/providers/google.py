@@ -75,7 +75,7 @@ def airport_flights(origin: PlaceData, dest: PlaceData, window_start: datetime, 
             arrive_at=dep + timedelta(minutes=minutes), duration_minutes=minutes, cost_per_person=fare,
             distance_m=int(air_km * 1000), from_name=airport_label(frm), to_name=airport_label(to), from_lat=fpt[0],
             from_lng=fpt[1], to_lat=tpt[0], to_lng=tpt[1], comfort=5, flexible=True, verification_state="estimated",
-            source="Airports from TripAI's airport list; flight time and fare estimated (no live flight schedule)",
+            source="Airports from Yaitro's airport list; flight time and fare estimated (no live flight schedule)",
             access_minutes=acc_min, access_cost=to_currency(acc_cost, currency), access_distance_m=acc_m,
             meta={"schedule_state": "estimated", "airport_minutes": at_airports}))
     return out
@@ -407,7 +407,7 @@ class GooglePlacesProvider(PlacesProvider):
                  "market": "markets and bazaars", "street_food": "street food spots", "photography": "photogenic spots",
                  "heritage": "heritage sites", "nightlife": "nightlife and bars", "viewpoint": "viewpoints",
                  "sunset": "sunset points", "adventure_activities": "adventure activities",
-                 "family": "family friendly attractions and kids activities"}
+                 "family": "family friendly attractions and kids activities", "day_trips": "day trips and nearby getaways"}
         # With Wikidata's famous sights already in hand (`known`, providers/wikidata.py), the searches it covers (forts,
         # temples, museums, lakes, "places near") are skipped: only what it can't know (bars, street food, markets) is asked.
         known = known or []
@@ -436,7 +436,7 @@ class GooglePlacesProvider(PlacesProvider):
         # are filled with Deeg or Fatehpur Sikri rather than neighbourhood parks.
         if not lean and sum(1 for p in out if (p.rating_count or 0) >= 500) < 10:
             run(f"famous places to visit near {city.name}", radius=60000)
-        return out[:32]
+        return out[:48 if "day_trips" in wanted else 32]  # a long trip needs a bigger pool to fill its days
 
     def restaurants(self, city: PlaceData, food: str, premium: bool) -> list[PlaceData]:
         currency = currency_for(city.lat, city.lng)
@@ -627,7 +627,7 @@ class GoogleTransportProvider(TransportProvider):
 
         # Every transit lookup (mode x direction x departure probe) is independent: fetch them all at once rather
         # than up to 12 round trips in a row, then read the answers back in the original order.
-        # Probe from an hour before the requested start (TripAI accepts +/- 60 min when that's all there is).
+        # Probe from an hour before the requested start (Yaitro accepts +/- 60 min when that's all there is).
         probes = [(mode, rail, direction, base + timedelta(minutes=shift))
                   for mode, rail in (("train", True), ("bus", False)) if mode in modes
                   for direction, base in (("outbound", window_start - timedelta(minutes=45)),
@@ -662,7 +662,7 @@ class GoogleTransportProvider(TransportProvider):
                              3, F.bus_fare(km, "ac"))
             elif mode == "train":
                 log.warning("No train timetable from Google for %s -> %s (%d transit routes returned, vehicle types: "
-                            "%s); offering a time window instead of a named train. TripAI never invents trains.",
+                            "%s); offering a time window instead of a named train. Yaitro never invents trains.",
                             origin.name, dest.name, routes_n, ", ".join(sorted(seen)) or "none")
                 # No source had a real timetable for this route. Rather than drop trains from the plan entirely,
                 # offer an honest time window ("timing estimated", no name, no number — see transport_label()) so

@@ -96,6 +96,7 @@ export interface Trip extends TripCard {
   origin_detail: { name: string; place_id: string | null; lat: number | null; lng: number | null };
   destination_detail: { name: string; place_id: string | null; lat: number | null; lng: number | null };
   currency: string; preferences: Preferences; feasibility: Feasibility | null; plan_count: number;
+  home_currency?: string | null; home_rate?: number | null;  // the starting point's money, and a rough rate to it
   replan_count: number; replans_left: number; quota_source: string | null; read_only: boolean;
   members: Member[]; expenses: Expense[]; expense_summary: ExpenseSummary; itinerary: Itinerary | null;
   versions: { version: number; created_at: string; change_note: string | null; total_cost: number }[];

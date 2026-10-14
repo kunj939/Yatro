@@ -296,7 +296,7 @@ def estimated_transport(origin: PlaceData, dest: PlaceData, inp: PlanInput, mode
                                      cost_per_person=pp, per_vehicle=pv > 0, vehicle_cost=pv, distance_m=dist,
                                      from_name=a.name, to_name=b.name, from_lat=a.lat, from_lng=a.lng, to_lat=b.lat,
                                      to_lng=b.lng, comfort=comfort, flexible=True, verification_state="estimated",
-                                     source="TripAI fare model (provider unavailable)"))
+                                     source="Yaitro fare model (provider unavailable)"))
     return out
 
 

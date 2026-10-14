@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDownUp, ArrowLeft, ArrowRight, CalendarDays, Check, Clock, MapPin, Pencil, Sparkles, Star, TrainFront, Wallet, X } from "lucide-react";
+import { ArrowDownUp, ArrowLeft, ArrowRight, CalendarDays, Check, MapPin, Pencil, Sparkles, Star, TrainFront, Wallet, X } from "lucide-react";
 import { LocationInput, type LocationValue } from "./LocationInput";
+import { WhenPicker } from "./WhenPicker";
 import type { HighlightPlace } from "@/lib/types";
 import { AgeSelector, BudgetInput, FoodSelector, InterestSelector, StaySelector, TransportSelector, TravellerSelector, TripStyleSelector } from "./Selectors";
 import { Modal } from "../Modal";
@@ -182,7 +183,7 @@ export function TripWizard() {
        s.destination.name.trim().length < 2 ? "Enter where you're going (it can be your own city)." :
        !s.start_date || s.start_date < today ? "Pick a date from today onwards." :
        s.end_date < s.start_date ? "The return date can't be before the start date." :
-       nights > 7 ? "Trips can be at most 7 days in this version." : null,
+       nights > 30 ? "Trips can be at most 30 nights." : null,
     1: !s.budget || s.budget < minBudget ? `Enter a budget of at least ${money(minBudget, currency)}.` : null,
     2: s.transport_modes.length === 0 ? "Pick at least one way to travel." : null,
   };
@@ -314,13 +315,8 @@ export function TripWizard() {
 
                 <SubHeading aside={<span className="inline-flex items-center gap-1.5 rounded-full bg-signal-soft px-3 py-1 text-xs font-bold text-ink"><CalendarDays className="h-3.5 w-3.5" aria-hidden />{lengthLabel}</span>}>When</SubHeading>
                 <Card>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Date" id="start-date" icon={CalendarDays}><input id="start-date" type="date" min={today} className="field pl-11" value={s.start_date}
-                      onChange={(e) => setS((p) => ({ ...p, start_date: e.target.value, end_date: p.end_date < e.target.value ? e.target.value : p.end_date }))} /></Field>
-                    <Field label="Return date" id="end-date" icon={CalendarDays}><input id="end-date" type="date" min={s.start_date} className="field pl-11" value={s.end_date} onChange={(e) => set("end_date", e.target.value)} /></Field>
-                    <Field label="Start time" id="start-time" icon={Clock}><input id="start-time" type="time" className="field pl-11" value={s.start_time} onChange={(e) => set("start_time", e.target.value)} /></Field>
-                    <Field label="Back by" id="end-time" icon={Clock}><input id="end-time" type="time" className="field pl-11" value={s.end_time} onChange={(e) => set("end_time", e.target.value)} /></Field>
-                  </div>
+                  <WhenPicker value={{ start_date: s.start_date, end_date: s.end_date, start_time: s.start_time, end_time: s.end_time }}
+                              today={today} onChange={(patch) => setS((p) => ({ ...p, ...patch }))} />
                   {overnightReturn && <p className="mt-4 rounded-xl bg-signal-soft px-4 py-3 text-[16px]">Back by {s.end_time} means the early hours of {niceDate(effectiveEnd)}. That works for a late train home.</p>}
                 </Card>
               </StepShell>
@@ -500,21 +496,9 @@ function StepShell({ n, title, accent, text, children }: { n: number; title: str
 }
 
 function Card({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-2xl border border-line bg-paper/80 p-5 shadow-[0_20px_50px_-35px_rgb(var(--shadow)/0.5)] backdrop-blur md:p-6">{children}</div>;
+  return <div className="card p-5 md:p-6">{children}</div>;
 }
 
 function SubHeading({ children, aside }: { children: React.ReactNode; aside?: React.ReactNode }) {
   return <h2 className="mb-4 mt-10 flex items-center justify-between gap-3 text-lg font-bold">{children}{aside}</h2>;
-}
-
-function Field({ label, id, icon: Icon, children }: { label: string; id: string; icon: any; children: React.ReactNode }) {
-  return (
-    <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-semibold">{label}</label>
-      <div className="relative">
-        <Icon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-mute" aria-hidden />
-        {children}
-      </div>
-    </div>
-  );
 }

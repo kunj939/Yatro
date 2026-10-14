@@ -202,7 +202,7 @@ class DemoTransportProvider(TransportProvider):
                     from_name=origin.name if direction == "outbound" else dest.name,
                     to_name=dest.name if direction == "outbound" else origin.name,
                     from_lat=a[0], from_lng=a[1], to_lat=b[0], to_lng=b[1], verification_state="demo",
-                    source="TripAI fare model (demo)", polyline=encode_polyline([a, (27.6, 76.6), b])))
+                    source="Yaitro fare model (demo)", polyline=encode_polyline([a, (27.6, 76.6), b])))
         return [stamp(t, SourceKind.SAMPLE) for t in out]  # demo mode's sample data
 
 
@@ -222,4 +222,4 @@ class DemoWeatherProvider(WeatherProvider):
 
     def forecast(self, lat, lng, day) -> WeatherData | None:
         w = D.WEATHER
-        return WeatherData(w["summary"], w["max"], w["min"], w["rain"], "demo", "TripAI demo data")
+        return WeatherData(w["summary"], w["max"], w["min"], w["rain"], "demo", "Yaitro demo data")

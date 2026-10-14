@@ -1,6 +1,6 @@
 """Indian Railways timetables from the third-party RailRadar API (railradar.in).
 
-The other of two Indian Railways timetable sources TripAI can use (see rail_chain.py, which tries this
+The other of two Indian Railways timetable sources Yaitro can use (see rail_chain.py, which tries this
 alongside indian_rail.py's IRCTC1 and Google has none of its own). Train name, number, departure and arrival
 are exactly what the timetable says. RailRadar's "trains between stations" search doesn't return fare or seat
 class, so those are estimated from the train's category and the route's distance (marked "Estimated") — the
@@ -124,7 +124,7 @@ class RailRadarProvider:
             raise ProviderUnavailable("RailRadar refresh failed")
         return [r for r in (data.get("data", {}) or {}).get("trains", []) or [] if isinstance(r, dict)]
 
-    # --- Conversion into TripAI transport options --------------------------------------------------------------
+    # --- Conversion into Yaitro transport options --------------------------------------------------------------
     def _options(self, rows: list[dict], direction: str, day: date, home: PlaceData, frm_pt, to_pt,
                  frm_name: str, to_name: str) -> list[TransportData]:
         out: list[TransportData] = []
@@ -176,7 +176,7 @@ class RailRadarProvider:
         if rows and not out:
             log.warning("RailRadar: %d trains returned but none could be read (first item keys: %s)",
                         len(rows), list(rows[0])[:15])
-            self.last_issue = "the train timetable came back in a format TripAI couldn't read"
+            self.last_issue = "the train timetable came back in a format Yaitro couldn't read"
         elif skipped:
             log.info("RailRadar: skipped %d incomplete rows", skipped)
         return out

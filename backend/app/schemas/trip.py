@@ -20,7 +20,7 @@ Stay = Literal["premium", "tier1", "tier2", "budget", "oyo", "hostel", "no_stay"
 Pace = Literal["relaxed", "normal", "packed"]
 AgeGroup = Literal["kids", "teens", "adults", "seniors"]  # 0-12, 13-17, 18-59, 60+ (services/age_fit.py)
 
-MAX_DAYS = 7
+MAX_DAYS = 30  # nights; longer trips show week by week in the plan
 
 
 class LocationIn(APIModel):
@@ -81,7 +81,7 @@ class TripCreate(APIModel):
         if end_date < self.start_date:
             raise ValueError("The trip can't end before it starts.")
         if (end_date - self.start_date).days + 1 > MAX_DAYS + 1:
-            raise ValueError(f"Trips can be at most {MAX_DAYS} days in this version.")
+            raise ValueError(f"Trips can be at most {MAX_DAYS} nights.")
         if end_date == self.start_date and self.end_time <= self.start_time:
             # e.g. start 05:00, back by 01:30 -> the return is on the next morning
             end_date = self.start_date + timedelta(days=1)
