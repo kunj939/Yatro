@@ -48,54 +48,40 @@ function fmt(trip: Trip, v: number, free = false) {
     maximumFractionDigits: Math.round(v * 100) % 100 ? 2 : 0, minimumFractionDigits: Math.round(v * 100) % 100 ? 2 : 0 }).format(v);
 }
 
+const ROWS = 4;
+
 export function LiveBoard() {
   const [idx, setIdx] = useState(0);
   // The first trip starts complete: an empty card saying "Counting…" looked broken to anyone who arrived mid-load
   // or scrolled straight past. The next trips fill in row by row.
-  const [shown, setShown] = useState(TRIPS[0].rows.length);
+  const [shown, setShown] = useState(Math.min(ROWS, TRIPS[0].rows.length));
   const [paused, setPaused] = useState(false);
   const [reduced, setReduced] = useState(false);
   const trip = TRIPS[idx];
+  const rows = trip.rows.slice(0, ROWS);  // a few roomy rows read better than a whole day squeezed in
 
   useEffect(() => { setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches); }, []);
 
   // Rows land one by one; once the day is complete it holds, then the next trip takes over.
   useEffect(() => {
-    if (reduced) return setShown(trip.rows.length);
-    if (shown < trip.rows.length) {
+    if (reduced) return setShown(rows.length);
+    if (shown < rows.length) {
       const t = setTimeout(() => setShown((n) => n + 1), shown === 0 ? 120 : STEP_MS);
       return () => clearTimeout(t);
     }
     if (paused) return;
     const t = setTimeout(() => { setShown(0); setIdx((i) => (i + 1) % TRIPS.length); }, HOLD_MS);
     return () => clearTimeout(t);
-  }, [shown, trip, paused, reduced]);
+  }, [shown, trip, paused, reduced, rows.length]);
 
-  function pick(i: number) { if (i !== idx) { setIdx(i); setShown(reduced ? TRIPS[i].rows.length : 0); } }
-
-  const total = trip.rows.reduce((a, r) => a + r.amt, 0);
-  const spent = trip.rows.slice(0, shown).reduce((a, r) => a + r.amt, 0);
+  const total = rows.reduce((a, r) => a + r.amt, 0);
+  const spent = rows.slice(0, shown).reduce((a, r) => a + r.amt, 0);
   const pct = Math.min(100, (spent / trip.budget) * 100);
 
   return (
     <div className="board-glow relative" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      <div role="tablist" aria-label="Sample trips" className="mb-3 flex flex-wrap gap-1.5">
-        {TRIPS.map((t, i) => (
-          <button key={t.key} role="tab" aria-selected={i === idx} onClick={() => pick(i)}
-                  className={`relative max-w-full overflow-hidden rounded-full border px-3 py-1.5 text-[13px] font-semibold transition-all duration-300 sm:px-3.5 ${
-                    i === idx ? "border-signal/50 bg-paper text-ink shadow-glow" : "border-line bg-paper/60 text-ink-mute hover:border-ink/30 hover:text-ink"}`}>
-            {t.route}
-            {i === idx && !reduced && (
-              <span aria-hidden key={`${idx}-${shown === t.rows.length}`}
-                    className={`absolute inset-x-0 bottom-0 h-[2px] origin-left bg-signal ${shown === t.rows.length && !paused ? "hiw-bar" : "scale-x-0"}`}
-                    style={{ animationDuration: `${HOLD_MS}ms` }} />
-            )}
-          </button>
-        ))}
-      </div>
-
       <div className="spotlight relative overflow-hidden rounded-2xl border border-line bg-paper/85 shadow-[0_30px_80px_-40px_rgb(var(--shadow)/0.6)] backdrop-blur-xl">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-line px-4 py-3 sm:px-5 sm:py-3.5">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-line px-5 py-4 sm:px-6">
           <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-mute">
             {trip.route} · {trip.date}
           </span>
@@ -106,9 +92,9 @@ export function LiveBoard() {
         </div>
 
         <ol aria-live="polite">
-          {trip.rows.map((r, i) => (
+          {rows.map((r, i) => (
             <li key={`${trip.key}-${r.t}`}
-                className={`group grid grid-cols-[46px_1fr_auto] items-baseline gap-x-3 border-b border-line/70 px-4 py-2.5 transition-all lg:py-3 duration-500 last:border-b-0 hover:bg-signal-soft/50 sm:grid-cols-[58px_1fr_auto] sm:gap-x-4 sm:px-5 ${
+                className={`group grid grid-cols-[46px_1fr_auto] items-baseline gap-x-3 border-b border-line/70 px-5 py-4 transition-all duration-500 last:border-b-0 hover:bg-signal-soft/50 sm:grid-cols-[58px_1fr_auto] sm:gap-x-4 sm:px-6 ${
                   i < shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}>
               <span className="num text-[14px] font-bold text-signal">{r.t}</span>
               <span className="min-w-0">
@@ -125,12 +111,12 @@ export function LiveBoard() {
           ))}
         </ol>
 
-        <div className="flex items-center justify-between bg-haze/70 px-4 py-3 text-[13px] text-ink-soft sm:px-5">
+        <div className="flex items-center justify-between bg-haze/70 px-5 py-3.5 text-[13px] text-ink-soft sm:px-6">
           <span className="flex items-center gap-2">
             <span className="board-live h-1.5 w-1.5 rounded-full bg-teal" />{trip.compared} departures compared
           </span>
           <span className="num font-semibold text-ink">
-            {shown === trip.rows.length ? `${fmt(trip, trip.budget - total)} left` : "Counting…"}
+            {shown === rows.length ? `${fmt(trip, trip.budget - total)} left` : "Counting…"}
           </span>
         </div>
       </div>

@@ -21,17 +21,17 @@ export function LandingHero() {
     // so later sections (animated with transforms) scrolled OVER the navbar. Lifting the whole layer fixes that.
     <header className="relative isolate z-50">
       <Navbar />
-      <div className="container-x relative grid gap-8 pb-10 pt-4 md:pb-12 md:pt-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-10 lg:pb-8 lg:pt-4">
+      <div className="container-x relative grid gap-12 pb-14 pt-6 md:pb-16 md:pt-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16 lg:pb-14 lg:pt-10">
         <div className="min-w-0">
           {/* The headline turns through six traveller stories (students, couples, families…); see HeroStory. */}
           <div className="fade-up" style={{ ["--d" as string]: "80ms" }}>
             <HeroStory />
           </div>
           {/* One box instead of two buttons: type the trip the way you'd text a friend. */}
-          <div className="fade-up mt-5" style={{ ["--d" as string]: "240ms" }}>
+          <div className="fade-up mt-8" style={{ ["--d" as string]: "240ms" }}>
             <HeroSearch />
           </div>
-          <ul className="fade-up mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-ink-mute" style={{ ["--d" as string]: "320ms" }}>
+          <ul className="fade-up mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-ink-mute" style={{ ["--d" as string]: "320ms" }}>
             <li className="inline-flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-teal" aria-hidden />{brand.freePlansText} a month</li>
             <li className="inline-flex items-center gap-1.5"><Clock3 className="h-4 w-4 text-teal" aria-hidden />Done in under a minute</li>
             <li className="inline-flex items-center gap-1.5"><CreditCard className="h-4 w-4 text-teal" aria-hidden />No card. No catch.</li>
