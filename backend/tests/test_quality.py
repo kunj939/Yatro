@@ -23,6 +23,51 @@ def test_countries_are_too_broad_but_cities_and_states_are_fine():
     assert not Q.too_broad(["administrative_area_level_1", "political"])  # Goa, Kerala...
 
 
+def test_city_states_are_a_city_and_countries_have_a_main_city():
+    assert not Q.too_broad(["country", "political"], "Singapore")  # Google calls it a country; the city is the trip
+    assert not Q.too_broad(["country", "political"], "Hong Kong")
+    assert Q.too_broad(["country", "political"], "Bangladesh")
+    assert Q.main_city("Bangladesh") == "Dhaka" and Q.main_city("  nepal ") == "Kathmandu"
+    assert Q.main_city("Atlantis") is None
+
+
+def _narrowing_planner(found):
+    from types import SimpleNamespace
+    from app.services.planner import Planner
+    pl = object.__new__(Planner)
+    pl.warnings = []
+    asked = []
+    pl.p = SimpleNamespace(places=SimpleNamespace(resolve=lambda text, place_id=None: (asked.append(text), found)[1]))
+    return pl, asked
+
+
+def _place(name, types):
+    from app.providers.types import PlaceData
+    return PlaceData(provider="test", provider_place_id=name, name=name, category="city", lat=0.0, lng=0.0, types=types)
+
+
+def test_a_country_is_planned_as_its_main_city_with_a_note():
+    from types import SimpleNamespace
+    pl, asked = _narrowing_planner(_place("Dhaka", ["locality", "political"]))
+    trip = SimpleNamespace(destination_name="Bangladesh", origin_name="Delhi")
+    out = pl._narrow(trip, _place("Bangladesh", ["country", "political"]), "destination")
+    assert out.name == "Dhaka" and trip.destination_name == "Dhaka" and asked == ["Dhaka, Bangladesh"]
+    assert pl.warnings and "Bangladesh is a whole country" in pl.warnings[0] and "goes to Dhaka" in pl.warnings[0]
+
+
+def test_singapore_is_kept_and_an_unknown_country_still_asks():
+    from types import SimpleNamespace
+    import pytest
+    from app.core.errors import AppError
+    pl, asked = _narrowing_planner(None)
+    trip = SimpleNamespace(destination_name="Singapore", origin_name="Delhi")
+    sg = _place("Singapore", ["country", "political"])
+    assert pl._narrow(trip, sg, "destination") is sg and not asked and not pl.warnings
+    with pytest.raises(AppError) as e:
+        pl._narrow(trip, _place("Atlantis", ["country", "political"]), "destination")
+    assert e.value.code == "place_too_broad"
+
+
 def _frame(i, stops, hours=12):
     start = datetime(2026, 10, 3 + i, 8, 30)
     return DayFrame(i, start.date(), start, start + timedelta(hours=hours), (0, 0), "a", (0, 0), "b", stops=stops)

@@ -531,14 +531,30 @@ class Planner:
         if dest is None:
             raise AppError(f"We couldn't locate \u201c{trip.destination_name}\u201d. Try a city name.",
                            code="destination_not_found", status_code=422)
-        for label, place in (("destination", dest), ("starting point", origin)):
-            if Q.too_broad(place.types):
-                raise AppError(f"\u201c{place.name}\u201d is a whole country. Pick a city as your {label}, "
-                               f"for example its capital or the city you'll fly into.",
-                               code="place_too_broad", status_code=422)
+        origin = self._narrow(trip, origin, "starting point")
+        dest = self._narrow(trip, dest, "destination")
         trip.origin_place_id, trip.origin_lat, trip.origin_lng = origin.provider_place_id, origin.lat, origin.lng
         trip.destination_place_id, trip.destination_lat, trip.destination_lng = dest.provider_place_id, dest.lat, dest.lng
         return origin, dest
+
+    def _narrow(self, trip: Trip, place: PlaceData, label: str) -> PlaceData:
+        """A whole country becomes the city most visitors start from (Bangladesh -> Dhaka), with a note saying so.
+        City-states such as Singapore are already a city. Only a country we have no city for still asks."""
+        if not Q.too_broad(place.types, place.name):
+            return place
+        city = Q.main_city(place.name)
+        sub = self.p.places.resolve(f"{city}, {place.name}") if city else None
+        if sub is None or Q.too_broad(sub.types, sub.name):
+            raise AppError(f"\u201c{place.name}\u201d is a whole country. Pick a city as your {label}, "
+                           f"for example its capital or the city you'll fly into.",
+                           code="place_too_broad", status_code=422)
+        if label == "destination":
+            trip.destination_name = sub.name
+        else:
+            trip.origin_name = sub.name
+        self.warn(f"{place.name} is a whole country, so this plan {'goes to' if label == 'destination' else 'starts from'} "
+                  f"{sub.name}. To plan another city there, change the {label}.")
+        return sub
 
     def _store_sources(self, trip: Trip, cands: list[Candidate], results, clear: bool = True) -> None:
         by_key = {c.key: c for c in cands}

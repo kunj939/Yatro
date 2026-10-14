@@ -17,6 +17,29 @@ MAX_HOP_M = 60_000  # two stops in one day more than 60 km apart means the place
 MAX_ARRIVAL_M = 150_000  # arrival point or hotel this far from the destination: wrong destination match
 MAX_FROM_DEST_M = 120_000  # a planned stop this far from the destination centre: the places and the destination disagree
 TOO_BROAD_TYPES = {"country", "continent"}
+# Countries that are one city: Google calls them a country, but the city is the trip.
+CITY_STATES = {"singapore", "monaco", "vatican city", "hong kong", "macau", "macao", "san marino", "gibraltar"}
+# When someone types a whole country, plan the city most visitors start from (usually the capital, sometimes the
+# main gateway). Keys are lower-case country names as Google returns them, plus common spellings people type.
+MAIN_CITY = {
+    "india": "New Delhi", "bangladesh": "Dhaka", "nepal": "Kathmandu", "bhutan": "Thimphu", "sri lanka": "Colombo",
+    "maldives": "Malé", "pakistan": "Lahore", "myanmar": "Yangon", "myanmar (burma)": "Yangon", "thailand": "Bangkok",
+    "malaysia": "Kuala Lumpur", "indonesia": "Bali", "vietnam": "Hanoi", "cambodia": "Siem Reap", "laos": "Luang Prabang",
+    "philippines": "Manila", "china": "Beijing", "japan": "Tokyo", "south korea": "Seoul", "taiwan": "Taipei",
+    "mongolia": "Ulaanbaatar", "united arab emirates": "Dubai", "uae": "Dubai", "qatar": "Doha", "oman": "Muscat",
+    "bahrain": "Manama", "kuwait": "Kuwait City", "saudi arabia": "Riyadh", "jordan": "Amman", "israel": "Jerusalem",
+    "turkey": "Istanbul", "türkiye": "Istanbul", "egypt": "Cairo", "morocco": "Marrakesh", "kenya": "Nairobi",
+    "tanzania": "Zanzibar", "south africa": "Cape Town", "mauritius": "Port Louis", "seychelles": "Victoria",
+    "united kingdom": "London", "uk": "London", "england": "London", "scotland": "Edinburgh", "ireland": "Dublin",
+    "france": "Paris", "spain": "Barcelona", "portugal": "Lisbon", "italy": "Rome", "germany": "Berlin",
+    "netherlands": "Amsterdam", "belgium": "Brussels", "switzerland": "Zurich", "austria": "Vienna",
+    "czechia": "Prague", "czech republic": "Prague", "hungary": "Budapest", "poland": "Kraków", "greece": "Athens",
+    "croatia": "Dubrovnik", "denmark": "Copenhagen", "sweden": "Stockholm", "norway": "Oslo", "finland": "Helsinki",
+    "iceland": "Reykjavík", "russia": "Moscow", "georgia": "Tbilisi", "armenia": "Yerevan", "azerbaijan": "Baku",
+    "kazakhstan": "Almaty", "uzbekistan": "Samarkand", "united states": "New York", "usa": "New York",
+    "canada": "Toronto", "mexico": "Mexico City", "brazil": "Rio de Janeiro", "argentina": "Buenos Aires",
+    "peru": "Cusco", "chile": "Santiago", "australia": "Sydney", "new zealand": "Auckland", "fiji": "Nadi",
+}
 MEAL_ORDER = ["breakfast", "lunch", "snack", "dinner"]
 # "on Mon 19 Oct": the date, because day numbers in the plan skip a day spent on an overnight train
 _MEAL_WARNING = re.compile(r"^No (breakfast|lunch|snack|dinner) stop matched .* on (\w{3} \d{2} \w{3})\.$")
@@ -35,9 +58,16 @@ class QualityReport:
         return not self.blocking
 
 
-def too_broad(types: list[str] | None) -> bool:
-    """A whole country can't be planned as one destination; a city or region can."""
+def too_broad(types: list[str] | None, name: str | None = None) -> bool:
+    """A whole country can't be planned as one destination; a city or region can, and so can a city-state."""
+    if name and name.strip().lower() in CITY_STATES:
+        return False
     return bool(set(types or []) & TOO_BROAD_TYPES)
+
+
+def main_city(country: str | None) -> str | None:
+    """The city to plan when someone names a whole country, or None if we don't know one for it."""
+    return MAIN_CITY.get((country or "").strip().lower())
 
 
 def _days_text(days: list[str]) -> str:
