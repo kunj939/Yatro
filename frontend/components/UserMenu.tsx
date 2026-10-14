@@ -31,7 +31,7 @@ export function UserMenu({ dark = false }: { dark?: boolean }) {
   return (
     <div className="relative" ref={box}>
       <button onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu"
-              className={`flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition-colors ${
+              className={`flex h-10 items-center gap-2 rounded-full pl-1 pr-2.5 transition-colors ${
                 dark ? "text-white/80 hover:bg-white/10" : "text-ink-soft hover:bg-haze-2"}`}>
         <span className="grid h-7 w-7 place-items-center rounded-full bg-signal text-[12px] font-bold text-on-signal ring-2 ring-signal/25">
           {initials}

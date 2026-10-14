@@ -87,36 +87,36 @@ export function Navbar() {
     <>
       <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3 md:px-5 md:pt-4">
         <nav aria-label="Main"
-             className={`relative mx-auto flex max-w-6xl items-center gap-3 rounded-2xl border px-3 transition-all duration-500 ease-out md:gap-5 md:px-4 ${
+             className={`relative mx-auto flex h-16 max-w-6xl items-center gap-3 rounded-2xl border px-3 backdrop-blur-xl backdrop-saturate-150 transition-all duration-500 ease-out md:gap-4 md:rounded-full md:pl-6 md:pr-2.5 ${
                scrolled
-                 ? "border-line/80 bg-paper/75 py-2 shadow-[0_10px_40px_-18px_rgb(var(--shadow)/0.45)] backdrop-blur-xl backdrop-saturate-150"
-                 : "border-transparent bg-transparent py-3"}`}>
+                 ? "border-line/80 bg-paper/80 shadow-[0_12px_40px_-18px_rgb(var(--shadow)/0.45)]"
+                 : "border-line/50 bg-paper/40 shadow-[0_8px_30px_-22px_rgb(var(--shadow)/0.35)]"}`}>
           <Link href="/" aria-label="Yatro home" className="group mr-auto shrink-0 rounded-lg px-1"><Logo /></Link>
 
           <div ref={navRef} onMouseLeave={rest}
-               className="relative hidden items-center gap-0.5 rounded-full border border-line/70 bg-haze/60 p-1 md:flex">
+               className="relative hidden items-center gap-1 md:flex">
             <span aria-hidden
-                  className={`absolute inset-y-1 left-0 rounded-full bg-paper shadow-[0_2px_10px_-4px_rgb(var(--shadow)/0.35)] ring-1 ring-line/80 transition-all duration-300 ease-out ${pill ? "opacity-100" : "opacity-0"}`}
+                  className={`absolute inset-y-0 left-0 rounded-full bg-haze-2 transition-all duration-300 ease-out ${pill ? "opacity-100" : "opacity-0"}`}
                   style={{ transform: `translateX(${pill?.x ?? 0}px)`, width: pill?.w ?? 0 }} />
             {links.map((l) => (
               <Link key={l.href} href={l.href} aria-current={l.current ? "true" : undefined}
                     onMouseEnter={(e) => moveTo(e.currentTarget)} onFocus={(e) => moveTo(e.currentTarget)}
-                    className={`relative rounded-full px-4 py-1.5 text-[14px] font-medium transition-colors duration-200 ${
-                      l.current ? "text-ink" : "text-ink-soft hover:text-ink"}`}>
+                    className={`relative rounded-full px-4 py-2 text-[14px] transition-colors duration-200 ${
+                      l.current ? "font-semibold text-ink" : "font-medium text-ink-soft hover:text-ink"}`}>
                 {l.label}
-                {l.current && <span aria-hidden className="absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-signal" />}
               </Link>
             ))}
           </div>
 
-          <div className="hidden items-center gap-1.5 md:flex">
-            <ThemeToggle className="!rounded-full" />
+          <div className="ml-2 hidden items-center gap-2 md:flex">
+            <ThemeToggle className="!h-10 !w-10 !rounded-full" />
+            <span aria-hidden className="h-6 w-px bg-line" />
             {ready && (user
               ? <UserMenu />
               : <Link href="/login" className="rounded-full px-3.5 py-2 text-[14px] font-medium text-ink-soft transition-colors hover:bg-haze-2 hover:text-ink">Sign in</Link>)}
-            <Link href="/plan" className="btn-primary shine group/cta !rounded-full !py-2 !pl-4 !pr-3.5 !text-[14px]">
+            <Link href="/plan" className="btn-primary shine group/cta !h-11 !rounded-full !py-0 !pl-5 !pr-3.5 !text-[14px]">
               Build my trip
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-[rgb(var(--on-signal)/0.12)] transition-transform duration-300 group-hover/cta:translate-x-0.5 group-hover/cta:-rotate-45">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-[rgb(var(--on-signal)/0.12)] transition-transform duration-300 group-hover/cta:translate-x-0.5 group-hover/cta:-rotate-45">
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden />
               </span>
             </Link>
@@ -132,7 +132,7 @@ export function Navbar() {
           </div>
 
           {/* Reading progress, drawn along the bottom edge of the bar once it has lifted off the page. */}
-          <span aria-hidden className={`pointer-events-none absolute inset-x-4 -bottom-px h-[2px] overflow-hidden rounded-full transition-opacity duration-300 ${scrolled ? "opacity-100" : "opacity-0"}`}>
+          <span aria-hidden className={`pointer-events-none absolute inset-x-8 -bottom-px h-[2px] overflow-hidden rounded-full transition-opacity duration-300 ${scrolled ? "opacity-100" : "opacity-0"}`}>
             <span className="block h-full origin-left bg-gradient-to-r from-signal via-signal to-spark" style={{ transform: `scaleX(${progress})` }} />
           </span>
         </nav>
@@ -172,7 +172,7 @@ export function Navbar() {
         )}
       </header>
       {open && <div className="fixed inset-0 z-30 bg-haze/60 backdrop-blur-sm md:hidden" onClick={() => setOpen(false)} aria-hidden />}
-      <div className="h-[68px] md:h-[76px]" aria-hidden />
+      <div className="h-[76px] md:h-[84px]" aria-hidden />
     </>
   );
 }
