@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { BadgeCheck, Clock3, CreditCard, MapPin } from "lucide-react";
+import { ArrowRight, BadgeCheck, Clock3, CreditCard, MapPin } from "lucide-react";
 import { Navbar } from "../Navbar";
-import { HeroSearch } from "./HeroSearch";
 import { HeroStory } from "./HeroStory";
 import { LiveBoard } from "./LiveBoard";
 import { brand } from "@/lib/brand";
@@ -27,9 +26,11 @@ export function LandingHero() {
           <div className="fade-up" style={{ ["--d" as string]: "80ms" }}>
             <HeroStory />
           </div>
-          {/* One box instead of two buttons: type the trip the way you'd text a friend. */}
-          <div className="fade-up mt-8" style={{ ["--d" as string]: "240ms" }}>
-            <HeroSearch />
+          <div className="fade-up mt-8 flex flex-wrap items-center gap-3" style={{ ["--d" as string]: "240ms" }}>
+            <Link href="/plan" className="btn-primary shine group !rounded-full !px-6 !py-3 !text-[16px]">
+              Build my trip<ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+            </Link>
+            <Link href="/#try" className="btn-ghost !rounded-full !bg-paper/40 !px-6 !py-3 !text-[16px] backdrop-blur">Try the budget demo</Link>
           </div>
           <ul className="fade-up mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-ink-mute" style={{ ["--d" as string]: "320ms" }}>
             <li className="inline-flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-teal" aria-hidden />{brand.freePlansText} a month</li>

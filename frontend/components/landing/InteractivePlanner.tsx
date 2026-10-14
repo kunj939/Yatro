@@ -69,7 +69,7 @@ export function InteractivePlanner() {
             A sample couple&apos;s day trip from Rome to Florence. We count every euro before adding anything, so
             the plan grows or shrinks honestly. No pretending.
           </p>
-          <div className="spotlight mt-9 rounded-2xl border border-line bg-paper/70 p-5 backdrop-blur">
+          <div className="spotlight mt-9 rounded-2xl border border-line bg-paper/45 p-5 backdrop-blur">
             <label htmlFor="budget-range" className="flex items-baseline justify-between font-semibold">
               <span>Total budget for two</span>
               <span className="num text-2xl">{eur(budget)}</span>
@@ -100,7 +100,7 @@ export function InteractivePlanner() {
         </Reveal>
 
         <Reveal delay={120} className="min-w-0">
-          <div className="spotlight panel overflow-hidden rounded-2xl shadow-[0_30px_80px_-40px_rgb(var(--shadow)/0.55)]" aria-live="polite">
+          <div className="spotlight overflow-hidden rounded-2xl border border-line bg-paper/55 shadow-[0_30px_80px_-40px_rgb(var(--shadow)/0.55)] backdrop-blur" aria-live="polite">
             {p.feasible ? (
               <>
                 <div className="flex items-center gap-3 border-b border-line p-5 md:px-7">

@@ -80,7 +80,7 @@ export function LiveBoard() {
 
   return (
     <div className="board-glow relative" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      <div className="spotlight relative overflow-hidden rounded-2xl border border-line bg-paper/85 shadow-[0_30px_80px_-40px_rgb(var(--shadow)/0.6)] backdrop-blur-xl">
+      <div className="spotlight relative overflow-hidden rounded-2xl border border-line bg-paper/55 shadow-[0_30px_80px_-40px_rgb(var(--shadow)/0.6)] backdrop-blur-xl">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-line px-5 py-4 sm:px-6">
           <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-mute">
             {trip.route} · {trip.date}
