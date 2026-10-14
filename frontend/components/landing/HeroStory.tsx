@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Route } from "lucide-react";
 
 type Story = {
   label: string;      // what the dot is called
@@ -96,10 +95,7 @@ export function HeroStory() {
             <div key={s.label} aria-hidden={!on || undefined}
                  className={`col-start-1 row-start-1 min-w-0 transition-all duration-500 ease-out ${
                    on ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}>
-              <span className="eyebrow max-w-full sm:max-w-[calc(100%-7.75rem)]">
-                <Route className="h-3.5 w-3.5 shrink-0 text-signal" aria-hidden /><span className="truncate">{s.tag}</span>
-              </span>
-              <p className="mt-5 max-w-[22ch] text-[clamp(2rem,3.5vw,2.9rem)] font-extrabold leading-[1.06] text-ink">
+              <p className="max-w-[22ch] text-[clamp(2rem,3.5vw,2.9rem)] font-extrabold leading-[1.06] text-ink">
                 {s.lead}{" "}
                 <span className={`accent ${s.tone === "highlight" ? "highlight" : s.tone} whitespace-nowrap`}>{s.accent}</span>
               </p>
@@ -107,15 +103,6 @@ export function HeroStory() {
             </div>
           );
         })}
-      </div>
-      <div className="mt-1 flex h-6 items-center gap-0.5 sm:absolute sm:right-0 sm:top-0 sm:mt-0 sm:h-[30px]" role="group" aria-label="Who is it for">
-        {STORIES.map((s, n) => (
-          <button key={s.label} type="button" onClick={() => setI(n)} aria-label={`Show: ${s.label}`} aria-current={n === i || undefined}
-                  className="group grid h-6 place-items-center px-1">
-            <span className={`block h-1.5 rounded-full transition-all duration-300 ${
-              n === i ? "w-6 bg-signal" : "w-1.5 bg-ink-mute/40 group-hover:bg-ink-mute"}`} />
-          </button>
-        ))}
       </div>
       </div>
     </div>
