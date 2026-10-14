@@ -15,8 +15,7 @@ import { MapPanel } from "./MapPanel";
 import { GroupMembers } from "./GroupMembers";
 import { ExpenseSplitter } from "./ExpenseSplitter";
 import { ShareSheet, SharedLinks } from "./ShareSheet";
-import { WhatsAppCard } from "./WhatsAppCard";
-import { TakeAlong } from "./TakeAlong";
+import { PlanActions } from "./PlanActions";
 import { useFlags } from "@/lib/flags";
 import { InfeasibleView } from "./InfeasibleView";
 import { TripLoading } from "./TripLoading";
@@ -140,129 +139,78 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
 
   return (
     <div className="container-x pb-24 pt-4">
-      {/* Header */}
-      <header className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-[#0f1219] p-6 text-white shadow-[0_30px_80px_-40px_rgb(0_0_0/0.8)] md:p-9">
-        <div aria-hidden className="absolute -right-24 -top-28 -z-10 h-80 w-80 rounded-full bg-[rgb(190_255_74/0.16)] blur-3xl" />
-        <div aria-hidden className="absolute -bottom-32 -left-20 -z-10 h-72 w-72 rounded-full bg-[rgb(45_212_230/0.12)] blur-3xl" />
-        <div className="flex flex-wrap items-center gap-2 text-sm text-white/70">
+      {/* Header: one light card. Title, route and facts on the left; the money on the right. */}
+      <header className="card p-4 sm:p-5 md:p-6">
+        <div className="flex flex-wrap items-center gap-1.5 text-[13px] text-ink-soft">
           {demo ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 font-semibold text-white"><FlaskConical className="h-3.5 w-3.5" aria-hidden />Demo mode: sample data</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-haze-2 px-2.5 py-0.5 font-semibold text-ink"><FlaskConical className="h-3.5 w-3.5" aria-hidden />Demo: sample data</span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgb(45_212_230/0.15)] px-2.5 py-0.5 font-semibold text-[rgb(140_230_240)]">
-              <span className="board-live h-1.5 w-1.5 rounded-full bg-[rgb(140_230_240)]" />Live data
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-soft px-2.5 py-0.5 font-semibold text-teal-deep">
+              <span className="board-live h-1.5 w-1.5 rounded-full bg-teal" />Live data
             </span>
           )}
-          {readOnly && <span className="rounded-full border border-white/25 px-2.5 py-0.5">Read-only sample</span>}
-          {it && <span className="rounded-full border border-white/15 px-2.5 py-0.5">Version {it.version}</span>}
+          {readOnly && <span className="rounded-full border border-line px-2.5 py-0.5">Read-only sample</span>}
+          {it && <span className="rounded-full border border-line px-2.5 py-0.5">v{it.version}</span>}
           {home ? (
-            <span className="inline-flex items-center rounded-full border border-white/15 p-0.5" role="group" aria-label="Show prices in">
+            <span className="inline-flex items-center rounded-full border border-line p-0.5" role="group" aria-label="Show prices in">
               {([[false, trip.currency], [true, home.code]] as [boolean, string][]).map(([h, code]) => (
                 <button key={code} type="button" aria-pressed={inHome === h} onClick={() => chooseMoney(h)}
                         title={h ? `Roughly, at ${currencySymbol(home.code)}${home.rate.toFixed(home.rate < 10 ? 2 : 1)} per ${trip.currency}` : "As the plan is priced"}
-                        className={`rounded-full px-2.5 py-0.5 font-semibold transition-colors ${inHome === h ? "bg-[rgb(190_255_74)] text-[#0b0d0c]" : "text-white/75 hover:text-white"}`}>
+                        className={`rounded-full px-2.5 py-0.5 font-semibold transition-colors ${inHome === h ? "bg-signal text-on-signal" : "text-ink-soft hover:text-ink"}`}>
                   {currencySymbol(code) !== code ? `${currencySymbol(code)} ${code}` : code}
                 </button>
               ))}
             </span>
           ) : (
-            <span className="hidden rounded-full border border-white/15 px-2.5 py-0.5 sm:inline">{trip.currency}</span>
+            <span className="rounded-full border border-line px-2.5 py-0.5">{trip.currency}</span>
           )}
-          {home && inHome && <span className="text-white/55">≈ approximate</span>}
+          {home && inHome && <span className="text-ink-mute">≈ approximate</span>}
           {canShare && (
-            <button onClick={() => setSharing(true)} className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 font-semibold text-white transition-colors hover:bg-white/20">
+            <button onClick={() => setSharing(true)} className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 font-semibold text-ink transition-colors hover:border-signal/50">
               <Share2 className="h-3.5 w-3.5" aria-hidden />Share
             </button>
           )}
         </div>
-        <h1 className="mt-4 text-[28px] font-extrabold leading-tight tracking-tight sm:text-4xl md:text-[44px]">
-          {withPlace(it?.title ?? trip.title, trip.destination)}
-        </h1>
 
-        {/* Route line */}
-        <div className="mt-6 grid grid-cols-[auto_1fr_auto] items-center gap-3 sm:gap-5">
+        <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,25rem)] lg:items-end lg:gap-8">
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.14em] text-white/45">From</p>
-            <p className="max-w-[28vw] truncate text-base font-semibold sm:max-w-[220px] sm:text-lg">{trip.origin}</p>
+            <h1 className="text-[24px] font-extrabold leading-tight tracking-tight sm:text-[30px] md:text-[34px]">
+              {withPlace(it?.title ?? trip.title, trip.destination)}
+            </h1>
+            <p className="mt-2 flex min-w-0 items-center gap-2 text-[15px] font-semibold">
+              <span className="truncate">{trip.origin}</span>
+              <span aria-hidden className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-signal text-on-signal"><ModeIcon className="h-3.5 w-3.5" /></span>
+              <span className="truncate">{trip.destination}</span>
+            </p>
+            <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[13px] text-ink-soft">
+              <Chip><CalendarDays className="h-3.5 w-3.5" aria-hidden />{niceDate(trip.start_date)}{trip.end_date !== trip.start_date ? ` – ${niceDate(trip.end_date)}` : ""}</Chip>
+              <Chip><Clock className="h-3.5 w-3.5" aria-hidden />{time12(trip.start_time)} – {time12(trip.end_time)}</Chip>
+              <Chip><Users className="h-3.5 w-3.5" aria-hidden />{plural(trip.travellers, "traveller")}{trip.traveller_type ? ` · ${TRAVELLER_LABEL[trip.traveller_type] ?? trip.traveller_type}` : ""}</Chip>
+              {!!trip.preferences?.age_groups?.length && trip.preferences.age_groups.some((a) => a !== "adults") && (
+                <Chip><Baby className="h-3.5 w-3.5" aria-hidden /><span className="sm:hidden">{ageSummary(trip.preferences.age_groups, true)}</span>
+                  <span className="hidden sm:inline">{ageSummary(trip.preferences.age_groups)}</span></Chip>)}
+              {it && <Chip><ListChecks className="h-3.5 w-3.5" aria-hidden />{plural(it.days.reduce((a, d) => a + dayStats(d.items).stops, 0), "stop")}</Chip>}
+            </p>
           </div>
-          <div className="relative flex items-center" aria-hidden>
-            <span className="h-2 w-2 shrink-0 rounded-full bg-white/60" />
-            <span className="h-px flex-1 border-t border-dashed border-white/30" />
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[rgb(190_255_74)] text-[#0b0d0c] shadow-[0_0_0_6px_rgb(190_255_74/0.15)]">
-              <ModeIcon className="h-4 w-4" />
-            </span>
-            <span className="h-px flex-1 border-t border-dashed border-white/30" />
-            <MapPin className="h-4 w-4 shrink-0 text-[rgb(190_255_74)]" />
-          </div>
-          <div className="min-w-0 text-right">
-            <p className="text-xs uppercase tracking-[0.14em] text-white/45">To</p>
-            <p className="max-w-[28vw] truncate text-base font-semibold sm:max-w-[220px] sm:text-lg">{trip.destination}</p>
+
+          <div className="rounded-2xl bg-haze/70 p-3.5">
+            <dl className="num grid grid-cols-4 gap-2 lg:grid-cols-2">
+              <Stat label="Budget" value={money(trip.budget, trip.currency)} />
+              <Stat label="Planned" value={it ? money(it.total_cost, trip.currency) : "—"} />
+              <Stat label={over ? "Over" : "Left"} value={it ? money(Math.abs(it.remaining), trip.currency) : "—"} accent={over ? "text-danger" : "text-teal-deep"} />
+              <Stat label="Per person" value={it ? money(Math.round(it.budget.per_person), trip.currency) : "—"} />
+            </dl>
+            {it && (
+              <div className="mt-2.5 flex items-center gap-2.5">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-haze-2">
+                  <div className={`h-full rounded-full transition-[width] duration-1000 ${over ? "bg-danger" : "bg-gradient-to-r from-signal to-spark"}`} style={{ width: `${used}%` }} />
+                </div>
+                <span className="num text-[12px] font-semibold text-ink-soft">{Math.round(used)}% used</span>
+              </div>
+            )}
           </div>
         </div>
-
-        <p className="mt-5 flex flex-wrap items-center gap-1.5 text-[13px] text-white/80 sm:gap-2 sm:text-[14px]">
-          <Chip><CalendarDays className="h-3.5 w-3.5" aria-hidden />{niceDate(trip.start_date)}{trip.end_date !== trip.start_date ? ` – ${niceDate(trip.end_date)}` : ""}</Chip>
-          <Chip><Clock className="h-3.5 w-3.5" aria-hidden />{time12(trip.start_time)} – {time12(trip.end_time)}</Chip>
-          <Chip><Users className="h-3.5 w-3.5" aria-hidden />{plural(trip.travellers, "traveller")}{trip.traveller_type ? ` · ${TRAVELLER_LABEL[trip.traveller_type] ?? trip.traveller_type}` : ""}</Chip>
-          {!!trip.preferences?.age_groups?.length && trip.preferences.age_groups.some((a) => a !== "adults") && (
-            <Chip><Baby className="h-3.5 w-3.5" aria-hidden /><span className="sm:hidden">{ageSummary(trip.preferences.age_groups, true)}</span>
-              <span className="hidden sm:inline">{ageSummary(trip.preferences.age_groups)}</span></Chip>)}
-          {it && <Chip><ListChecks className="h-3.5 w-3.5" aria-hidden />{plural(it.days.reduce((a, d) => a + dayStats(d.items).stops, 0), "stop")}</Chip>}
-        </p>
-
-        <dl className="num mt-7 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Stat label="Budget" value={money(trip.budget, trip.currency)} />
-          <Stat label="Planned cost" value={it ? money(it.total_cost, trip.currency) : "—"} />
-          <Stat label={over ? "Over budget" : "Remaining"} value={it ? money(Math.abs(it.remaining), trip.currency) : "—"} accent={over ? "text-[rgb(255_150_175)]" : "text-[rgb(190_255_74)]"} />
-          <Stat label="Per person" value={it ? money(Math.round(it.budget.per_person), trip.currency) : "—"} />
-        </dl>
-        {it && (
-          <div className="mt-5">
-            <div className="flex justify-between text-xs text-white/55"><span>Budget used</span><span className="num font-semibold text-white/80">{Math.round(used)}%</span></div>
-            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/10">
-              <div className={`h-full rounded-full transition-[width] duration-1000 ${over ? "bg-[rgb(255_150_175)]" : "bg-gradient-to-r from-[rgb(190_255_74)] to-[rgb(45_212_230)]"}`} style={{ width: `${used}%` }} />
-            </div>
-          </div>
-        )}
       </header>
-
-      {/* Day-by-day overview: tap a day to jump to it */}
-      {/* A trip longer than a week: one card per week instead of one per day */}
-      {it && isWeekly(it) && (
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:overflow-x-auto sm:pb-1">
-          {Array.from({ length: weekOf(it.days.length - 1) + 1 }, (_, w) => {
-            const wk = weekStats(it, w);
-            return (
-              <button key={w} type="button" onClick={() => jumpTo(`w${w}`)}
-                      className="card group min-w-0 flex-1 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-signal/50 sm:min-w-[210px]">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-[0.12em] text-signal-deep">Week {w + 1}</span>
-                  <ArrowDown className="h-3.5 w-3.5 text-ink-mute transition-transform group-hover:translate-y-0.5" aria-hidden />
-                </div>
-                <p className="mt-1 font-semibold">{niceDate(wk.first!)} – {niceDate(wk.last!)}</p>
-                <p className="num mt-2 text-sm text-ink-mute">{plural(wk.days.length, "day")} · {plural(wk.stops, "stop")} · {money(wk.cost, trip.currency)}</p>
-              </button>
-            );
-          })}
-        </div>
-      )}
-      {it && it.days.length > 1 && !isWeekly(it) && (
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:overflow-x-auto sm:pb-1">
-          {it.days.map((d, n) => {
-            const st = dayStats(d.items);
-            return (
-              <button key={d.index} type="button" onClick={() => jumpTo(d.index)}
-                      className="group min-w-0 flex-1 sm:min-w-[190px] rounded-2xl border border-line bg-paper/80 p-4 text-left backdrop-blur transition-all hover:-translate-y-0.5 hover:border-signal/50 hover:shadow-glow">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-[0.12em] text-signal-deep">Day {n + 1}</span>
-                  <ArrowDown className="h-3.5 w-3.5 text-ink-mute transition-transform group-hover:translate-y-0.5" aria-hidden />
-                </div>
-                <p className="mt-1 font-semibold">{niceDate(d.date)}</p>
-                <p className="num mt-2 text-sm text-ink-mute">{plural(st.stops, "stop")} · {money(st.cost, trip.currency)}</p>
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {notice && (
         <div role="status" className="fade-up mt-5 flex items-center gap-2 rounded-xl border border-teal/30 bg-teal-soft px-4 py-3 text-[16px] font-medium text-teal-deep"><Sparkles className="h-4 w-4 shrink-0" aria-hidden />{notice}</div>
@@ -310,22 +258,21 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                       {it.brownout.labels.alternatives && <BrownoutNote text={it.brownout.labels.alternatives} icon={Repeat} />}
                     </div>
                   )}
-                  {!readOnly && flags.share && <div className="hidden lg:block"><WhatsAppCard trip={trip} /></div>}
-                  {!readOnly && <div className="hidden lg:block"><TakeAlong trip={trip} /></div>}
+                  {!readOnly && <div className="hidden lg:block"><PlanActions trip={trip} onShare={canShare ? () => setSharing(true) : undefined} /></div>}
                   {it.llm_status === "fallback" && (
                     <p className="mb-5 rounded-xl bg-haze-2 px-4 py-3 text-sm text-ink-soft">Trip data was collected, but AI explanation is temporarily unavailable.</p>
                   )}
-                  <div id="plan-top" className="mb-4 flex scroll-mt-28 flex-wrap items-center justify-between gap-3">
+                  <div id="plan-top" className="mb-4 flex scroll-mt-28 flex-wrap items-center justify-between gap-3 sm:flex-nowrap">
                     {it.days.length > 1 ? (
-                      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Show which days">
+                      <div className="-mx-1 flex min-w-0 flex-1 basis-full gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:thin] sm:basis-0" role="group" aria-label="Show which days">
                         {([["all", "All days"], ...(isWeekly(it)
                             ? Array.from({ length: weekOf(it.days.length - 1) + 1 }, (_, w) => [`w${w}`, `Week ${w + 1}`])
-                            : it.days.map((d, n) => [d.index, `Day ${n + 1}`]))] as [DayFilter, string][]).map(([v, l]) => (
-                          <button key={String(v)} type="button" aria-pressed={day === v} onClick={() => setDay(v)} className={day === v ? "chip-on !py-1.5" : "chip-off !py-1.5"}>{l}</button>
+                            : it.days.map((d, n) => [d.index, `Day ${n + 1} · ${niceDate(d.date, { day: "numeric", month: "short" })}`]))] as [DayFilter, string][]).map(([v, l]) => (
+                          <button key={String(v)} type="button" aria-pressed={day === v} onClick={() => setDay(v)} className={`shrink-0 whitespace-nowrap ${day === v ? "chip-on !py-1.5" : "chip-off !py-1.5"}`}>{l}</button>
                         ))}
                       </div>
                     ) : <span />}
-                    <div className="inline-flex rounded-xl border border-line bg-paper p-1 text-[13px] font-semibold" role="group" aria-label="How much detail">
+                    <div className="inline-flex shrink-0 rounded-xl border border-line bg-paper p-1 text-[13px] font-semibold" role="group" aria-label="How much detail">
                       {([["compact", "Compact"], ["detailed", "Detailed"]] as [PlanView, string][]).map(([v, l]) => (
                         <button key={v} type="button" aria-pressed={view === v} onClick={() => chooseView(v)}
                                 className={`rounded-lg px-3 py-1.5 transition-colors ${view === v ? "bg-signal text-on-signal" : "text-ink-mute hover:text-ink"}`}>{l}</button>
@@ -340,8 +287,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                   )}
                   {/* On a phone the plan comes first: keeping it and changing it follow the itinerary, not precede it */}
                   <div className="mt-6 space-y-6 lg:hidden">
-                    {!readOnly && flags.share && <WhatsAppCard trip={trip} />}
-                    {!readOnly && <TakeAlong trip={trip} />}
+                    {!readOnly && <PlanActions trip={trip} onShare={canShare ? () => setSharing(true) : undefined} />}
                     <ReplanBox chips={chips} value={message} onChange={setMessage} onSend={sendMessage} busy={running}
                                readOnly={readOnly} replansLeft={trip.replans_left} error={error} reply={reply} />
                   </div>
@@ -441,15 +387,15 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
 
 function Stat({ label, value, accent = "" }: { label: string; value: string; accent?: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition-colors hover:border-white/20">
-      <dt className="text-xs text-white/55">{label}</dt>
-      <dd className={`mt-0.5 truncate text-xl font-bold md:text-2xl ${accent}`}>{value}</dd>
+    <div className="min-w-0">
+      <dt className="text-[11.5px] font-medium text-ink-mute">{label}</dt>
+      <dd className={`truncate text-[15px] font-bold sm:text-[17px] ${accent || "text-ink"}`}>{value}</dd>
     </div>
   );
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
-  return <span className="num inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.05] px-2.5 py-1 sm:px-3">{children}</span>;
+  return <span className="num inline-flex items-center gap-1.5 rounded-full bg-haze-2/80 px-2.5 py-1">{children}</span>;
 }
 
 function SideCard({ icon: Icon, title, children, folded = false }: { icon: any; title: string; children: React.ReactNode; folded?: boolean }) {
@@ -501,19 +447,19 @@ function ReplanBox({ chips, value, onChange, onSend, busy, readOnly, replansLeft
 }) {
   const uid = useId();
   return (
-    <section className="rounded-2xl border border-signal/30 bg-paper/90 p-5 shadow-[0_20px_50px_-30px_rgb(var(--signal)/0.6)] backdrop-blur" aria-labelledby={`${uid}-title`}>
+    <section className="card p-4" aria-labelledby={`${uid}-title`}>
       <h2 id={`${uid}-title`} className="flex items-center gap-2 text-[16px] font-bold"><Sparkles className="h-4 w-4 text-signal-deep" aria-hidden />Change the plan</h2>
-      <p className="mt-1 text-[14px] text-ink-mute">
-        {readOnly ? "This is a sample trip. Plan your own to change it." : "Say it in your own words, in English or Hinglish. The engine re-checks time, hours and budget."}
+      <p className="mt-0.5 text-[13px] text-ink-mute">
+        {readOnly ? "This is a sample trip. Plan your own to change it." : "In your own words, English or Hinglish. Time, hours and budget are re-checked."}
       </p>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {chips.map((c) => (
-          <button key={c} type="button" className="chip-off !px-3 !py-1.5 text-[14px]" disabled={busy} onClick={() => onSend(c)}>{c}</button>
+          <button key={c} type="button" className="chip-off !rounded-full !px-2.5 !py-1 text-[13px]" disabled={busy} onClick={() => onSend(c)}>{c}</button>
         ))}
       </div>
       <form className="mt-3" onSubmit={(e) => { e.preventDefault(); onSend(value); }}>
         <label htmlFor={`${uid}-msg`} className="sr-only">Describe a change</label>
-        <textarea id={`${uid}-msg`} rows={2} maxLength={1000} className="field resize-none" placeholder="Try: add Fatehpur Sikri, start at 9am, no temples…"
+        <textarea id={`${uid}-msg`} rows={2} maxLength={1000} className="field resize-none !py-2.5 text-[14px]" placeholder={`Try: ${EXAMPLES}`}
                   value={value} onChange={(e) => onChange(e.target.value)} disabled={busy}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); onSend(value); } }} />
         {error && <p role="alert" className="mt-2 rounded-lg bg-danger-soft px-3 py-2 text-[14px] font-medium text-danger">{error}</p>}
@@ -522,7 +468,6 @@ function ReplanBox({ chips, value, onChange, onSend, busy, readOnly, replansLeft
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-ink-mute" aria-hidden /><span>{reply}</span>
           </p>
         )}
-        {!readOnly && !error && !reply && <p className="mt-2 text-[13px] leading-snug text-ink-mute">Examples: {EXAMPLES}</p>}
         <div className="mt-2 flex items-center justify-between gap-3">
           {!readOnly && <span className="num text-[13px] text-ink-mute">{replansLeft} changes left</span>}
           <button className="btn-primary ml-auto !py-2" disabled={busy || (!readOnly && !value.trim())}>

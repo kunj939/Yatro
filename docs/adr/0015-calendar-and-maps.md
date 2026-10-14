@@ -43,3 +43,6 @@ Once the trip is planned, people want it where they will look during the trip: t
 
 - Anyone with the feed URL can read the plan, the same as a share link. "Stop syncing" revokes it.
 - No new Google API calls and no new cost. The feed is generated on request from the stored plan.
+- Update (same day): the trip page no longer shows a .ics download button (the subscription covers it); the
+  `calendar.ics` endpoint stays for anyone who needs a one-off file. The calendar, WhatsApp, Share (with the PDF),
+  My Maps and Email actions now sit in one slim bar (`PlanActions`).
