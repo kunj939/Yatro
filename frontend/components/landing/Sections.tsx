@@ -50,9 +50,7 @@ const COMPARE = [
   { topic: "Prices", Icon: Wallet, bot: "Guesses from stale data.", yatro: "Real fares from live timetables. Estimates are always labelled." },
   { topic: "Opening hours", Icon: Clock, bot: "Might send you to a closed gate.", yatro: "Checked for the day and hour you'll land up there." },
   { topic: "Your budget", Icon: ShieldCheck, bot: "“Around ₹5,000, probably.”", yatro: "Every ticket, meal and auto added up. Never over budget." },
-  { topic: "Getting around", Icon: Route, bot: "“About an hour, probably.”", yatro: "Every leg routed: cab, train, metro, walk." },
   { topic: "Who is travelling", Icon: Users, bot: "The same plan for everyone.", yatro: "Picks that suit the kids, the adults and the grandparents." },
-  { topic: "Changing the plan", Icon: Repeat, bot: "Start the whole chat again.", yatro: "Say “skip the fort”. Only that changes." },
   { topic: "A plan that can't work", Icon: AlertTriangle, bot: "Makes one up anyway.", yatro: "Tells you why, and the quickest fix." },
 ];
 
@@ -319,11 +317,6 @@ export function GroupSection() {
           <h2 id="group-heading" className="mt-5 text-title font-bold">Your group chat could <span className="accent highlight">never plan this.</span></h2>
           <p className="mt-4 text-lg leading-relaxed text-ink-soft">We turn &ldquo;bro, let&apos;s go somewhere&rdquo; into <span className="font-semibold text-ink">actual tickets, stays, food stops, timings, and a budget everyone can agree on</span>. Add everyone with their own budget and food choices. One vegetarian in the gang? Every meal stop has veg options. Log spends as you go and {brand.name} settles up, so no more &ldquo;who paid for what&rdquo;.</p>
           <p className="mt-3 text-lg font-semibold text-ink">From bakchodi to boarding pass.</p>
-          <ul className="mt-6 space-y-2.5 text-ink-soft">
-            {["Split equally, between some people, custom amounts, or one person pays for all", "Heads-up when someone's budget can't cover their share", "Settles up in the fewest payments possible"].map((t) => (
-              <li key={t} className="flex gap-3"><span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-teal-soft text-teal"><Check className="h-3 w-3" aria-hidden /></span>{t}</li>
-            ))}
-          </ul>
         </Reveal>
         <Reveal delay={120} className="min-w-0">
           <div className="spotlight rounded-2xl border border-line bg-paper/80 p-6 shadow-[0_30px_80px_-40px_rgb(var(--shadow)/0.55)] backdrop-blur md:p-8">
@@ -378,7 +371,7 @@ export function FinalCTA() {
           <div className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-[#0c0f16] px-6 py-14 text-white md:px-14 md:py-20">
             <div aria-hidden className="absolute -left-20 -top-32 -z-10 h-80 w-80 rounded-full bg-[rgb(190_255_74/0.22)] blur-3xl" />
             <div aria-hidden className="absolute -bottom-32 right-0 -z-10 h-80 w-96 rounded-full bg-[rgb(45_212_230/0.18)] blur-3xl" />
-            <div className="grid gap-10 lg:grid-cols-[1.3fr_1fr] lg:items-end">
+            <div>
               <div>
                 <h2 className="max-w-2xl text-title font-bold">Pack the bag. <span className="accent highlight-night">We&apos;ll do the maths.</span></h2>
                 <p className="mt-4 max-w-xl text-lg text-white/70">Four quick steps. Under a minute. A plan where every time and every rupee checks out.</p>
@@ -389,16 +382,6 @@ export function FinalCTA() {
                   <Link href="/#pricing" className="btn-ghost-dark px-7 py-3.5 text-base">See pricing</Link>
                 </div>
               </div>
-              <ul className="space-y-3 text-sm text-white/70">
-                {[[ShieldCheck, "Sources for every checked fact"], [MapPin, "Real routes and distances"], [Footprints, "Walking legs timed, not guessed"], [Wallet, "No hidden costs. Ever."]].map(([I, t]) => {
-                  const Icon = I as typeof ShieldCheck;
-                  return (
-                    <li key={t as string} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 transition-colors hover:border-white/25">
-                      <Icon className="h-4 w-4 shrink-0 text-[rgb(190_255_74)]" aria-hidden />{t as string}
-                    </li>
-                  );
-                })}
-              </ul>
             </div>
           </div>
         </Reveal>

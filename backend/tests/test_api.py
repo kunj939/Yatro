@@ -63,7 +63,7 @@ def test_quota_two_lifetime_plans_and_free_replans(client):
     assert r2.status_code == 200
     t3, r3 = _plan(client, auth)
     assert r3.status_code == 402
-    assert r3.json()["error"]["message"] == "Your 2 free trip plans are used."
+    assert r3.json()["error"]["message"] == "This month's 2 free trip plans are used. They come back on the 1st."
     # replans of an existing trip never consume quota
     trip = r1.json()["trip"]
     item = next(i for d in trip["itinerary"]["days"] for i in d["items"] if i["alternatives"])

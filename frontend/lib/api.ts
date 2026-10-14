@@ -109,7 +109,7 @@ export const endpoints = {
   deleteTrip: (id: string) => api<void>(`/api/trips/${id}`, { method: "DELETE" }),
   subscription: () => api<Quota>("/api/subscription"),
   referrals: () => api<ReferralCard>("/api/subscription/referrals"),
-  upgrade: (product: "plus" | "one_trip") => api<Quota>("/api/subscription/upgrade", { method: "POST", json: { product } }),
+  upgrade: (product: "plus" | "plus_yearly" | "one_trip") => api<Quota>("/api/subscription/upgrade", { method: "POST", json: { product } }),
   cancel: () => api<Quota>("/api/subscription/cancel", { method: "POST" }),
   autocomplete: (q: string) => api<{ results: Suggestion[]; message?: string }>(`/api/places/autocomplete?q=${encodeURIComponent(q)}`),
   reverse: (lat: number, lng: number) => api<{ result: Suggestion | null }>(`/api/places/reverse?lat=${lat}&lng=${lng}`),

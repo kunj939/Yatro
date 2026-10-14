@@ -64,7 +64,7 @@ SWITCHES: dict[str, Switch] = {s.name: s for s in (
 
 NUMBERS: dict[str, Number] = {n.key: n for n in (
     Number("brownout_level", "Busy mode level", "0 = normal. 1 template text · 2 + no alternatives · 3 + fewer options compared · 4 + saved train timetables only.", 0, 4),
-    Number("free_trip_plans", "Free plans per account", "How many trip plans a free account gets in total.", 0, 50),
+    Number("free_trip_plans", "Free plans per month", "How many new trip plans a free account gets each month (the count starts again on the 1st).", 0, 50),
     Number("referral_reward_friend", "Invite: plans for the friend", "Extra free trip plans a new account gets when it signs up with a friend's code.", 0, 10),
     Number("referral_reward_inviter", "Invite: plans for the inviter", "Extra free trip plans the inviter gets when their friend's first plan is ready.", 0, 10),
     Number("referral_plus_discount_pct", "Invite: Plus discount for the friend (%)", "Off the friend's first month of Plus. 0 = no discount.", 0, 90),

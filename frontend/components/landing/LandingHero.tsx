@@ -30,15 +30,9 @@ export function LandingHero() {
           {/* One box instead of two buttons: type the trip the way you'd text a friend. */}
           <div className="fade-up mt-5" style={{ ["--d" as string]: "240ms" }}>
             <HeroSearch />
-            <p className="mt-3 text-[14px] text-ink-mute">
-              Type it like you&apos;d text a friend. Or{" "}
-              <Link href="/plan" className="font-semibold text-ink-soft underline-offset-4 hover:text-ink hover:underline">plan step by step</Link>
-              {" · "}
-              <Link href="/#try" className="font-semibold text-ink-soft underline-offset-4 hover:text-ink hover:underline">play with the budget demo</Link>
-            </p>
           </div>
           <ul className="fade-up mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-ink-mute" style={{ ["--d" as string]: "320ms" }}>
-            <li className="inline-flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-teal" aria-hidden />First {brand.freePlans} plans free</li>
+            <li className="inline-flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-teal" aria-hidden />{brand.freePlans} free plans a month</li>
             <li className="inline-flex items-center gap-1.5"><Clock3 className="h-4 w-4 text-teal" aria-hidden />Done in under a minute</li>
             <li className="inline-flex items-center gap-1.5"><CreditCard className="h-4 w-4 text-teal" aria-hidden />No card. No catch.</li>
           </ul>

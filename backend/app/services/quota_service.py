@@ -18,7 +18,7 @@ from app.models.user import Subscription, User
 
 def quota_message() -> str:
     n = runtime.free_trip_plans()
-    return f"Your {n} free trip plan{'s are' if n != 1 else ' is'} used."
+    return f"This month's {n} free trip plan{'s are' if n != 1 else ' is'} used. They come back on the 1st."
 
 
 def get_subscription(db: Session, user: User) -> Subscription:
@@ -41,14 +41,34 @@ def plus_active(sub: Subscription) -> bool:
     return end > datetime.now(UTC)
 
 
+def _next_month() -> str:
+    now = datetime.now(UTC)
+    return f"{now.year + (now.month == 12)}-{now.month % 12 + 1:02d}-01"
+
+
 def _first_month(db: Session, user: User, price: int) -> int | None:
     from app.services import referral_service
     pct = referral_service.plus_discount(db, user)
     return round(price * (100 - pct) / 100) if pct else None
 
 
+def month_key(now: datetime | None = None) -> str:
+    return f"{(now or datetime.now(UTC)):%Y-%m}"
+
+
+def roll_period(db: Session, user: User) -> None:
+    """Free plans are counted per month (ADR 0013): the first look in a new month starts the count again."""
+    m = month_key()
+    if user.free_period != m:
+        db.execute(update(User).where(User.id == user.id, (User.free_period != m) | User.free_period.is_(None))
+                   .values(free_plans_used=0, free_period=m))
+        db.flush()
+        db.refresh(user)
+
+
 def quota_status(db: Session, user: User) -> dict:
     s = get_settings()
+    roll_period(db, user)
     sub = get_subscription(db, user)
     free_total = runtime.free_trip_plans()  # the setting, or what an admin chose in the console
     left = max(0, free_total - user.free_plans_used)
@@ -57,7 +77,9 @@ def quota_status(db: Session, user: User) -> dict:
             "free_plans_used": min(user.free_plans_used, free_total), "free_plans_left": left,
             "trip_credits": sub.trip_credits, "can_plan": plus or left > 0 or sub.trip_credits > 0,
             "current_period_end": sub.current_period_end.isoformat() if sub.current_period_end and plus else None,
-            "prices": {"plus_monthly_inr": s.plus_price_inr, "one_trip_inr": s.one_trip_price_inr,
+            "free_plans_reset": _next_month(),
+            "prices": {"plus_monthly_inr": s.plus_price_inr, "plus_yearly_inr": s.plus_yearly_price_inr,
+                       "one_trip_inr": s.one_trip_price_inr,
                        # a friend's invite: their first month of Plus is cheaper (ADR 0012)
                        "plus_first_month_inr": _first_month(db, user, s.plus_price_inr)},
             "payments_mode": s.payments_mode}
@@ -67,6 +89,7 @@ def reserve(db: Session, user: User, trip: Trip) -> str | None:
     """Consume one plan for this trip if it hasn't consumed one yet. Returns the source used (or None)."""
     if trip.quota_consumed:
         return None
+    roll_period(db, user)
     sub = get_subscription(db, user)
     if plus_active(sub):
         source = "plus"
@@ -120,6 +143,10 @@ def upgrade(db: Session, user: User, product: str) -> dict:
         sub.plan, sub.status = "plus", "active"
         sub.current_period_end = now + timedelta(days=30)
         sub.provider, sub.provider_ref = "mock", f"mock_plus_{int(now.timestamp())}"
+    elif product == "plus_yearly":  # twelve months for the price of about eight (ADR 0013)
+        sub.plan, sub.status = "plus", "active"
+        sub.current_period_end = now + timedelta(days=365)
+        sub.provider, sub.provider_ref = "mock", f"mock_plus_year_{int(now.timestamp())}"
     elif product == "one_trip":
         sub.trip_credits += 1
         sub.provider, sub.provider_ref = "mock", f"mock_trip_{int(now.timestamp())}"

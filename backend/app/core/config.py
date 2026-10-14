@@ -65,10 +65,11 @@ class Settings(BaseSettings):
     hotel_provider: Literal["auto", "places", "estimate"] = "auto"
 
     # --- Business rules --------------------------------------------------
-    free_trip_plans: int = 7  # lifetime, per account; an admin can change it live (/admin → Controls)
+    free_trip_plans: int = 3  # per account, every month (ADR 0013); an admin can change it live (/admin → Controls)
     max_replans_per_trip: int = 40
     payments_mode: Literal["mock", "disabled"] = "mock"
     plus_price_inr: int = 99
+    plus_yearly_price_inr: int = 799  # Plus for a year, about 4 months free against monthly (ADR 0013)
     one_trip_price_inr: int = 49
 
     # --- Sign-up verification (email and mobile codes) --------------------

@@ -100,6 +100,7 @@ class QuotaOut(APIModel):
     trip_credits: int
     can_plan: bool
     current_period_end: str | None = None
+    free_plans_reset: str | None = None  # when this month's free plans come back (ADR 0013)
     prices: dict
     payments_mode: str
 

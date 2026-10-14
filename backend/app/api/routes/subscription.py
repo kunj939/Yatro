@@ -25,7 +25,7 @@ def my_referrals(user: User = Depends(current_user), db: Session = Depends(get_d
 
 
 class UpgradeRequest(BaseModel):
-    product: Literal["plus", "one_trip"]
+    product: Literal["plus", "plus_yearly", "one_trip"]
 
 
 @router.get("", response_model=QuotaOut)

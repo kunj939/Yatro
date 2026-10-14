@@ -13,7 +13,7 @@ import { validUpi } from "@/lib/upi";
 import { InviteCard } from "@/components/InviteCard";
 import { inr, plural } from "@/lib/format";
 
-type Product = "plus" | "one_trip";
+type Product = "plus" | "plus_yearly" | "one_trip";
 
 /** The person's OWN UPI ID, for payment requests in settle-up. Nobody else's is ever stored (ADR 0006). */
 function UpiSection() {
@@ -99,11 +99,14 @@ function Account() {
 
   useEffect(() => {
     const u = params.get("upgrade");
-    if (u === "plus" || u === "one_trip") setCheckout(u);
+    if (u === "plus" || u === "plus_yearly" || u === "one_trip") setCheckout(u);
   }, [params]);
 
   if (!user || !quota) return null;
-  const price = (p: Product) => (p === "plus" ? quota.prices.plus_monthly_inr : quota.prices.one_trip_inr);
+  const price = (p: Product) => (p === "plus" ? quota.prices.plus_first_month_inr ?? quota.prices.plus_monthly_inr
+    : p === "plus_yearly" ? quota.prices.plus_yearly_inr ?? 799 : quota.prices.one_trip_inr);
+  const resets = quota.free_plans_reset
+    ? new Date(`${quota.free_plans_reset}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "long" }) : null;
 
   async function pay(p: Product) {
     setBusy(true); setError(null);
@@ -111,7 +114,7 @@ function Account() {
       setQuota(await endpoints.upgrade(p));
       setCheckout(null);
       if (next) { router.push(safeNext(next)); return; }
-      setMessage(p === "plus" ? "Plus is active. Plan as many trips as you like." : "One trip credit added.");
+      setMessage(p === "one_trip" ? "Trip pass added." : "Plus is active. Plan as many trips as you like.");
       router.replace("/account", { scroll: false });
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Payment couldn't be completed.");
@@ -136,38 +139,43 @@ function Account() {
         <h2 id="plan-title" className="text-lg font-bold">Your plan</h2>
         <div className="num mt-4 grid gap-4 sm:grid-cols-3">
           <div><p className="text-sm text-ink-mute">Plan</p><p className="text-xl font-bold">{plus ? "Plus" : "Free"}</p></div>
-          <div><p className="text-sm text-ink-mute">Free plans left</p><p className="text-xl font-bold">{quota.free_plans_left} of {quota.free_plans_total}</p></div>
+          <div><p className="text-sm text-ink-mute">Free plans left this month</p><p className="text-xl font-bold">{quota.free_plans_left} of {quota.free_plans_total}</p></div>
           <div><p className="text-sm text-ink-mute">Trip credits</p><p className="text-xl font-bold">{quota.trip_credits}</p></div>
         </div>
         {plus && quota.current_period_end && <p className="mt-4 text-sm text-ink-soft">Renews on {new Date(quota.current_period_end).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.</p>}
-        <p className="mt-4 text-sm text-ink-mute">Free plans are for life, not monthly. Tweaking a trip you&apos;ve already planned never uses one up.</p>
+        <p className="mt-4 text-sm text-ink-mute">{resets ? `Your free plans come back on ${resets}. ` : ""}Tweaking a trip you&apos;ve already planned never uses one up.</p>
       </section>
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2" aria-label="Upgrade options">
         <div className="panel flex flex-col p-6">
-          <p className="font-bold">One trip</p>
+          <p className="font-bold">Trip pass</p>
           <p className="num mt-1 text-3xl font-bold">{inr(price("one_trip"))}</p>
           <p className="mt-2 flex-1 text-ink-soft">Plan one more trip, with unlimited changes to it.</p>
-          <button className="btn-ghost mt-5" onClick={() => setCheckout("one_trip")}>Buy one trip</button>
+          <button className="btn-ghost mt-5" onClick={() => setCheckout("one_trip")}>Buy a pass</button>
         </div>
         <div className="flex flex-col rounded-2xl border-2 border-signal bg-paper p-6">
           <p className="font-bold">Plus</p>
           {quota.prices.plus_first_month_inr && !plus ? (
             <>
               <p className="num mt-1 text-3xl font-bold">{inr(quota.prices.plus_first_month_inr)}<span className="text-base font-medium text-ink-mute"> first month</span></p>
-              <p className="num text-sm text-ink-mute">then {inr(price("plus"))}/month · your friend&apos;s invite discount</p>
+              <p className="num text-sm text-ink-mute">then {inr(quota.prices.plus_monthly_inr)}/month · your friend&apos;s invite discount</p>
             </>
           ) : (
             <p className="num mt-1 text-3xl font-bold">{inr(price("plus"))}<span className="text-base font-medium text-ink-mute"> /month</span></p>
           )}
           <ul className="mt-2 flex-1 space-y-1 text-ink-soft">
-            {["Unlimited trip plans", "Group expense splitting", "Cancel any time"].map((f) => (
+            {["Unlimited trip plans", "Priority when Yatro is busy", "Group expense splitting"].map((f) => (
               <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-teal" aria-hidden />{f}</li>
             ))}
           </ul>
           {plus
             ? <button className="btn-ghost mt-5" onClick={cancel}>Cancel Plus</button>
-            : <button className="btn-primary mt-5" onClick={() => setCheckout("plus")}>Upgrade to Plus</button>}
+            : (
+              <div className="mt-5 grid gap-2">
+                <button className="btn-primary" onClick={() => setCheckout("plus_yearly")}>Yearly · {inr(price("plus_yearly"))} <span className="font-medium opacity-75">(best value)</span></button>
+                <button className="btn-ghost" onClick={() => setCheckout("plus")}>Monthly · {inr(price("plus"))}</button>
+              </div>
+            )}
         </div>
       </section>
 
@@ -179,11 +187,11 @@ function Account() {
 
       <button className="mt-10 text-sm font-semibold text-ink-soft underline underline-offset-4" onClick={signOut}>Sign out</button>
 
-      <Modal open={!!checkout} onClose={() => { setCheckout(null); setError(null); }} title={checkout === "plus" ? "Upgrade to Plus" : "Buy one trip"}>
+      <Modal open={!!checkout} onClose={() => { setCheckout(null); setError(null); }} title={checkout === "plus" ? "Plus, monthly" : checkout === "plus_yearly" ? "Plus, yearly" : "Trip pass"}>
         {checkout && (
           <div>
-            <p className="num text-3xl font-bold">{inr(price(checkout))}{checkout === "plus" && <span className="text-base font-medium text-ink-mute"> /month</span>}</p>
-            <p className="mt-2 text-ink-soft">{checkout === "plus" ? "Unlimited trip plans while your subscription is active." : `Adds ${plural(1, "trip credit")} to your account.`}</p>
+            <p className="num text-3xl font-bold">{inr(price(checkout))}{checkout !== "one_trip" && <span className="text-base font-medium text-ink-mute">{checkout === "plus" ? " /month" : " /year"}</span>}</p>
+            <p className="mt-2 text-ink-soft">{checkout === "one_trip" ? `Adds ${plural(1, "trip credit")} to your account.` : checkout === "plus_yearly" ? "Unlimited trip plans for 12 months, for about the price of 8." : "Unlimited trip plans while your subscription is active."}</p>
             {quota.payments_mode === "mock" && (
               <p className="mt-4 rounded-xl bg-demo-soft px-4 py-3 text-sm text-ink">Test checkout: payments run in mock mode, so no money is charged.</p>
             )}
