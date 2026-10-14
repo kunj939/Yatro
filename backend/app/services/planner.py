@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import delete, select, update
@@ -31,12 +31,13 @@ from app.services import feasibility as FE
 from app.services import llm_service
 from app.services import plan_quality as Q
 from app.services import planning_support as PS
+from app.services import seasonality as SEASON
 from app.services.budget_engine import BudgetBreakdown, BudgetLine, buffer_pct, compute
 from app.services.engine_types import Candidate, DayFrame, PlanInput, StageReporter, Stop
 from app.services.route_optimizer import DayScheduler, Travel, _meal_stops, apply_real_routes, simulate
 from app.services.verification import verify_candidates
 from app.utils.geo import haversine_m
-from app.utils.locale import locale_for
+from app.utils.locale import country_for, locale_for
 from app.utils.money import fmt_money, round_rupees, to_currency
 
 log = logging.getLogger("tripai.planner")
@@ -125,6 +126,7 @@ class Planner:
         self.warnings: list[str] = []
         self.no_timetable: list[str] = []
         self.priced_modes: list[str] = []
+        self.stay_demand = Decimal(1)  # festival, holiday and weekend nights on estimated hotel rates
 
     def warn(self, msg: str) -> None:
         if msg not in self.warnings:
@@ -210,6 +212,9 @@ class Planner:
                 self.warn("Route information is temporarily unavailable. Travel times are estimates.")
                 options = PS.estimated_transport(origin, dest, inp, modes, PS.return_day(inp))
             PS.choose_station_access(options, inp, origin)
+            india = "IN" in (country_for(origin.lat, origin.lng), country_for(dest.lat, dest.lng))
+            self._season_note(SEASON.apply_to_transport(options, india, date.today()),
+                              SEASON.stay_factor(inp.start.date(), inp.nights, india))
             # Only a mode that could realistically run here is "missing": no train runs Delhi -> Istanbul, so not
             # finding one isn't news (and must not be blamed for the plan).
             missing = [m for m in ("train", "bus", "flight") if m in modes and FE.mode_realistic(m, km)
@@ -283,6 +288,11 @@ class Planner:
                 self.warn("Hotel information is temporarily unavailable; the stay cost is an estimate.")
             if not hotels:
                 hotels = [PS.estimated_hotel(dest, inp.stay, inp.currency)]
+            india = "IN" in (country_for(origin.lat, origin.lng), country_for(dest.lat, dest.lng))
+            self.stay_demand, _ = SEASON.stay_factor(inp.start.date(), inp.nights, india)
+            for h in hotels:
+                if h.cost_state == "estimated" and self.stay_demand != 1:
+                    h.unit_cost = (h.unit_cost * self.stay_demand).quantize(Decimal("1"))
         PS.upsert_places(self.db, attractions + restaurants + hotels)
         # Commit now: holding this write open while the rest of the plan waits on providers blocked every other
         # session's write (response cache, saved timetables) for SQLite's 30 s busy timeout, 90% of plan time (ADR 0001).
@@ -315,7 +325,7 @@ class Planner:
             r.done("prices", f"Minimum realistic cost {fmt_money(mc.total, inp.currency)} exceeds {fmt_money(inp.budget, inp.currency)}", status="failed")
             any_mode = self._cheapest_any_mode(inp, origin, dest, options, modes) if not local else None
             cheapest_stay = min((to_currency(F.stay_nightly(t), inp.currency) * F.stay_units(t, inp.travellers) for t in FE.STAY_ORDER),
-                                default=Decimal(0)) * mc.nights if hotel else Decimal(0)
+                                default=Decimal(0)) * mc.nights * self.stay_demand if hotel else Decimal(0)
             acts = sum((c.group_cost(inp.travellers) for c in attractions[:4]), Decimal(0))
             return self._infeasible(trip, FE.budget_infeasible(inp, mc, any_mode, cheapest_stay, acts))
         r.done("prices", f"Transport from {fmt_money(cheapest.cost, inp.currency)}" +
@@ -469,7 +479,7 @@ class Planner:
                                 best.combo.outbound.mode if best.combo.outbound else None)
                 any_mode = self._cheapest_any_mode(inp, origin, dest, options, modes) if not local else None
                 cheapest_stay = min((to_currency(F.stay_nightly(t), inp.currency) * F.stay_units(t, inp.travellers) for t in FE.STAY_ORDER),
-                                    default=Decimal(0)) * mc.nights if best.hotel else Decimal(0)
+                                    default=Decimal(0)) * mc.nights * self.stay_demand if best.hotel else Decimal(0)
                 acts = sum((c.group_cost(inp.travellers) for c in attractions[:4]), Decimal(0))
                 info = FE.budget_infeasible(inp, mc, any_mode, cheapest_stay, acts)
                 # The minimum above leaves out paid sights, so its "raise the budget" figure can land at or below what the
@@ -538,6 +548,20 @@ class Planner:
         trip.origin_place_id, trip.origin_lat, trip.origin_lng = origin.provider_place_id, origin.lat, origin.lng
         trip.destination_place_id, trip.destination_lat, trip.destination_lng = dest.provider_place_id, dest.lat, dest.lng
         return origin, dest
+
+    def _season_note(self, reasons: list[str], stay: tuple[Decimal, str | None]) -> None:
+        """One Plan note when the dates make estimated prices higher: which season, and late booking if it applies."""
+        seasons = [r for r in reasons if not r.startswith("booked")]
+        if stay[1] and stay[1] not in seasons:
+            seasons.append(stay[1])
+        late = next((r for r in reasons if r.startswith("booked")), None)
+        parts = []
+        if seasons:
+            parts.append(f"Travel costs more around {seasons[0]}, so estimated fares and hotel rates include the usual rise.")
+        if late:
+            parts.append(f"Flights {late} cost more, and that's included too. Booking early keeps them cheaper.")
+        if parts:
+            self.warn(" ".join(parts))
 
     def _narrow(self, trip: Trip, place: PlaceData, label: str) -> PlaceData:
         """A whole country becomes the city most visitors start from (Bangladesh -> Dhaka), with a note saying so.

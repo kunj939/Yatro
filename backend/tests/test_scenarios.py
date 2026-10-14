@@ -20,6 +20,7 @@ from datetime import date, datetime, timedelta
 import pytest
 
 from app.api.deps import providers_dep
+from app.schemas.trip import MAX_DAYS
 from app.main import app
 from app.utils.geo import haversine_m
 
@@ -245,7 +246,7 @@ def test_fixes_never_loop_or_overstretch(client, plus_user, sc):
         body = r.json()
         t = body["trip"]
         span = (date.fromisoformat(t["end_date"]) - date.fromisoformat(t["start_date"])).days
-        assert span <= 7, f"a fix stretched the trip to {span} days"
+        assert span <= MAX_DAYS, f"a fix stretched the trip to {span} nights"
     if body["status"] == "ready":
         assert not check_ready(body["trip"], sc)
 

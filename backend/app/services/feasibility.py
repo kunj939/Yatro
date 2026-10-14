@@ -16,6 +16,7 @@ from decimal import Decimal
 
 from app.core.provenance import part_of_day, train_shows_facts
 from app.providers.types import PlaceData, TransportData
+from app.schemas.trip import MAX_DAYS
 from app.services import fare_model as F
 from app.services.budget_engine import BudgetLine, buffer_pct
 from app.services.engine_types import PlanInput
@@ -32,7 +33,7 @@ BOARDING_BUFFER = 15  # minutes before a scheduled departure
 EXIT_BUFFER = 10  # minutes to leave the station/airport after arrival
 NIGHT_ARRIVAL_BEFORE = time(6, 0)  # arriving before this, the night is spent at the hotel, not at the station
 MIN_DEST_MINUTES = 120
-MAX_TRIP_DAYS = 7  # the wizard's limit too; a suggested fix must never stretch a trip past it
+MAX_TRIP_DAYS = MAX_DAYS  # the wizard's limit too (30 nights); a suggested fix must never stretch a trip past it
 EARLIEST_START = time(4, 30)  # never suggest leaving home before this
 
 

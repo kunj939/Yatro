@@ -16,6 +16,7 @@ import { GroupMembers } from "./GroupMembers";
 import { ExpenseSplitter } from "./ExpenseSplitter";
 import { ShareSheet, SharedLinks } from "./ShareSheet";
 import { PlanActions } from "./PlanActions";
+import { TripChat } from "./TripChat";
 import { useFlags } from "@/lib/flags";
 import { InfeasibleView } from "./InfeasibleView";
 import { TripLoading } from "./TripLoading";
@@ -85,31 +86,38 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
     if (fresh) setTrip(fresh);
   }, [onReload]);
 
-  const replan = useCallback(async (path: string, body: unknown, done: string) => {
-    if (readOnly) { router.push("/plan"); return; }
+  const replan = useCallback(async (path: string, body: unknown, done: string): Promise<string> => {
+    if (readOnly) { router.push("/plan"); return "Plan your own trip to change it."; }
     setError(null); setNotice(null); setReply(null); setChanging(null);
     const before = itemKeys(trip);
     try {
       const out = await run(path, body);
       setTrip(out.trip);
       if (out.status === "unavailable") {  // a normal answer: the plan stays as it was
-        setReply(`We can't update the plan right now. Your current plan is unchanged${out.retry_at ? `. Try again ${reopenAt(out.retry_at)}` : ""}.`);
-        return;
+        const text = `We can't update the plan right now. Your current plan is unchanged${out.retry_at ? `. Try again ${reopenAt(out.retry_at)}` : ""}.`;
+        setReply(text);
+        return text;
       }
       if (out.status === "no_change") {
         setReply(out.message || "Nothing to change.");
-        return; // the plan is as it was, and what was typed stays so it can be adjusted
+        return out.message || "Nothing to change."; // the plan is as it was
       }
       if (out.status === "infeasible") {
         window.scrollTo({ top: 0, behavior: "smooth" });
+        setMessage("");
+        return out.trip.feasibility?.message ? `${out.trip.feasibility.message} The ways to fix it are at the top of the page.`
+          : "That change doesn't fit. The ways to fix it are at the top of the page.";
       } else {
         setNotice(out.trip.itinerary?.change_note || done);
         setHighlight(out.trip.itinerary?.days.flatMap((d) => d.items).filter((i) => !before.has(`${i.kind}:${i.title}`)).map((i) => i.id) ?? []);
         setTab("timeline");
       }
       setMessage("");
+      return `Done. ${out.trip.itinerary?.change_note || done}`;
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Re-planning failed. Your current plan is unchanged.");
+      const text = err instanceof ApiError ? err.message : "Re-planning failed. Your current plan is unchanged.";
+      setError(text);
+      return text;
     }
   }, [readOnly, router, run, trip]);
 
@@ -117,7 +125,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
     replan(`/api/trips/${trip.id}/replan?stream=true`, { swap: { item_id: changing.id, alternative_id: altId } }, "Swapped and re-planned.");
   const applyAdjustment = (a: Adjustment) =>
     replan(`/api/trips/${trip.id}/plan?stream=true`, { changes: a.apply }, `Applied: ${a.label}.`);
-  const sendMessage = (text: string) => readOnly ? router.push("/plan") : text.trim() &&
+  const sendMessage = (text: string): Promise<string> =>
     replan(`/api/trips/${trip.id}/replan?stream=true`, { message: text.trim() }, "Plan updated.");
 
   const firstActivity = useMemo(() => it?.days.flatMap((d) => d.items).find((i) => i.kind === "activity"), [it]);
@@ -288,14 +296,12 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                   {/* On a phone the plan comes first: keeping it and changing it follow the itinerary, not precede it */}
                   <div className="mt-6 space-y-6 lg:hidden">
                     {!readOnly && <PlanActions trip={trip} onShare={canShare ? () => setSharing(true) : undefined} />}
-                    <ReplanBox chips={chips} value={message} onChange={setMessage} onSend={sendMessage} busy={running}
-                               readOnly={readOnly} replansLeft={trip.replans_left} error={error} reply={reply} />
+                    <TripChat tripId={trip.id} chips={chips} busy={running} readOnly={readOnly} replansLeft={trip.replans_left} onChange={sendMessage} />
                   </div>
                 </div>
                 <aside className="space-y-5">
                   <div className="hidden lg:block">
-                    <ReplanBox chips={chips} value={message} onChange={setMessage} onSend={sendMessage} busy={running}
-                               readOnly={readOnly} replansLeft={trip.replans_left} error={error} reply={reply} />
+                    <TripChat tripId={trip.id} chips={chips} busy={running} readOnly={readOnly} replansLeft={trip.replans_left} onChange={sendMessage} />
                   </div>
                   {trip.feasibility?.transport && (
                     <SideCard icon={Sparkles} title="Why this route">
@@ -437,47 +443,9 @@ function PlanNotes({ notes }: { notes: string[] }) {
   );
 }
 
-const EXAMPLES = "“add Fatehpur Sikri”, “start at 9am”, “no temples”, “budget 8000”, “one more day”";
 
 /** Type anything: the engine reads English and Hinglish, applies what it understands and says plainly what it
  *  couldn't. A request that changes nothing gets an answer here — never a red error — and the text stays put. */
-function ReplanBox({ chips, value, onChange, onSend, busy, readOnly, replansLeft, error, reply }: {
-  chips: string[]; value: string; onChange: (v: string) => void; onSend: (v: string) => void; busy: boolean; readOnly: boolean;
-  replansLeft: number; error?: string | null; reply?: string | null;
-}) {
-  const uid = useId();
-  return (
-    <section className="card p-4" aria-labelledby={`${uid}-title`}>
-      <h2 id={`${uid}-title`} className="flex items-center gap-2 text-[16px] font-bold"><Sparkles className="h-4 w-4 text-signal-deep" aria-hidden />Change the plan</h2>
-      <p className="mt-0.5 text-[13px] text-ink-mute">
-        {readOnly ? "This is a sample trip. Plan your own to change it." : "In your own words, English or Hinglish. Time, hours and budget are re-checked."}
-      </p>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {chips.map((c) => (
-          <button key={c} type="button" className="chip-off !rounded-full !px-2.5 !py-1 text-[13px]" disabled={busy} onClick={() => onSend(c)}>{c}</button>
-        ))}
-      </div>
-      <form className="mt-3" onSubmit={(e) => { e.preventDefault(); onSend(value); }}>
-        <label htmlFor={`${uid}-msg`} className="sr-only">Describe a change</label>
-        <textarea id={`${uid}-msg`} rows={2} maxLength={1000} className="field resize-none !py-2.5 text-[14px]" placeholder={`Try: ${EXAMPLES}`}
-                  value={value} onChange={(e) => onChange(e.target.value)} disabled={busy}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); onSend(value); } }} />
-        {error && <p role="alert" className="mt-2 rounded-lg bg-danger-soft px-3 py-2 text-[14px] font-medium text-danger">{error}</p>}
-        {!error && reply && (
-          <p role="status" className="fade-up mt-2 flex gap-2 rounded-lg border border-line bg-haze px-3 py-2.5 text-[14px] leading-relaxed text-ink-soft">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-ink-mute" aria-hidden /><span>{reply}</span>
-          </p>
-        )}
-        <div className="mt-2 flex items-center justify-between gap-3">
-          {!readOnly && <span className="num text-[13px] text-ink-mute">{replansLeft} changes left</span>}
-          <button className="btn-primary ml-auto !py-2" disabled={busy || (!readOnly && !value.trim())}>
-            {readOnly ? "Plan my trip" : busy ? "Updating…" : <>Update plan<Send className="h-3.5 w-3.5" aria-hidden /></>}
-          </button>
-        </div>
-      </form>
-    </section>
-  );
-}
 
 /** One quiet line beside the part of a plan that was made with less effort because we were busy. Not a warning. */
 function BrownoutNote({ text, icon: Icon = Info }: { text: string; icon?: any }) {

@@ -138,6 +138,9 @@ export const endpoints = {
     api<ShareLink>(`/api/trips/${id}/shares/${sid}`, { method: "PATCH", json: body }),
   revokeShare: (id: string, sid: string) => api<void>(`/api/trips/${id}/shares/${sid}`, { method: "DELETE" }),
   // Calendar (ADR 0015): a feed calendars subscribe to, so a changed plan updates there too; or a one-off .ics file
+  // The trip chat (ADR 0016): an answer about this trip, or "change" (then the same message goes through /replan)
+  chat: (id: string, message: string, history: { role: "user" | "assistant"; text: string }[]) =>
+    api<{ action: "answer" | "change"; text?: string; by?: string }>(`/api/trips/${id}/chat`, { method: "POST", json: { message, history } }),
   calendarOn: (id: string) => api<CalendarLinks>(`/api/trips/${id}/calendar`, { method: "POST" }),
   calendarOff: (id: string) => api<void>(`/api/trips/${id}/calendar`, { method: "DELETE" }),
   calendarFile: async (id: string): Promise<string> => {

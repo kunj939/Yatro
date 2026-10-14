@@ -27,7 +27,7 @@ from app.models.user import User
 from app.providers.registry import Providers
 from app.schemas.expense import ExpenseCreate
 from app.schemas.trip import MemberCreate, MemberUpdate, PreferencesPatch, ReplanRequest, TripCreate, TripUpdate
-from app.services import expense_service, google_content, plan_jobs, plan_runner, quota_service, share_service
+from app.services import chat_service, expense_service, google_content, plan_jobs, plan_runner, quota_service, share_service
 from app.services import trip_service as TS
 from app.services.engine_types import StageReporter
 
@@ -433,6 +433,30 @@ def replan_trip(trip_id: uuid.UUID, body: ReplanRequest, stream: bool = Query(Fa
         return stream_plan(trip.id, user.id, p, change_note=note, is_replan=True)
     out = _plan_now(db, p, user, trip, change_note=note, is_replan=True)
     out["interpreted_by"] = source
+    return out
+
+
+class ChatTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    text: str = Field(max_length=2000)
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=1000)
+    history: list[ChatTurn] = Field(default_factory=list, max_length=12)
+
+
+_chat_limit = limit("chat", 20)
+
+
+@router.post("/{trip_id}/chat", dependencies=[Depends(_chat_limit)])
+def chat(trip_id: uuid.UUID, body: ChatRequest, user: User = Depends(current_user), db: Session = Depends(get_db),
+         providers: Providers = Depends(providers_dep)):
+    """The trip chat (ADR 0016): answers a question about this trip, or says "change" so the client re-plans with the
+    same message through /replan (the one path that can change a plan)."""
+    trip = TS.load_trip(db, trip_id, user)
+    out = chat_service.respond(db, providers, user, trip, body.message, [h.model_dump() for h in body.history])
+    db.commit()
     return out
 
 

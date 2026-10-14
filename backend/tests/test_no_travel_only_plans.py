@@ -93,9 +93,10 @@ def test_return_suggestion_never_pushes_the_trip_a_day_further_each_time():
     assert FE.build_combos([out, day, night], fixed, JAIPUR, RISHIKESH)  # the suggestion actually fits
 
 
-def test_no_suggestion_stretches_a_trip_past_seven_days():
-    inp = _inp(start=datetime(2026, 10, 10, 7), end=datetime(2026, 10, 17, 7, 12))
+def test_no_suggestion_stretches_a_trip_past_the_longest_allowed():
+    # a trip already at the 30-night limit: a later train home would make it 31, so it isn't offered
+    inp = _inp(start=datetime(2026, 10, 10, 7), end=datetime(2026, 11, 9, 7, 12))
     out = _t("outbound", "train", datetime(2026, 10, 10, 7, 40), datetime(2026, 10, 10, 15, 0))
-    late = _t("return", "train", datetime(2026, 10, 17, 20, 0), datetime(2026, 10, 18, 6, 27))
+    late = _t("return", "train", datetime(2026, 11, 9, 20, 0), datetime(2026, 11, 10, 6, 27))
     info = FE.time_infeasible(inp, [out, late], ["train"], RISHIKESH)
     assert not any(a["key"] == "return_later" for a in info["adjustments"])

@@ -19,7 +19,7 @@ from app.core.errors import AppError, NotFound, ProviderUnavailable
 from app.models.trip import Alternative, Itinerary, ItineraryItem, Trip, TripMember, TripPreferences
 from app.models.user import User
 from app.providers.registry import Providers
-from app.schemas.trip import PreferencesPatch, TripCreate
+from app.schemas.trip import MAX_DAYS, PreferencesPatch, TripCreate
 from app.services import age_fit, expense_service, quota_service
 from app.services import intent as intent_service
 from app.core import telemetry
@@ -31,7 +31,7 @@ from app.utils.money import D, approx_rate, fmt_money
 
 log = logging.getLogger("tripai.trips")
 
-MAX_TRIP_DAYS = 7  # same limit as the wizard and feasibility.MAX_TRIP_DAYS
+MAX_TRIP_DAYS = MAX_DAYS  # nights: the same limit as the wizard and feasibility.MAX_TRIP_DAYS
 TYPE_LABEL = {"solo": "Solo", "couple": "Couple", "partner": "Partner", "friends": "Friends", "family": "Family"}
 
 
@@ -128,7 +128,7 @@ def apply_patch(trip: Trip, patch: PreferencesPatch) -> list[str]:
             else:
                 raise AppError("The trip can't end before it starts.", code="invalid_dates", status_code=422)
         if (trip.end_date - trip.start_date).days > MAX_TRIP_DAYS:
-            raise AppError(f"Trips can be at most {MAX_TRIP_DAYS} days in this version.", code="trip_too_long",
+            raise AppError(f"Trips can be at most {MAX_TRIP_DAYS} nights.", code="trip_too_long",
                            status_code=422)
         if titled_automatically:  # "Rishikesh 2-day trip" must not survive a change to six days
             trip.title = auto_title()
@@ -250,15 +250,13 @@ def _similar(request: str, found: str) -> bool:
     return any(difflib.SequenceMatcher(None, w, h).ratio() >= 0.75 for w in want for h in have)
 
 
-def intent_patch(db: Session, providers: Providers, user: User, trip: Trip, message: str) -> IntentOutcome:
-    """Turn a typed request into changes for `trip`. Never raises for a request it can't act on: what can be done
-    is returned as changes, and what can't is explained in `issues`."""
+def intent_inputs(trip: Trip) -> tuple[dict, list[dict]]:
+    """What the intent reader (and the trip chat) knows about the trip: its settings, and the places it could use."""
     it = trip.current_itinerary
     p = trip.preferences
     pool = (it.candidate_pool or {}).get("places", []) if it else []
     planned = {(i.meta or {}).get("key") for i in (it.items if it else [])} - {None}
     candidates = [{**c, "planned": c["id"] in planned} for c in pool]
-    names = {c["id"]: c["name"] for c in pool}
     days = (trip.end_date - trip.start_date).days + 1
     ctx = {"destination": trip.destination_name, "origin": trip.origin_name, "start_date": trip.start_date.isoformat(),
            "end_date": trip.end_date.isoformat(), "days": days, "start_time": trip.start_time.strftime("%H:%M"),
@@ -266,6 +264,17 @@ def intent_patch(db: Session, providers: Providers, user: User, trip: Trip, mess
            "travellers": trip.travellers, "traveller_type": p.traveller_type, "styles": p.trip_styles, "food": p.food,
            "stay": p.stay, "pace": p.pace, "transport": p.transport_modes,
            "planned_stops": [i.title for i in (it.items if it else []) if i.kind in ("activity", "meal", "sunset")]}
+    return ctx, candidates
+
+
+def intent_patch(db: Session, providers: Providers, user: User, trip: Trip, message: str) -> IntentOutcome:
+    """Turn a typed request into changes for `trip`. Never raises for a request it can't act on: what can be done
+    is returned as changes, and what can't is explained in `issues`."""
+    ctx, candidates = intent_inputs(trip)
+    names = {c["id"]: c["name"] for c in candidates}
+    it = trip.current_itinerary
+    planned = {(i.meta or {}).get("key") for i in (it.items if it else [])} - {None}
+    p = trip.preferences
     intent = intent_service.understand(providers.llm, message, ctx, candidates, db=db, user_id=user.id, trip_id=trip.id)
     labels: list[str] = []
     issues: list[str] = []
@@ -298,7 +307,7 @@ def intent_patch(db: Session, providers: Providers, user: User, trip: Trip, mess
             issues.append("A trip needs at least one day, so I made it a day trip.")
         if (target - trip.start_date).days > MAX_TRIP_DAYS:
             target = trip.start_date + timedelta(days=MAX_TRIP_DAYS)
-            issues.append(f"Trips can be at most {MAX_TRIP_DAYS + 1} days, so I set it to {MAX_TRIP_DAYS + 1}.")
+            issues.append(f"Trips can be at most {MAX_TRIP_DAYS} nights, so I set it to {MAX_TRIP_DAYS + 1} days.")
         if target == trip.end_date:
             issues.append(f"The trip is already {(target - trip.start_date).days + 1} day"
                           f"{'s' if target != trip.start_date else ''} long.")
