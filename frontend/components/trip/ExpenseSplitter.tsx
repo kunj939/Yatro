@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Check, Copy, Plus, Smartphone, Trash2 } from "lucide-react";
 import type { Trip } from "@/lib/types";
 import { ApiError, endpoints } from "@/lib/api";
-import { money } from "@/lib/format";
+import { currencySymbol, money } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
 import { useFlags } from "@/lib/flags";
 import { onMobile, upiLink, validUpi } from "@/lib/upi";
@@ -136,7 +136,7 @@ export function ExpenseSplitter({ trip, onChanged, readOnly }: { trip: Trip; onC
 
   return (
     <div className="space-y-6">
-      <section className="panel p-5 md:p-6" aria-labelledby="settle-title">
+      <section className="card p-5 md:p-6" aria-labelledby="settle-title">
         <h2 id="settle-title" className="text-lg font-bold">Who owes whom</h2>
         {s.settlements.length === 0 ? (
           <p className="mt-2 text-[16px] text-ink-soft">{s.total > 0 ? "Everyone is square." : "Log a shared expense and the balance appears here."}</p>
@@ -177,7 +177,7 @@ export function ExpenseSplitter({ trip, onChanged, readOnly }: { trip: Trip; onC
       </section>
 
       {!readOnly && (
-        <form onSubmit={add} className="panel space-y-4 p-5 md:p-6" aria-labelledby="add-exp">
+        <form onSubmit={add} className="card space-y-4 p-5 md:p-6" aria-labelledby="add-exp">
           <h2 id="add-exp" className="text-lg font-bold">Add an expense</h2>
           <div className="grid gap-3 md:grid-cols-[1fr_160px]">
             <div>
@@ -185,7 +185,7 @@ export function ExpenseSplitter({ trip, onChanged, readOnly }: { trip: Trip; onC
               <input id="e-desc" className="field" placeholder="Lunch at LMB" value={desc} onChange={(e) => setDesc(e.target.value)} maxLength={200} />
             </div>
             <div>
-              <label htmlFor="e-amt" className="mb-1 block text-sm font-medium">Amount (₹)</label>
+              <label htmlFor="e-amt" className="mb-1 block text-sm font-medium">Amount ({currencySymbol(trip.currency)})</label>
               <input id="e-amt" className="field num" inputMode="decimal" placeholder="1450" value={amount}
                      onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} />
             </div>
@@ -254,7 +254,7 @@ export function ExpenseSplitter({ trip, onChanged, readOnly }: { trip: Trip; onC
         </form>
       )}
 
-      <section className="panel" aria-labelledby="exp-list">
+      <section className="card overflow-hidden" aria-labelledby="exp-list">
         <h2 id="exp-list" className="px-5 pt-5 text-lg font-bold md:px-6">Expenses <span className="num font-normal text-ink-mute">{money(s.total, trip.currency)}</span></h2>
         {trip.expenses.length === 0 ? (
           <p className="px-5 pb-5 pt-2 text-[16px] text-ink-soft md:px-6">No expenses yet.</p>

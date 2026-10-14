@@ -24,7 +24,7 @@ export function BudgetPanel({ budget, expenses, currency }: { budget: BudgetBrea
   const spent = expenses?.total ?? 0;
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-line bg-paper/85 p-5 backdrop-blur md:p-7" aria-labelledby="budget-summary">
+      <section className="card p-5 md:p-7" aria-labelledby="budget-summary">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 id="budget-summary" className="text-lg font-bold">Where the money goes</h2>
@@ -60,7 +60,7 @@ export function BudgetPanel({ budget, expenses, currency }: { budget: BudgetBrea
         </ul>
       </section>
 
-      <section className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-paper/85 backdrop-blur" aria-label="Budget by category">
+      <section className="card divide-y divide-line overflow-hidden" aria-label="Budget by category">
         {cats.map((c) => {
           const diff = c.typical ? c.amount - c.typical : 0;
           return (
@@ -72,12 +72,14 @@ export function BudgetPanel({ budget, expenses, currency }: { budget: BudgetBrea
                   <span className="num ml-1 hidden text-xs text-ink-mute sm:inline">{Math.round((c.amount / Math.max(1, budget.planned)) * 100)}%</span>
                   <ChevronDown className="h-4 w-4 text-ink-mute transition-transform group-open:rotate-180" aria-hidden />
                 </span>
-                <span className="num text-right">
+                <span aria-hidden className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-haze-2 md:block">
+                  <span className={`block h-full rounded-full ${BAR[c.key] ?? "bg-ink-mute"}`} style={{ width: `${Math.min(100, (c.amount / Math.max(1, budget.planned)) * 100)}%` }} />
+                </span>
+                <span className="num min-w-[9.5rem] text-right">
                   <span className="font-bold">{money(c.amount, currency)}</span>
-                  {c.typical > 0 && (
-                    <span className="block text-[13px] text-ink-mute">
-                      {Math.abs(diff) < 1 ? "About typical" : diff < 0 ? `${money(-diff, currency)} under typical` : `${money(diff, currency)} over typical`}
-                    </span>
+                  {/* "typical" is the usual share of this budget; spending less than it isn't news, so only a clear overspend is shown */}
+                  {c.typical > 0 && diff > c.typical * 0.1 && (
+                    <span className="block text-[13px] text-caution">{money(diff, currency)} more than usual</span>
                   )}
                 </span>
               </summary>
@@ -104,7 +106,7 @@ export function BudgetPanel({ budget, expenses, currency }: { budget: BudgetBrea
       </section>
 
       {expenses && (
-        <section className="rounded-2xl border border-line bg-paper/85 p-5 backdrop-blur md:p-7" aria-labelledby="actual-vs-plan">
+        <section className="card p-5 md:p-7" aria-labelledby="actual-vs-plan">
           <h2 id="actual-vs-plan" className="text-lg font-bold">Spent so far</h2>
           <p className="mt-1 text-[16px] text-ink-soft">What the group has actually logged, compared with the plan.</p>
           <div className="num mt-4 flex flex-wrap items-baseline gap-x-6 gap-y-2">

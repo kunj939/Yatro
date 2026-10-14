@@ -414,7 +414,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
             {tab === "map" && <MapPanel trip={trip} />}
             {tab === "budget" && <BudgetPanel budget={it.budget} expenses={trip.expense_summary} currency={trip.currency} />}
             {tab === "group" && (
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+              <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
                 <GroupMembers trip={trip} onChanged={reload} readOnly={readOnly} />
                 <ExpenseSplitter trip={trip} onChanged={reload} readOnly={readOnly} />
               </div>

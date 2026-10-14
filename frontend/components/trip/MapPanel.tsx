@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MapPinned } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPinned } from "lucide-react";
 import type { ItineraryItem, Trip } from "@/lib/types";
 import { decodePolyline } from "@/lib/polyline";
-import { MODE_LABEL, km, minutes } from "@/lib/format";
+import { MODE_LABEL, km, minutes, niceDate } from "@/lib/format";
 
 type LatLng = [number, number];
 interface Stop { id: string; n: number; title: string; time: string; kind: string; at: LatLng; item: ItineraryItem }
@@ -17,8 +17,10 @@ function ll(v: any): LatLng | null {
   return null;
 }
 
-function buildGeometry(trip: Trip) {
-  const items = trip.itinerary?.days.flatMap((d) => d.items) ?? [];
+/** The map's shapes for one day of the plan (`day`, its position in the list), or the whole trip when null. */
+function buildGeometry(trip: Trip, day: number | null = null) {
+  const days = trip.itinerary?.days ?? [];
+  const items = (day === null ? days : days.slice(day, day + 1)).flatMap((d) => d.items);
   const stops: Stop[] = [];
   const cityPaths: Path[] = [];
   const journeyPaths: Path[] = [];
@@ -57,9 +59,9 @@ function projector(points: LatLng[], w: number, h: number, pad: number) {
   ];
 }
 
-function SvgMap({ trip, view, selected, onSelect }: { trip: Trip; view: "city" | "journey"; selected: string | null; onSelect: (id: string) => void }) {
+function SvgMap({ trip, view, day, selected, onSelect }: { trip: Trip; view: "city" | "journey"; day: number | null; selected: string | null; onSelect: (id: string) => void }) {
   const W = 720, H = 460;
-  const g = useMemo(() => buildGeometry(trip), [trip]);
+  const g = useMemo(() => buildGeometry(trip, view === "journey" ? null : day), [trip, view, day]);
   const origin = ll([trip.origin_detail.lat, trip.origin_detail.lng]);
   const dest = ll([trip.destination_detail.lat, trip.destination_detail.lng]);
 
@@ -187,16 +189,16 @@ function MapBackdrop({ W, H }: { W: number; H: number }) {
 function Empty() {
   return (
     <div className="grid h-72 place-items-center text-center text-ink-mute">
-      <p><MapPinned className="mx-auto mb-2 h-8 w-8" aria-hidden />Map locations are not available for this plan.</p>
+      <p><MapPinned className="mx-auto mb-2 h-8 w-8" aria-hidden />No places to show on the map here.</p>
     </div>
   );
 }
 
 /** Google Maps rendering, used only when a browser key is configured. */
-function GoogleMap({ trip, selected, onSelect }: { trip: Trip; selected: string | null; onSelect: (id: string) => void }) {
+function GoogleMap({ trip, day, selected, onSelect }: { trip: Trip; day: number | null; selected: string | null; onSelect: (id: string) => void }) {
   const el = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
-  const g = useMemo(() => buildGeometry(trip), [trip]);
+  const g = useMemo(() => buildGeometry(trip, day), [trip, day]);
   useEffect(() => {
     let cancelled = false;
     const w = window as any;
@@ -231,14 +233,20 @@ function GoogleMap({ trip, selected, onSelect }: { trip: Trip; selected: string 
     }
     return () => { cancelled = true; };
   }, [g, onSelect]);
-  if (failed) return <SvgMap trip={trip} view="city" selected={selected} onSelect={onSelect} />;
+  if (failed) return <SvgMap trip={trip} view="city" day={day} selected={selected} onSelect={onSelect} />;
   return <div ref={el} className="h-[460px] w-full" aria-label={`Map of stops in ${trip.destination}`} />;
 }
 
 export function MapPanel({ trip }: { trip: Trip }) {
-  const g = useMemo(() => buildGeometry(trip), [trip]);
+  // One day at a time: a long trip's hundred stops on one sketch can't be read. Starts on the first day with places.
+  const days = trip.itinerary?.days ?? [];
+  const multi = days.length > 1;
+  const [day, setDay] = useState(() => Math.max(0, days.findIndex((d) => d.items.some((i) => i.kind === "activity" || i.kind === "meal"))));
+  const g = useMemo(() => buildGeometry(trip, multi ? day : null), [trip, multi, day]);
   const [view, setView] = useState<"city" | "journey">("city");
   const [selected, setSelected] = useState<string | null>(g.stops[0]?.id ?? null);
+  useEffect(() => { setSelected(g.stops[0]?.id ?? null); }, [g]);
+  const go = (n: number) => { setDay(Math.min(days.length - 1, Math.max(0, n))); setView("city"); };
   const sel = g.stops.find((s) => s.id === selected);
   const hasJourney = g.journeyPaths.length > 0;
   return (
@@ -249,11 +257,25 @@ export function MapPanel({ trip }: { trip: Trip }) {
             <button role="tab" aria-selected={view === "city"} onClick={() => setView("city")} className={view === "city" ? "chip-on" : "chip-off"}>In {trip.destination}</button>
             {hasJourney && <button role="tab" aria-selected={view === "journey"} onClick={() => setView("journey")} className={view === "journey" ? "chip-on" : "chip-off"}>Whole journey</button>}
           </div>
-          <p className="text-[13px] text-ink-mute">{BROWSER_KEY ? "Google Maps" : "Route sketch from the plan's coordinates"}</p>
+          {multi && view === "city" ? (
+            <div className="flex items-center gap-1.5" role="group" aria-label="Day on the map">
+              <button type="button" onClick={() => go(day - 1)} disabled={day === 0} aria-label="Previous day"
+                      className="grid h-9 w-9 place-items-center rounded-full border border-line bg-paper text-ink transition-colors hover:border-ink/30 disabled:opacity-40"><ChevronLeft className="h-4 w-4" /></button>
+              <label className="sr-only" htmlFor="map-day">Day</label>
+              <select id="map-day" value={day} onChange={(e) => go(Number(e.target.value))}
+                      className="h-9 rounded-full border border-line bg-paper px-3 text-[14px] font-semibold text-ink focus:border-signal focus:outline-none">
+                {days.map((d, n) => <option key={d.index} value={n}>Day {n + 1} · {niceDate(d.date)}</option>)}
+              </select>
+              <button type="button" onClick={() => go(day + 1)} disabled={day === days.length - 1} aria-label="Next day"
+                      className="grid h-9 w-9 place-items-center rounded-full border border-line bg-paper text-ink transition-colors hover:border-ink/30 disabled:opacity-40"><ChevronRight className="h-4 w-4" /></button>
+            </div>
+          ) : (
+            <p className="text-[13px] text-ink-mute">{BROWSER_KEY ? "Google Maps" : "Route sketch from the plan's coordinates"}</p>
+          )}
         </div>
         {BROWSER_KEY && view === "city"
-          ? <GoogleMap trip={trip} selected={selected} onSelect={setSelected} />
-          : <SvgMap trip={trip} view={view} selected={selected} onSelect={setSelected} />}
+          ? <GoogleMap trip={trip} day={multi ? day : null} selected={selected} onSelect={setSelected} />
+          : <SvgMap trip={trip} view={view} day={multi ? day : null} selected={selected} onSelect={setSelected} />}
         <div className="flex flex-wrap gap-x-5 gap-y-1 border-t border-line px-4 py-3 text-[13px] text-ink-soft">
           {view === "journey" ? (
             <>
@@ -272,6 +294,12 @@ export function MapPanel({ trip }: { trip: Trip }) {
         </div>
       </div>
       <ol className="panel max-h-[560px] divide-y divide-line overflow-y-auto" aria-label="Stops in order">
+        {multi && (
+          <li className="sticky top-0 z-10 bg-paper/95 px-4 py-2.5 backdrop-blur">
+            <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-signal-deep">Day {day + 1} of {days.length}</p>
+            <p className="text-[14px] font-semibold">{niceDate(days[day].date, { weekday: "long", day: "numeric", month: "long" })} · {g.stops.length} stops</p>
+          </li>
+        )}
         {g.stops.map((s) => (
           <li key={s.id}>
             <button onClick={() => { setSelected(s.id); setView("city"); }} aria-current={s.id === selected}

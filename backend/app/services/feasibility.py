@@ -699,12 +699,12 @@ def budget_infeasible(inp: PlanInput, mc: MinCost, cheapest_any_mode: Decimal | 
                 continue  # e.g. two hostel beds cost the same as one budget room
             if need - mc.stay + new_stay <= budget or t == STAY_ORDER[-1]:
                 adjustments.append({"key": "cheaper_hotel", "label": f"Switch to {STAY_LABEL[t]}",
-                                    "description": f"Saves about {fmt_money(mc.stay - new_stay, inp.currency)} on the stay.",
+                                    "description": f"Saves about {fmt_money(round_rupees(mc.stay - new_stay), inp.currency)} on the stay.",
                                     "saves": float(mc.stay - new_stay), "apply": {"stay": t}})
                 break
     if cheaper_mode:
         adjustments.append({"key": "cheaper_transport", "label": "Allow train and bus",
-                            "description": f"Saves about {fmt_money(mc.transport - cheapest_any_mode, inp.currency)} on travel.",
+                            "description": f"Saves about {fmt_money(round_rupees(mc.transport - cheapest_any_mode), inp.currency)} on travel.",
                             "saves": float(mc.transport - cheapest_any_mode),
                             "apply": {"transport_modes": sorted(set(inp.transport_modes) | {"train", "bus"})}})
     if activities_cost > 0:

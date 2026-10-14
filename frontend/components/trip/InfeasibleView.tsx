@@ -33,7 +33,7 @@ function BudgetGap({ min, currency }: { min: Record<string, number>; currency?: 
   const at = Math.min(100, Math.max(0.8, (budget / total) * 100));
   const parts = PARTS.filter((p) => min[p.key] > 0);
   return (
-    <div className="mt-6 rounded-2xl border border-line bg-haze/50 p-4 md:p-5">
+    <div className="mt-6 rounded-2xl border border-line bg-haze/60 p-4 md:p-5">
       <div className="num flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div>
           <p className="text-[13px] font-semibold uppercase tracking-wider text-ink-mute">Cheapest workable</p>
@@ -85,7 +85,8 @@ export function InfeasibleView({ feasibility, onApply, busy, readOnly, hasPlan, 
   const Icon = feasibility.kind === "time" ? Clock : CircleAlert;
 
   return (
-    <section className="rounded-ticket border border-caution/40 bg-paper p-5 shadow-lift sm:p-6 md:p-8" aria-labelledby="infeasible-title" role="alert">
+    <section className="card relative overflow-hidden p-5 sm:p-6 md:p-8" aria-labelledby="infeasible-title" role="alert">
+      <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-caution via-caution/70 to-signal" />
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-caution-soft text-caution"><Icon className="h-5 w-5" aria-hidden /></span>
         <div className="min-w-0">
@@ -118,25 +119,25 @@ export function InfeasibleView({ feasibility, onApply, busy, readOnly, hasPlan, 
       {rest.length > 0 && (
         <>
           <h3 className="mt-7 text-[16px] font-bold text-ink-soft">Or change something else</h3>
-          <ul className="mt-3 grid gap-2.5 md:grid-cols-2">
+          <ul className="mt-3 grid gap-3 md:grid-cols-2">
             {rest.map((a) => {
               const elsewhere = a.apply?.action === "change_destination";
               const enough = over !== null && !elsewhere && fixes(a, over);
               return (
-                <li key={a.key + a.label} className="flex items-center justify-between gap-3 rounded-2xl border border-line p-4 transition-colors hover:border-ink/25">
+                <li key={a.key + a.label} className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-paper p-4 transition-all hover:-translate-y-px hover:border-signal/40 hover:shadow-[0_10px_24px_-16px_rgb(var(--shadow)/0.3)]">
                   <div className="min-w-0">
                     <p className="font-bold leading-snug">{a.label}</p>
                     <p className="mt-0.5 text-[14px] text-ink-soft">{a.description}</p>
-                    {over !== null && !!a.saves && a.key !== "higher_budget" && (
+                    {over !== null && !!a.saves && a.saves >= Math.max(1, over * 0.02) && a.key !== "higher_budget" && (
                       <p className={`num mt-1.5 inline-block rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${enough ? "bg-teal-soft text-teal-deep" : "bg-haze-2 text-ink-soft"}`}>
                         {enough ? "Fixes it on its own" : `Saves ${money(a.saves, currency)} · not enough alone`}
                       </p>
                     )}
                   </div>
                   {elsewhere ? (
-                    <Link href="/plan" className="btn-ghost shrink-0 !px-3.5 !py-2 text-[14px]"><MapPin className="h-4 w-4" aria-hidden />Choose</Link>
+                    <Link href="/plan" className="btn-ghost shrink-0 !rounded-full !px-4 !py-2 text-[14px]"><MapPin className="h-4 w-4" aria-hidden />Choose</Link>
                   ) : (
-                    <button className="btn-ghost shrink-0 !px-3.5 !py-2 text-[14px]" disabled={busy || readOnly} onClick={() => onApply(a)}
+                    <button className="btn-primary shrink-0 !rounded-full !px-4 !py-2 text-[14px]" disabled={busy || readOnly} onClick={() => onApply(a)}
                             aria-label={`${readOnly ? "Sign in to apply" : "Apply"}: ${a.label}`}>
                       {readOnly ? "Sign in" : "Apply"}
                     </button>
