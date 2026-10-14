@@ -220,23 +220,31 @@ section[id] { scroll-margin-top: 96px; }
 @keyframes sheet-in { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: none; } }
 .sheet-in { animation: sheet-in 220ms cubic-bezier(.2,.7,.2,1) both; }
 
-/* The night island (Navbar.tsx): a dark capsule in both themes, with a comet of lime light circling its edge. */
+/* The island (Navbar.tsx): frosted glass in light, a night capsule in dark, with a comet of brand colour circling its edge. */
 @property --orbit { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+:root { --island: 255 255 255; }
+.dark { --island: 13 16 22; }
 .nav-island, .nav-sheet {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.82), rgb(250 252 247 / 0.74));
+  border: 1px solid rgb(var(--line) / 0.9);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 14px 40px -22px rgb(var(--shadow) / 0.35), 0 2px 6px -3px rgb(var(--shadow) / 0.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6);
+}
+.dark .nav-island, .dark .nav-sheet {
   background: linear-gradient(180deg, rgb(20 24 33 / 0.86), rgb(10 12 18 / 0.9));
-  border: 1px solid rgb(255 255 255 / 0.09);
+  border-color: rgb(255 255 255 / 0.09);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 18px 50px -20px rgb(4 6 12 / 0.7), 0 0 0 1px rgb(0 0 0 / 0.15);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5);
 }
 .nav-island::before {
   content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
-  background: conic-gradient(from var(--orbit), transparent 0deg 250deg, rgb(190 255 74 / 0.15) 290deg, rgb(190 255 74) 340deg, transparent 360deg);
+  background: conic-gradient(from var(--orbit), transparent 0deg 250deg, rgb(var(--signal) / 0.15) 290deg, rgb(var(--signal)) 340deg, transparent 360deg);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   animation: orbit 7s linear infinite;
 }
 @keyframes orbit { to { --orbit: 360deg; } }
-.nav-train { box-shadow: 0 0 0 3px rgb(190 255 74 / 0.18), 0 0 14px 2px rgb(190 255 74 / 0.75); }
+.nav-sheet:not(.dark *) { background: rgb(255 255 255 / 0.95); }
+.nav-train { box-shadow: 0 0 0 3px rgb(var(--signal) / 0.18), 0 0 14px 2px rgb(var(--signal) / 0.6); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
