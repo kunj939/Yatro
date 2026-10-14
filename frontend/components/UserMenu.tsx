@@ -33,7 +33,8 @@ export function UserMenu({ dark = false }: { dark?: boolean }) {
       <button onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu"
               className={`flex h-10 items-center gap-2 rounded-full pl-1 pr-2.5 transition-colors ${
                 dark ? "text-white/80 hover:bg-white/10" : "text-ink-soft hover:bg-haze-2"}`}>
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-signal text-[12px] font-bold text-on-signal ring-2 ring-signal/25">
+        <span className={`grid h-7 w-7 place-items-center rounded-full text-[12px] font-bold ring-2 ${
+          dark ? "bg-[rgb(190_255_74)] text-[#0b0d0c] ring-[rgb(190_255_74/0.25)]" : "bg-signal text-on-signal ring-signal/25"}`}>
           {initials}
         </span>
         <span className="hidden text-[14px] font-medium lg:inline">{user.name.split(" ")[0]}</span>

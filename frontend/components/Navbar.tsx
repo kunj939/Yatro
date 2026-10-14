@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { UserMenu } from "./UserMenu";
@@ -15,29 +15,38 @@ const SECTIONS = [
   { id: "pricing", label: "Pricing" },
 ];
 
+/** A label that rolls up to a fresh copy of itself on hover. */
+function Roll({ children }: { children: string }) {
+  return (
+    <span className="relative block h-[1.3em] overflow-hidden leading-[1.3em]">
+      <span className="block transition-transform duration-500 ease-[cubic-bezier(.6,0,.2,1)] group-hover/l:-translate-y-1/2">
+        {children}
+        <span aria-hidden className="block">{children}</span>
+      </span>
+    </span>
+  );
+}
+
+/**
+ * The night island: one dark capsule in both themes, a comet of lime running round its edge. The links sit on a
+ * metro line; a lit train rides to the section you're reading, and follows the pointer between stations.
+ */
 export function Navbar() {
   const { user, ready, signOut } = useAuth();
   const pathname = usePathname();
   const onHome = pathname === "/";
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [active, setActive] = useState<string | null>(null);
 
-  // The bar floats lightly at the top and firms up once you scroll; a thin line tracks reading progress.
   useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY, max = document.documentElement.scrollHeight - window.innerHeight;
-      setScrolled(y > 12);
-      setProgress(max > 0 ? Math.min(1, y / max) : 0);
-    };
+    const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); };
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // On the landing page, highlight the section currently in view.
+  // On the landing page, the train stops at the section currently in view.
   useEffect(() => {
     if (!onHome) return setActive(null);
     const els = SECTIONS.map((s) => document.getElementById(s.id)).filter(Boolean) as HTMLElement[];
@@ -69,110 +78,141 @@ export function Navbar() {
          : { href: "/plan", label: "Plan", current: pathname === "/plan" },
   ];
 
-  // Sliding highlight that follows the pointer between links, and rests on the current one.
-  const navRef = useRef<HTMLDivElement>(null);
-  const [pill, setPill] = useState<{ x: number; w: number } | null>(null);
-  function moveTo(el: HTMLElement | null) {
-    const box = navRef.current;
-    if (!box || !el) return setPill(null);
-    const a = box.getBoundingClientRect(), b = el.getBoundingClientRect();
-    setPill({ x: b.left - a.left, w: b.width });
+  // Metro line geometry: station centres measured from the links, the train parked on the current one.
+  const lineRef = useRef<HTMLDivElement>(null);
+  const [stations, setStations] = useState<number[]>([]);
+  const [train, setTrain] = useState<number | null>(null);
+  function measure() {
+    const box = lineRef.current;
+    if (!box) return;
+    const a = box.getBoundingClientRect();
+    setStations(Array.from(box.querySelectorAll<HTMLElement>("[data-station]")).map((el) => {
+      const b = el.getBoundingClientRect();
+      return b.left - a.left + b.width / 2;
+    }));
   }
   function rest() {
-    moveTo(navRef.current?.querySelector<HTMLElement>("[aria-current='true']") ?? null);
+    const i = links.findIndex((l) => l.current);
+    setTrain(i >= 0 ? i : null);
   }
-  useEffect(rest, [active, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [user, scrolled]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(rest, [active, pathname, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const first = stations[0] ?? 0, last = stations[stations.length - 1] ?? 0;
+  const at = train !== null ? stations[train] ?? first : first;
 
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3 md:px-5 md:pt-4">
         <nav aria-label="Main"
-             className={`relative mx-auto flex h-16 max-w-6xl items-center gap-3 rounded-2xl border px-3 backdrop-blur-xl backdrop-saturate-150 transition-all duration-500 ease-out md:gap-4 md:rounded-full md:pl-6 md:pr-2.5 ${
-               scrolled
-                 ? "border-line/80 bg-paper/80 shadow-[0_12px_40px_-18px_rgb(var(--shadow)/0.45)]"
-                 : "border-line/50 bg-paper/40 shadow-[0_8px_30px_-22px_rgb(var(--shadow)/0.35)]"}`}>
-          <Link href="/" aria-label="Yatro home" className="group mr-auto shrink-0 rounded-lg px-1"><Logo /></Link>
+             className={`nav-island relative mx-auto flex items-center gap-3 rounded-full pl-4 pr-2 text-white transition-all duration-500 ease-out md:gap-4 md:pl-6 ${
+               scrolled ? "h-14 max-w-5xl md:h-[60px]" : "h-14 max-w-6xl md:h-16"}`}>
+          <Link href="/" aria-label="Yatro home" className="group mr-auto shrink-0 rounded-lg [&_.fill-signal]:fill-[rgb(190_255_74)] [&_.stroke-signal]:stroke-[rgb(190_255_74)]"><Logo light /></Link>
 
-          <div ref={navRef} onMouseLeave={rest}
-               className="relative hidden items-center gap-1 md:flex">
-            <span aria-hidden
-                  className={`absolute inset-y-0 left-0 rounded-full bg-haze-2 transition-all duration-300 ease-out ${pill ? "opacity-100" : "opacity-0"}`}
-                  style={{ transform: `translateX(${pill?.x ?? 0}px)`, width: pill?.w ?? 0 }} />
-            {links.map((l) => (
-              <Link key={l.href} href={l.href} aria-current={l.current ? "true" : undefined}
-                    onMouseEnter={(e) => moveTo(e.currentTarget)} onFocus={(e) => moveTo(e.currentTarget)}
-                    className={`relative rounded-full px-4 py-2 text-[14px] transition-colors duration-200 ${
-                      l.current ? "font-semibold text-ink" : "font-medium text-ink-soft hover:text-ink"}`}>
-                {l.label}
+          <div ref={lineRef} onMouseLeave={rest} className="relative hidden h-full items-center md:flex">
+            {/* the line, the part already travelled, then the train */}
+            <span aria-hidden className="pointer-events-none absolute bottom-[9px] h-px bg-white/15" style={{ left: first, width: last - first }} />
+            <span aria-hidden className="pointer-events-none absolute bottom-[9px] h-px bg-gradient-to-r from-[rgb(190_255_74/0.2)] to-[rgb(190_255_74)] transition-all duration-500 ease-[cubic-bezier(.6,0,.2,1)]"
+                  style={{ left: first, width: Math.max(0, at - first) }} />
+            {stations.map((x, i) => (
+              <span key={i} aria-hidden style={{ left: x }}
+                    className={`pointer-events-none absolute bottom-[7px] h-[5px] w-[5px] -translate-x-1/2 rounded-full transition-colors duration-500 ${
+                      train !== null && i <= train ? "bg-[rgb(190_255_74)]" : "bg-white/30"}`} />
+            ))}
+            <span aria-hidden style={{ left: at }}
+                  className={`nav-train pointer-events-none absolute bottom-[5px] h-[9px] w-[9px] -translate-x-1/2 rounded-full bg-[rgb(190_255_74)] transition-all duration-500 ease-[cubic-bezier(.6,0,.2,1)] ${
+                    train !== null ? "opacity-100" : "scale-50 opacity-0"}`} />
+
+            {links.map((l, i) => (
+              <Link key={l.href} href={l.href} aria-current={l.current ? "true" : undefined} data-station
+                    onMouseEnter={() => setTrain(i)} onFocus={() => setTrain(i)}
+                    className={`group/l relative px-3.5 text-[14px] font-medium transition-colors duration-300 lg:px-4 ${
+                      l.current ? "text-white" : "text-white/60 hover:text-white"}`}>
+                <Roll>{l.label}</Roll>
               </Link>
             ))}
           </div>
 
-          <div className="ml-2 hidden items-center gap-2 md:flex">
-            <ThemeToggle className="!h-10 !w-10 !rounded-full" />
-            <span aria-hidden className="h-6 w-px bg-line" />
+          <div className="ml-1 hidden items-center gap-1 md:flex">
+            <ThemeToggle className="!h-10 !w-10 !rounded-full !text-white/70 hover:!bg-white/10 hover:!text-white" />
             {ready && (user
-              ? <UserMenu />
-              : <Link href="/login" className="rounded-full px-3.5 py-2 text-[14px] font-medium text-ink-soft transition-colors hover:bg-haze-2 hover:text-ink">Sign in</Link>)}
-            <Link href="/plan" className="btn-primary shine group/cta !h-11 !rounded-full !py-0 !pl-5 !pr-3.5 !text-[14px]">
-              Build my trip
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-[rgb(var(--on-signal)/0.12)] transition-transform duration-300 group-hover/cta:translate-x-0.5 group-hover/cta:-rotate-45">
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+              ? <UserMenu dark />
+              : <Link href="/login" className="group/l rounded-full px-3.5 py-2 text-[14px] font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"><Roll>Sign in</Roll></Link>)}
+            <Link href="/plan"
+                  className={`group/cta group/l shine relative ml-1 inline-flex items-center gap-2 overflow-hidden rounded-full bg-[rgb(190_255_74)] pl-5 pr-1.5 text-[14px] font-semibold text-[#0b0d0c] shadow-[0_0_0_4px_rgb(190_255_74/0.12),0_10px_30px_-8px_rgb(190_255_74/0.6)] transition-all duration-500 hover:shadow-[0_0_0_6px_rgb(190_255_74/0.18),0_14px_36px_-8px_rgb(190_255_74/0.75)] ${
+                    scrolled ? "h-10 md:h-11" : "h-11 md:h-12"}`}>
+              <Roll>Build my trip</Roll>
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-[#0b0d0c] text-[rgb(190_255_74)] transition-transform duration-500 ease-[cubic-bezier(.6,0,.2,1)] group-hover/cta:rotate-45">
+                <ArrowUpRight className="h-4 w-4" aria-hidden />
               </span>
             </Link>
           </div>
 
           <div className="flex items-center gap-1 md:hidden">
-            <ThemeToggle className="!rounded-full" />
-            <button className="relative inline-grid h-10 w-10 place-items-center rounded-full border border-line bg-paper/80 text-ink transition-colors hover:bg-haze-2"
+            <ThemeToggle className="!h-10 !w-10 !rounded-full !text-white/70 hover:!bg-white/10 hover:!text-white" />
+            <button className="flex h-10 items-center gap-2.5 rounded-full bg-white/10 pl-4 pr-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-white/15"
                     onClick={() => setOpen(!open)} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="mobile-menu">
-              <Menu className={`absolute h-5 w-5 transition-all duration-300 ${open ? "rotate-90 scale-50 opacity-0" : "opacity-100"}`} aria-hidden />
-              <X className={`absolute h-5 w-5 transition-all duration-300 ${open ? "opacity-100" : "-rotate-90 scale-50 opacity-0"}`} aria-hidden />
+              {open ? "Close" : "Menu"}
+              <span aria-hidden className="relative block h-2.5 w-4">
+                <span className={`absolute left-0 h-[2px] w-4 rounded-full bg-[rgb(190_255_74)] transition-all duration-300 ${open ? "top-1 rotate-45" : "top-0"}`} />
+                <span className={`absolute left-0 h-[2px] rounded-full bg-[rgb(190_255_74)] transition-all duration-300 ${open ? "top-1 w-4 -rotate-45" : "top-2 w-2.5"}`} />
+              </span>
             </button>
           </div>
-
-          {/* Reading progress, drawn along the bottom edge of the bar once it has lifted off the page. */}
-          <span aria-hidden className={`pointer-events-none absolute inset-x-8 -bottom-px h-[2px] overflow-hidden rounded-full transition-opacity duration-300 ${scrolled ? "opacity-100" : "opacity-0"}`}>
-            <span className="block h-full origin-left bg-gradient-to-r from-signal via-signal to-spark" style={{ transform: `scaleX(${progress})` }} />
-          </span>
         </nav>
 
         {open && (
-          <div id="mobile-menu" className="sheet-in mx-auto mt-2 max-w-6xl overflow-hidden rounded-2xl border border-line bg-paper/95 p-2 shadow-[0_24px_60px_-20px_rgb(var(--shadow)/0.5)] backdrop-blur-xl md:hidden">
-            <div className="flex flex-col">
+          <div id="mobile-menu" className="nav-sheet sheet-in mx-auto mt-2 max-w-6xl overflow-hidden rounded-[28px] p-3 text-white md:hidden">
+            {/* the same metro line, standing up: every link is a stop */}
+            <ol className="relative px-2 pt-2">
+              <span aria-hidden className="absolute bottom-7 left-[21px] top-7 w-px bg-white/15" />
               {links.map((l, i) => (
-                <Link key={l.href} href={l.href} onClick={() => setOpen(false)} style={{ ["--d" as string]: `${i * 45}ms` }}
-                      className={`fade-up flex items-center justify-between rounded-xl px-4 py-3.5 text-[18px] font-semibold transition-colors hover:bg-haze ${l.current ? "bg-haze text-ink" : "text-ink"}`}>
-                  {l.label}
-                  <ArrowRight className="h-4 w-4 text-ink-mute" aria-hidden />
-                </Link>
+                <li key={l.href} className="fade-up" style={{ ["--d" as string]: `${i * 50}ms` }}>
+                  <Link href={l.href} onClick={() => setOpen(false)} className="group relative flex items-center gap-4 rounded-2xl py-3 pl-1 pr-3">
+                    <span aria-hidden className={`relative z-10 grid h-6 w-6 place-items-center rounded-full ring-4 ring-[#0d1016] ${
+                      l.current ? "bg-[rgb(190_255_74)]" : "border border-white/25 bg-[#0d1016]"}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${l.current ? "bg-[#0b0d0c]" : "bg-white/40"}`} />
+                    </span>
+                    <span className="num w-6 text-[12px] font-semibold text-white/40">0{i + 1}</span>
+                    <span className={`flex-1 text-[26px] font-bold leading-tight tracking-tight ${l.current ? "text-[rgb(190_255_74)]" : "text-white"}`}>{l.label}</span>
+                    <ArrowRight className="h-5 w-5 -translate-x-1 text-white/30 transition-all group-hover:translate-x-0 group-hover:text-[rgb(190_255_74)]" aria-hidden />
+                  </Link>
+                </li>
               ))}
-              <div className="my-2 h-px bg-line" />
-              {user ? (
-                <>
-                  <div className="flex items-center gap-3 px-4 py-2">
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-signal text-[13px] font-bold text-on-signal">{user.name[0]?.toUpperCase()}</span>
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-ink">{user.name}</p>
-                      <p className="truncate text-[14px] text-ink-mute">{user.email}</p>
-                    </div>
+            </ol>
+            <div className="mx-2 my-3 h-px bg-white/10" />
+            {user ? (
+              <div className="px-2">
+                <div className="flex items-center gap-3 py-2">
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-[rgb(190_255_74)] text-[14px] font-bold text-[#0b0d0c]">{user.name[0]?.toUpperCase()}</span>
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{user.name}</p>
+                    <p className="truncate text-[14px] text-white/55">{user.email}</p>
                   </div>
-                  <Link href="/account" onClick={() => setOpen(false)} className="rounded-xl px-4 py-3 font-medium text-ink hover:bg-haze">My account</Link>
-                  {user.is_admin && <Link href="/admin" onClick={() => setOpen(false)} className="rounded-xl px-4 py-3 font-semibold text-signal-deep hover:bg-signal-soft/60">Admin console</Link>}
-                  <button onClick={() => { setOpen(false); signOut(); }} className="rounded-xl px-4 py-3 text-left font-medium text-ink hover:bg-haze">Sign out</button>
-                </>
-              ) : (
-                <Link href="/login" onClick={() => setOpen(false)} className="rounded-xl px-4 py-3 font-medium text-ink hover:bg-haze">Sign in</Link>
-              )}
-              <Link href="/plan" onClick={() => setOpen(false)} className="btn-primary mt-2 !rounded-xl !py-3.5">
-                Build my trip <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
-            </div>
+                </div>
+                <div className="mt-1 grid grid-cols-2 gap-2">
+                  <Link href="/account" onClick={() => setOpen(false)} className="rounded-xl bg-white/[0.06] px-4 py-3 text-[15px] font-medium hover:bg-white/10">My account</Link>
+                  <button onClick={() => { setOpen(false); signOut(); }} className="rounded-xl bg-white/[0.06] px-4 py-3 text-left text-[15px] font-medium hover:bg-white/10">Sign out</button>
+                  {user.is_admin && <Link href="/admin" onClick={() => setOpen(false)} className="col-span-2 rounded-xl bg-[rgb(190_255_74/0.1)] px-4 py-3 text-[15px] font-semibold text-[rgb(190_255_74)] hover:bg-[rgb(190_255_74/0.16)]">Admin console</Link>}
+                </div>
+              </div>
+            ) : (
+              <Link href="/login" onClick={() => setOpen(false)} className="mx-2 block rounded-xl bg-white/[0.06] px-4 py-3 font-medium hover:bg-white/10">Sign in</Link>
+            )}
+            <Link href="/plan" onClick={() => setOpen(false)}
+                  className="mt-3 flex items-center justify-between rounded-2xl bg-[rgb(190_255_74)] py-2 pl-5 pr-2 text-[17px] font-bold text-[#0b0d0c]">
+              Build my trip
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#0b0d0c] text-[rgb(190_255_74)]"><ArrowUpRight className="h-5 w-5" aria-hidden /></span>
+            </Link>
           </div>
         )}
       </header>
-      {open && <div className="fixed inset-0 z-30 bg-haze/60 backdrop-blur-sm md:hidden" onClick={() => setOpen(false)} aria-hidden />}
-      <div className="h-[76px] md:h-[84px]" aria-hidden />
+      {open && <div className="fixed inset-0 z-30 bg-[#05070b]/50 backdrop-blur-sm md:hidden" onClick={() => setOpen(false)} aria-hidden />}
+      <div className="h-[68px] md:h-[84px]" aria-hidden />
     </>
   );
 }
