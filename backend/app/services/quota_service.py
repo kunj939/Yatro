@@ -18,7 +18,7 @@ from app.models.user import Subscription, User
 
 def quota_message() -> str:
     n = runtime.free_trip_plans()
-    return f"This month's {n} free trip plan{'s are' if n != 1 else ' is'} used. They come back on the 1st."
+    return f"This month's {n} free trip plan{'s are' if n != 1 else ' is'} used. {'They come' if n != 1 else 'It comes'} back on the 1st."
 
 
 def get_subscription(db: Session, user: User) -> Subscription:
