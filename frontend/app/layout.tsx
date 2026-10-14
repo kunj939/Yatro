@@ -2,8 +2,6 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import { brand } from "@/lib/brand";
-import { themeScript } from "@/components/ThemeToggle";
-import { NightSky } from "@/components/NightSky";
 import { SpotlightTracker } from "@/components/SpotlightTracker";
 
 // Link previews need absolute image URLs. NEXT_PUBLIC_SITE_URL wins; on Vercel the production domain is known at build.
@@ -17,8 +15,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [{ media: "(prefers-color-scheme: light)", color: "#F0F1EC" },
-               { media: "(prefers-color-scheme: dark)", color: "#090B11" }],
+  themeColor: "#F0F1EC",  // light only: people found the dark theme harder to read, so it was retired
   width: "device-width", initialScale: 1,
 };
 
@@ -34,11 +31,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         />
         <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
         <div className="page-bg" aria-hidden />
-        <NightSky />
         <SpotlightTracker />
         <AuthProvider>{children}</AuthProvider>
       </body>

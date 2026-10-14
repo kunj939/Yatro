@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { ArrowUp, ArrowUpRight, Mail, MapPin } from "lucide-react";
 import { Logo } from "./Logo";
-import { ThemeToggle } from "./ThemeToggle";
 import { brand } from "@/lib/brand";
 
 const COLUMNS = [
@@ -62,7 +61,6 @@ export function Footer() {
             <p className="mt-1 text-[12px] text-ink-mute">Data from Google Maps, Wikidata, Open-Meteo and Indian Railways timetables.</p>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle className="!rounded-full border border-line" />
             <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                     className="group inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 font-medium text-ink transition-all hover:-translate-y-px hover:border-ink/30">
               Back to top <ArrowUp className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5" aria-hidden />

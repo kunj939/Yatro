@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { brand } from "@/lib/brand";
 
 type Story = {
   label: string;      // what the dot is called
@@ -8,7 +9,7 @@ type Story = {
   lead: string;       // headline, up to the accent
   accent: string;     // the italic, coloured part
   tone: string;       // accent colour: darker on the light theme, brighter on the dark one
-  body: React.ReactNode;
+  body: React.ReactNode;  // not shown in the hero any more (one fixed line explains the product); kept for later use
   quote: string;
 };
 
@@ -99,12 +100,16 @@ export function HeroStory() {
                 {s.lead}{" "}
                 <span className={`accent ${s.tone === "highlight" ? "highlight" : s.tone} whitespace-nowrap`}>{s.accent}</span>
               </p>
-              <p className="mt-5 max-w-[46ch] text-[17px] leading-relaxed text-ink-soft">{s.body}</p>
             </div>
           );
         })}
       </div>
       </div>
+      {/* The headline changes; this line doesn't. It says plainly what the product is, for someone who's never heard of it. */}
+      <p className="mt-5 max-w-[48ch] text-[17px] leading-relaxed text-ink-soft">
+        <span className="font-semibold text-ink">{brand.name} is an AI trip planner.</span> Tell it where, when and your budget.
+        It checks real trains, places and prices, does the maths, and gives you a day-by-day plan that fits.
+      </p>
     </div>
   );
 }

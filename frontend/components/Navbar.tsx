@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Logo } from "./Logo";
-import { ThemeToggle } from "./ThemeToggle";
 import { UserMenu } from "./UserMenu";
 import { useAuth } from "@/lib/auth";
 
@@ -138,7 +137,6 @@ export function Navbar() {
           </div>
 
           <div className="ml-1 hidden items-center gap-1 md:flex">
-            <ThemeToggle className="!h-10 !w-10 !rounded-full !text-ink/70 hover:!bg-ink/10 hover:!text-ink" />
             {ready && (user
               ? <UserMenu />
               : <Link href="/login" className="group/l rounded-full px-3.5 py-2 text-[14px] font-medium text-ink/70 transition-colors hover:bg-ink/10 hover:text-ink"><Roll>Sign in</Roll></Link>)}
@@ -153,7 +151,6 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-1 md:hidden">
-            <ThemeToggle className="!h-10 !w-10 !rounded-full !text-ink/70 hover:!bg-ink/10 hover:!text-ink" />
             <button className="flex h-10 items-center gap-2.5 rounded-full bg-ink/10 pl-4 pr-3.5 text-[14px] font-semibold text-ink transition-colors hover:bg-ink/15"
                     onClick={() => setOpen(!open)} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="mobile-menu">
               {open ? "Close" : "Menu"}

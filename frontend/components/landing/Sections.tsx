@@ -56,7 +56,7 @@ const COMPARE = [
 
 export function WhyDifferent() {
   return (
-    <section id="features" className="py-20 md:py-28" aria-labelledby="compare-heading">
+    <section id="compare" className="py-20 md:py-28" aria-labelledby="compare-heading">
       <div className="container-x">
         <Reveal className="mx-auto max-w-3xl text-center">
           <span className="eyebrow mx-auto">Chatbot vs {brand.name}</span>
