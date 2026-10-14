@@ -9,7 +9,9 @@ os.environ.update({"DATABASE_URL": os.environ.get("TEST_DATABASE_URL", f"sqlite:
                    # the gateway tests switch budgets on themselves; the rest of the suite runs many plans a day
                    "BUDGET_MODE": "off", "IRCTC1_ASSUME_EXHAUSTED": "false",
                    # every test client is one address: the per-address code limit (10 an hour) is tested by its own tests
-                   "OTP_PER_IP_HOUR": "0"})
+                   "OTP_PER_IP_HOUR": "0",
+                   # no network in tests: the chat's Wikipedia lookups are stubbed where they're tested
+                   "WIKIPEDIA_ENABLED": "false"})
 # The suite is written around 2 free plans (the product default is higher): pinned here so a plain `pytest` works too
 os.environ.setdefault("FREE_TRIP_PLANS", "2")
 

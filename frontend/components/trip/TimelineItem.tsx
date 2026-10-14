@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { BedDouble, Car, ChevronDown, Clock, Coffee, ExternalLink, Footprints, Home, Landmark, Map as MapIcon, Plane, Bus, Repeat, Sparkles, Sunset, TrainFront, TramFront, UtensilsCrossed } from "lucide-react";
+import { BedDouble, Car, ChevronDown, Clock, Coffee, ExternalLink, Footprints, Home, Landmark, Map as MapIcon, MessageCircle, Plane, Bus, Repeat, Sparkles, Sunset, TrainFront, TramFront, UtensilsCrossed } from "lucide-react";
 import type { ItineraryItem, TransportLeg } from "@/lib/types";
 import { endpoints } from "@/lib/api";
 import { MODE_LABEL, km, minutes, money } from "@/lib/format";
 import { directionsUrl } from "@/lib/tripLinks";
 import { VerificationBadge } from "../VerificationBadge";
 import { placeSource } from "@/lib/sources";
+import { askAboutStop } from "./TripChat";
 
 const KIND_ICON: Record<string, any> = { activity: Landmark, meal: UtensilsCrossed, sunset: Sunset, stay: BedDouble, arrival: Home, free: Coffee };
 const MODE_ICON: Record<string, any> = { train: TrainFront, bus: Bus, flight: Plane, cab: Car, own_car: Car, walk: Footprints, transit: TramFront };
@@ -164,6 +165,7 @@ export function TimelineItem({ item, onChange, highlight, currency, near, first,
   const unpublished = !!item.hours_note?.startsWith("Opening hours are not published") && !item.opening_time;
   const ticket = item.kind === "transport" && TICKET_MODES.has(item.meta?.mode) && !!item.meta?.from_name && !!item.meta?.to_name;
   const source = placeSource(item);
+  const askable = !!tripId && ["activity", "sunset", "meal", "stay"].includes(item.kind);  // owner's trip: the chat can answer
   // On a ticket the route is drawn, so the subtitle keeps only what it adds ("including about 3 h at the airports").
   let subtitle = item.subtitle;
   if (ticket && subtitle) {
@@ -255,8 +257,14 @@ export function TimelineItem({ item, onChange, highlight, currency, near, first,
               (sources disagree, closes soon after you arrive) keeps its note. */}
           {item.hours_note && !unpublished && <p className="mt-3 rounded-lg bg-caution-soft px-3 py-2 text-[14px] text-caution">{item.hours_note}</p>}
 
-          {(item.explanation || hasAlts || mappable) && (
+          {(item.explanation || hasAlts || mappable || askable) && (
             <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-3">
+              {askable && (
+                <button type="button" onClick={() => askAboutStop(item)}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-signal-soft px-3 py-1.5 text-[13px] font-semibold text-signal-deep transition-all hover:-translate-y-px hover:bg-signal hover:text-on-signal">
+                  <MessageCircle className="h-3.5 w-3.5" aria-hidden />Ask{item.kind === "activity" || item.kind === "sunset" ? ": why famous?" : ""}
+                </button>
+              )}
               {item.explanation && (
                 <ActionBtn onClick={() => setWhy(!why)} aria-expanded={why}>
                   Why this?<ChevronDown className={`h-3.5 w-3.5 transition-transform ${why ? "rotate-180" : ""}`} aria-hidden />

@@ -11,12 +11,15 @@ import json
 import logging
 import re
 import time
+import uuid
 from datetime import date
 
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.errors import ProviderUnavailable
-from app.models.trip import Trip
+from app.models.trip import ItineraryItem, Trip
+from app.providers import wikipedia
 from app.providers.registry import Providers
 from app.providers.types import LLMMessage
 from app.services import intent as intent_service
@@ -39,6 +42,9 @@ Decide what the traveller wants:
 - action "answer": anything else. Answer in at most 4 short sentences, using ONLY the trip data. Quote times,
   places and prices exactly as the data gives them. If the data doesn't say, say so plainly and suggest what they
   could ask instead. Never invent trains, timings, prices, phone numbers or bookings.
+When an ABOUT THIS STOP section is given, the question is about that stop. You may also use its Wikipedia text to
+explain what the place is, its history and why it is known, in your own words; add nothing that isn't in it, and
+mention that it's from Wikipedia. Then say how it fits this trip (day, time, hours, cost) from the trip data.
 If the message is not about this trip (general knowledge, other trips, coding, news), answer that you can only
 help with this trip, in one friendly sentence.
 Reply in the traveller's own style: English, Hindi, or Hinglish written in Latin letters."""
@@ -90,7 +96,9 @@ def trip_brief(trip: Trip, limit: int = 9000) -> str:
     return text if len(text) <= limit else text[:limit] + "\n(the rest of the plan is left out)"
 
 
-def respond(db: Session, providers: Providers, user, trip: Trip, message: str, history: list[dict]) -> dict:
+def respond(db: Session, providers: Providers, user, trip: Trip, message: str, history: list[dict],
+            item_id: str | None = None) -> dict:
+    """`item_id`: the stop the traveller tapped "Ask" on; follow-up questions keep it until they ask about another."""
     from app.services import trip_service as TS
     message = message.strip()[:1000]
     ctx, candidates = TS.intent_inputs(trip)
@@ -105,8 +113,15 @@ def respond(db: Session, providers: Providers, user, trip: Trip, message: str, h
     if rules.item_price and not rules.has_change():  # "the cab is ₹358, make it 200": one item, not the budget
         item = copied[0] if copied else None
         return {"action": "answer", "text": item_price_answer(trip, rules.item_price, message, item), "by": "rules"}
+    focus = _locate(trip, item_id) if item_id else None
+    if focus and _SKIP_THIS.search(own or message) and focus[1]["kind"] in PLACE_KINDS:
+        return {"action": "change", "message": f"skip {focus[1]['title']}"}  # "skip it", said about a tapped stop
     if rules.has_change() and not QUESTION.search(own):
         return {"action": "change", "message": own} if copied else {"action": "change"}
+    if focus is None:
+        focus = _locate(trip, copied[0]["id"]) if copied else _named_stop(trip, message)
+    if focus:
+        return about_stop(db, providers, user, trip, focus, own or message, history)
     llm = providers.llm
     if llm.live:
         convo = [LLMMessage("system", CHAT_SYSTEM), LLMMessage("system", "TRIP DATA:\n" + trip_brief(trip))]
@@ -136,6 +151,128 @@ def respond(db: Session, providers: Providers, user, trip: Trip, message: str, h
     if rules.has_change() and not (QUESTION.search(own) and answer != ONLY_THIS_TRIP):
         return {"action": "change", "message": own} if copied else {"action": "change"}
     return {"action": "answer", "text": answer, "by": "rules"}
+
+
+PLACE_KINDS = ("activity", "sunset", "meal", "stay")
+_SKIP_THIS = re.compile(r"\b(?:skip|remove|drop|hata\w*|nikal\w*)\b.{0,12}\b(?:it|this|this one|ise|isko|ye|yeh)\b|"
+                        r"\b(?:ise|isko|ye|yeh)\b.{0,12}\b(?:hata\w*|skip|nikal\w*)\b", re.I)
+
+
+def _locate(trip: Trip, item_id: str) -> tuple[int, dict] | None:
+    for n, d in enumerate(_days(trip)):
+        for i in d["items"]:
+            if i["id"] == str(item_id):
+                return n, i
+    return None
+
+
+def _named_stop(trip: Trip, message: str) -> tuple[int, dict] | None:
+    """"Why is Hawa Mahal famous?": the stop the question names, the longest name first."""
+    m = message.lower()
+    best = None
+    for n, d in enumerate(_days(trip)):
+        for i in d["items"]:
+            t = i["title"].lower()
+            if i["kind"] in PLACE_KINDS and len(t) >= 4 and t in m and (best is None or len(t) > len(best[1]["title"])):
+                best = (n, i)
+    return best
+
+
+def _wiki(db: Session, trip: Trip, item: dict) -> dict | None:
+    if item["kind"] not in ("activity", "sunset"):
+        return None  # a restaurant or hotel rarely has an article, and the wrong one would mislead
+    if not get_settings().wikipedia_enabled:
+        return None
+    row = db.get(ItineraryItem, uuid.UUID(item["id"])) if item.get("id") else None
+    place = row.place if row is not None else None
+    name = place.name if place is not None and place.name else item["title"]
+    qid = ((place.meta or {}).get("wikidata") if place is not None else None) or None
+    return wikipedia.about(name, (trip.destination_name or "").split(",")[0], qid)
+
+
+def _sentences(text: str, limit: int = 650) -> str:
+    out = ""
+    for s in re.split(r"(?<=[.!?])\s+", text):
+        if out and len(out) + len(s) > limit:
+            break
+        out = f"{out} {s}".strip()
+    return out
+
+
+def _mins(n: int | None) -> str:
+    if not n:
+        return ""
+    h, m = divmod(int(n), 60)
+    return f"{h} h {m} min" if h and m else f"{h} h" if h else f"{m} min"
+
+
+def _in_plan(trip: Trip, n: int, i: dict) -> str:
+    when = f"{i['time']}–{i['end_time']}" if i.get("time") and i.get("duration_minutes") else (i.get("time") or "")
+    bits = [f"Day {n + 1}{', ' + when if when else ''}" + (f" ({_mins(i['duration_minutes'])})" if i.get("duration_minutes") else "")]
+    if i.get("opening_time") and i.get("closing_time"):
+        bits.append(f"open {i['opening_time']}–{i['closing_time']}")
+    if i.get("cost"):
+        bits.append(f"{fmt_money(i['cost'], trip.currency)} for the group")
+    elif i["kind"] in ("activity", "sunset") and i.get("cost") == 0:
+        bits.append("free entry")
+    return "In your plan: " + ", ".join(bits) + "."
+
+
+def about_answer(trip: Trip, n: int, i: dict, info: dict | None, message: str) -> str:
+    """A question about one stop, answered without a model: the plan's facts, and Wikipedia's introduction."""
+    m = message.lower()
+    plan = _in_plan(trip, n, i)
+    if re.search(r"how long|how much time|kitna time|kitni der|kitne ghante|time chahiye|spend", m):
+        rec = i.get("recommended_minutes")
+        extra = f" Most people spend about {_mins(rec)} there." if rec and rec != i.get("duration_minutes") else ""
+        return plan + extra
+    if re.search(r"\bopen|timing|close|closing|band|khula|khulta", m):
+        if i.get("opening_time"):
+            return f"{i['title']} is open {i['opening_time']}–{i['closing_time']} that day. {plan}"
+        return f"Opening hours for {i['title']} aren't confirmed, so check before you go. {plan}"
+    if re.search(r"entry|ticket|fee|price|cost|kitne ka|kitna paisa", m):
+        return plan
+    if info:
+        return f"{_sentences(info['extract'])} (Wikipedia)\n\n{plan}"
+    if i["kind"] not in ("activity", "sunset"):
+        return describe(trip, i)
+    why = i.get("meta", {}).get("why_go") or i.get("explanation") or i.get("subtitle")
+    return ((f"{why.rstrip('.')}. " if why else "") + f"I couldn't find an article about {i['title']} to tell you more, "
+            f"so here is how it fits your trip. {plan}")
+
+
+def about_stop(db: Session, providers: Providers, user, trip: Trip, focus: tuple[int, dict], message: str,
+               history: list[dict]) -> dict:
+    n, i = focus
+    info = _wiki(db, trip, i)
+    source = {"label": "Wikipedia", "title": info["title"], "url": info["url"]} if info and info.get("url") else None
+    out = {"action": "answer", "item_id": i["id"], "item_title": i["title"], "source": source}
+    llm = providers.llm
+    if llm.live:
+        stop = f"Day {n + 1}: {describe(trip, i)} {_in_plan(trip, n, i)}"
+        if i.get("explanation"):
+            stop += f" Why it's in the plan: {i['explanation']}"
+        if info:
+            stop += f"\nWikipedia, \"{info['title']}\": {info['extract']}"
+        convo = [LLMMessage("system", CHAT_SYSTEM), LLMMessage("system", "TRIP DATA:\n" + trip_brief(trip, 6000)),
+                 LLMMessage("system", "ABOUT THIS STOP:\n" + stop)]
+        for h in history[-6:]:
+            convo.append(LLMMessage("assistant" if h.get("role") == "assistant" else "user", str(h.get("text", ""))[:600]))
+        convo.append(LLMMessage("user", message))
+        t0 = time.perf_counter()
+        try:
+            result = llm.complete(convo, json_schema=CHAT_SCHEMA, temperature=0.3, max_tokens=450)
+            log_usage(db, llm, "chat", user_id=user.id, trip_id=trip.id, result=result)
+            text = ((result.data or {}).get("answer") or "").strip()
+            if text:
+                return {**out, "text": text, "by": "ai"}
+        except ProviderUnavailable as exc:
+            log_usage(db, llm, "chat", user_id=user.id, trip_id=trip.id, error=str(exc),
+                      latency_ms=int((time.perf_counter() - t0) * 1000))
+        except Exception:  # noqa: BLE001 - a model problem falls back to the rules, never to an error
+            log.warning("chat model call failed", exc_info=True)
+    text = about_answer(trip, n, i, info, message)
+    return {**out, "text": text, "by": "rules", "source": source if "(Wikipedia)" in text else None}  # linked when quoted
 
 
 _CARD_LABELS = re.compile(r"(?im)^\s*(?:travel|stay|food|meal|activity|sunset|why this\??|swap|directions|day \d+[^\n]*)\s*$")

@@ -142,6 +142,7 @@ class Settings(BaseSettings):
     referral_plus_discount_pct: int = 50  # off the friend's first month of Plus
     referral_monthly_cap: int = 10       # inviter rewards per month (0 = no cap)
     wikidata_enabled: bool = True  # famous sights from Wikidata (free, CC0) next to Google's: providers/wikidata.py
+    wikipedia_enabled: bool = True  # "why is it famous?" in the trip chat: providers/wikipedia.py (ADR 0017)
     cold_plan_worst_usd: float = 0.35
     background_budget_share: float = 0.5  # background work (rail refresh, later pre-warming) may use this much of a day
     busy_notify_email: bool = False  # reserved: "email me when it's back". Email sending doesn't exist yet; never read

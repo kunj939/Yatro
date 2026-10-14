@@ -48,6 +48,37 @@ def test_one_items_price_and_pasted_plan_text_never_change_the_trip(client, plus
     app.dependency_overrides.clear()
 
 
+def test_ask_about_a_stop_answers_from_wikipedia_and_the_plan(client, plus_user, monkeypatch):  # noqa: F811
+    """"Ask" on a stop: what the place is (Wikipedia's own introduction, linked), then how it fits this trip. Follow-ups
+    keep the stop, "skip it" skips that stop, and a question that names a stop finds it without a tap."""
+    from app.services import chat_service
+    wiki = {"title": "Test Fort", "extract": "Test Fort is a hill fort built in 1726. It is known for its long walls and "
+                                              "the view over the city.", "url": "https://en.wikipedia.org/wiki/Test_Fort"}
+    from app.core.config import get_settings
+    asked = []
+    monkeypatch.setattr(get_settings(), "wikipedia_enabled", True)
+    monkeypatch.setattr(chat_service.wikipedia, "about", lambda name, near=None, qid=None: asked.append(name) or wiki)
+    trip_id = _planned_trip(client, plus_user)
+    trip = client.get(f"/api/trips/{trip_id}", headers=plus_user).json()
+    stop = next(i for d in trip["itinerary"]["days"] for i in d["items"] if i["kind"] == "activity")
+
+    def ask(text, item_id=None):
+        r = client.post(f"/api/trips/{trip_id}/chat", headers=plus_user,
+                        json={"message": text, "history": [], "item_id": item_id})
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    famous = ask(f"Why is {stop['title']} famous?", stop["id"])
+    assert famous["action"] == "answer" and "built in 1726" in famous["text"] and "In your plan: Day" in famous["text"]
+    assert famous["source"]["url"] == wiki["url"] and famous["item_id"] == stop["id"] and asked[0] == stop["title"]
+    long = ask("How long should I spend?", stop["id"])
+    assert long["text"].startswith("In your plan: Day") and "1726" not in long["text"] and long["source"] is None
+    assert ask("skip it", stop["id"]) == {"action": "change", "message": f"skip {stop['title']}"}
+    named = ask(f"tell me about {stop['title']}?")
+    assert named["item_id"] == stop["id"] and "1726" in named["text"]
+    app.dependency_overrides.clear()
+
+
 def test_only_the_owner_can_chat(client, plus_user):  # noqa: F811
     from .conftest import register
     trip_id = _planned_trip(client, plus_user)

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Coffee, Navigation, Sparkles } from "lucide-react";
+import { ChevronDown, Coffee, MessageCircle, Navigation, Sparkles } from "lucide-react";
 import type { Itinerary, ItineraryItem } from "@/lib/types";
 import { MODE_LABEL, minutes, money, niceDate } from "@/lib/format";
 import { dayRouteUrl } from "@/lib/tripLinks";
 import { KIND_TONE, TimelineItem, itemIcon } from "./TimelineItem";
+import { askAboutStop } from "./TripChat";
 
 /** What a day costs and how many real stops it has — shared by the day headers and the overview strip. */
 export function dayStats(items: ItineraryItem[]) {
@@ -57,8 +58,9 @@ function CompactRow({ item, onChange, highlight, currency, near, tripId }: {
     ? item.title.slice(item.time.length + 1).replace(/^./, (c) => c.toUpperCase()) : item.title;
   return (
     <li className={highlight ? "bg-signal-soft/50" : ""}>
+      <div className="flex items-stretch">
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open}
-              className="grid w-full grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-x-2.5 px-3 py-2.5 text-left transition-colors hover:bg-haze/70 sm:grid-cols-[56px_34px_minmax(0,1fr)_auto] sm:gap-x-3 sm:px-3.5">
+              className="grid min-w-0 flex-1 grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-x-2.5 py-2.5 pl-3 pr-1 text-left transition-colors hover:bg-haze/70 sm:grid-cols-[56px_34px_minmax(0,1fr)_auto] sm:gap-x-3 sm:pl-3.5">
         <span className="num text-[14px] font-bold text-ink">{when}</span>
         <span className={`hidden h-8 w-8 place-items-center rounded-lg sm:grid ${KIND_TONE[item.kind] ?? "bg-haze text-ink"}`}><Icon className="h-4 w-4" aria-hidden /></span>
         <span className="min-w-0">
@@ -82,6 +84,13 @@ function CompactRow({ item, onChange, highlight, currency, near, tripId }: {
           <ChevronDown className={`h-4 w-4 text-ink-mute transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
         </span>
       </button>
+      {tripId && ["activity", "sunset", "meal", "stay"].includes(item.kind) ? (
+        <button type="button" onClick={() => askAboutStop(item)} title={`Ask about ${title}`}
+                className="my-2 mr-2 grid w-9 shrink-0 place-items-center rounded-xl text-signal-deep transition-colors hover:bg-signal-soft sm:mr-2.5">
+          <MessageCircle className="h-[18px] w-[18px]" aria-hidden /><span className="sr-only">Ask about {title}</span>
+        </button>
+      ) : <span className="w-2 shrink-0 sm:w-2.5" aria-hidden />}
+      </div>
       {open && (
         <ol className="fade-up border-t border-line bg-haze/40 px-2 pb-3 pt-3 sm:px-4">
           <TimelineItem item={item} onChange={onChange} tripId={tripId} highlight={highlight} currency={currency} near={near} first last />

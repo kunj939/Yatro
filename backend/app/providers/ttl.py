@@ -20,6 +20,7 @@ DEFAULTS: dict[str, int] = {
     "google-routes": 6 * H, "google-matrix": 24 * H, "google-places-search": 7 * D, "google-autocomplete": 24 * H,
     "google-place-details": 7 * D, "google-reverse": 7 * D, "google-transit": 12 * H,
     "wikidata": 30 * D,  # CC0 data, ours to keep; refreshed monthly to pick up new pages
+    "wikipedia": 30 * D,  # article introductions for the trip chat (CC BY-SA, always linked back)
     "open-meteo": 3 * H, "search": 12 * H,
     "irctc1-station": 1 * D, "irctc1-between": 12 * H, "railradar": 12 * H,
 }

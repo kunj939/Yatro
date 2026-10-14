@@ -444,6 +444,7 @@ class ChatTurn(BaseModel):
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
     history: list[ChatTurn] = Field(default_factory=list, max_length=12)
+    item_id: uuid.UUID | None = None  # the stop "Ask" was tapped on
 
 
 _chat_limit = limit("chat", 20)
@@ -455,7 +456,8 @@ def chat(trip_id: uuid.UUID, body: ChatRequest, user: User = Depends(current_use
     """The trip chat (ADR 0016): answers a question about this trip, or says "change" so the client re-plans with the
     same message through /replan (the one path that can change a plan)."""
     trip = TS.load_trip(db, trip_id, user)
-    out = chat_service.respond(db, providers, user, trip, body.message, [h.model_dump() for h in body.history])
+    out = chat_service.respond(db, providers, user, trip, body.message, [h.model_dump() for h in body.history],
+                               str(body.item_id) if body.item_id else None)
     db.commit()
     return out
 
