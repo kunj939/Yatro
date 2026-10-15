@@ -838,9 +838,12 @@ class Planner:
             fare, access = FE.group_cost(t, tv)
             reason = FE.combo_reason(combo, [combo], inp)
             subtitle = f"{t.from_name} to {t.to_name}"
-            if t.meta.get("legs"):  # a change of train: say where, and how long there is to make it
-                subtitle += f", changing at {t.meta.get('change_at')} ({t.meta.get('change_minutes')} min to connect)"
-            elif t.meta.get("airport_minutes"):
+            if t.meta.get("legs"):  # a change of train or plane: say where, and how long there is to make it
+                subtitle += f", changing at {t.meta.get('change_at')} ({_hours(t.meta.get('change_minutes') or 0)} to connect)"
+            if t.mode == "flight" and t.meta.get("depart_local"):  # a real flight: each airport's own clock
+                subtitle += (f". Leaves {t.meta['depart_local']}, lands {t.meta['arrive_local']}, local times; be at the "
+                             f"airport {_hours(t.meta.get('check_in_minutes') or 120)} before")
+            elif t.meta.get("airport_minutes") and not t.meta.get("legs"):
                 subtitle += f", including about {_hours(t.meta['airport_minutes'])} at the airports (check-in, security)"
             add(kind="transport", day_index=day_index, start=t.depart_at, end=t.arrive_at,
                 title=FE.transport_label(t),
@@ -856,6 +859,10 @@ class Planner:
                       "cost_per_person": float(t.cost_per_person), "comfort": t.comfort, "key": FE.option_key(t),
                       "number": t.meta.get("number"), "operator": t.meta.get("operator"),
                       "changes": t.meta.get("changes"), "legs": t.meta.get("legs"),
+                      # a real flight's own clocks at each airport (ADR 0020)
+                      "depart_local": t.meta.get("depart_local"), "arrive_local": t.meta.get("arrive_local"),
+                      "duration_minutes": t.duration_minutes if t.meta.get("depart_local") else None,
+                      "fare_label": t.meta.get("fare_label"),
                       # provenance (ADR 0002): the serializer redacts train facts unless this is a timetable source
                       "source_kind": t.meta.get("source_kind"), "observed_at": t.meta.get("observed_at"),
                       "freshness": t.meta.get("freshness"), "rail_source": t.meta.get("rail_source")})
@@ -869,7 +876,7 @@ class Planner:
             _, access = FE.group_cost(t, tv)
             metro = t.meta.get("access_mode") == "transit"
             how, mode = ("Metro", "transit") if metro else ("Cab", "cab")
-            buffer = timedelta(minutes=0 if t.flexible else FE.BOARDING_BUFFER)
+            buffer = timedelta(minutes=FE.boarding_minutes(t))
             station = (t.from_name if outbound else t.to_name) or "the station"
             spt = [t.from_lat, t.from_lng] if outbound else [t.to_lat, t.to_lng]
             home = [origin.lat, origin.lng]

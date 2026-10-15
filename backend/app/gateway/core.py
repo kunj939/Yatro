@@ -37,10 +37,10 @@ TIMEOUTS = {
     "google-places POST /v1/places:autocomplete": 3, "google-places POST /v1/places:searchText": 6,
     "google-places GET /v1/places/{id}": 4, "google-routes POST /directions/v2:computeRoutes": 6,
     "google-routes POST /distanceMatrix/v2:computeRouteMatrix": 6, "google-geocoding": 4, "railradar": 8, "irctc1": 6,
-    "openrouter": 15, "open-meteo": 4, "brave": 4, "serper": 4, "tavily": 4, "wikidata": 12, "wikipedia": 5,
+    "openrouter": 15, "open-meteo": 4, "brave": 4, "serper": 4, "tavily": 4, "wikidata": 12, "wikipedia": 5, "serpapi": 15,
 }
 READ_PROVIDERS = {"google-places", "google-routes", "google-geocoding", "brave", "serper", "tavily", "open-meteo", "railradar", "irctc1",
-                  "wikidata", "wikipedia"}
+                  "wikidata", "wikipedia", "serpapi"}
 QUOTA_WORDS = {"railradar": ("quota", "limit"), "irctc1": ("quota",), "google-places": ("quota", "resource_exhausted"),
                "google-routes": ("quota", "resource_exhausted"), "google-geocoding": ("quota", "over_query_limit")}
 

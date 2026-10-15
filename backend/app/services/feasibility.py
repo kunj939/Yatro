@@ -266,8 +266,19 @@ def journey_penalty(t: TransportData | None, inp: PlanInput) -> float:
     return pen
 
 
+def boarding_minutes(t: TransportData) -> int:
+    """How long before a scheduled departure the traveller has to be there: a train's few minutes, a real flight's
+    check-in and security (2 h, 3 h abroad: meta["check_in_minutes"])."""
+    return 0 if t.flexible else int(t.meta.get("check_in_minutes") or BOARDING_BUFFER)
+
+
+def exit_minutes(t: TransportData) -> int:
+    """From a scheduled arrival to being on the way: a station's few minutes, an airport's bags and immigration."""
+    return 0 if t.flexible else int(t.meta.get("exit_minutes") or EXIT_BUFFER)
+
+
 def _leave_home(t: TransportData) -> datetime:
-    return t.depart_at - timedelta(minutes=t.access_minutes + (0 if t.flexible else BOARDING_BUFFER))
+    return t.depart_at - timedelta(minutes=t.access_minutes + boarding_minutes(t))
 
 
 def _home_again(t: TransportData) -> datetime:
@@ -354,9 +365,9 @@ def build_combos(options: list[TransportData], inp: PlanInput, origin: PlaceData
 def _combine(outs: list[TransportData], rets: list[TransportData], inp: PlanInput, dest: PlaceData) -> list[Combo]:
     combos = []
     for o in outs:
-        dest_start = o.arrive_at + timedelta(minutes=0 if o.flexible else EXIT_BUFFER)
+        dest_start = o.arrive_at + timedelta(minutes=exit_minutes(o))
         for r in rets:
-            dest_end = r.depart_at - timedelta(minutes=0 if r.flexible else BOARDING_BUFFER + 5)
+            dest_end = r.depart_at - timedelta(minutes=0 if r.flexible else boarding_minutes(r) + 5)
             if (dest_end - dest_start).total_seconds() / 60 < MIN_DEST_MINUTES:
                 continue
             if explore_minutes(dest_start, dest_end) < MIN_DEST_MINUTES:
@@ -562,7 +573,7 @@ def time_infeasible(inp: PlanInput, options: list[TransportData], modes: list[st
         conflict = f"No {', '.join(MODE_LABEL[m] for m in modes)} connection to {dest.name} was found for these dates."
     elif not valid_out:
         first = min(outs, key=lambda t: t.depart_at)
-        need = first.depart_at - timedelta(minutes=first.access_minutes + BOARDING_BUFFER)
+        need = first.depart_at - timedelta(minutes=first.access_minutes + max(BOARDING_BUFFER, boarding_minutes(first)))
         conflict = (f"The earliest {MODE_LABEL[first.mode]} leaves {at(first)}, which means starting by "
                     f"{need:%H:%M} — before your {inp.start:%H:%M} start.")
         adjustments.append({"key": "start_earlier", "label": f"Start at {need:%H:%M}",
@@ -595,8 +606,8 @@ def time_infeasible(inp: PlanInput, options: list[TransportData], modes: list[st
         # Services run both ways, but no pairing leaves a day at the destination. Name the pairing that came closest,
         # with its real times — "the Shatabdi gets you there at 22:30" explains far more than "the journey is long".
         def daylight(o: TransportData, r: TransportData) -> int:
-            return explore_minutes(o.arrive_at + timedelta(minutes=0 if o.flexible else EXIT_BUFFER),
-                                   r.depart_at - timedelta(minutes=0 if r.flexible else BOARDING_BUFFER + 5))
+            return explore_minutes(o.arrive_at + timedelta(minutes=exit_minutes(o)),
+                                   r.depart_at - timedelta(minutes=0 if r.flexible else boarding_minutes(r) + 5))
 
         o, r = max(((o, r) for o in valid_out for r in valid_ret), key=lambda p: daylight(*p))
         hours, mins = divmod(daylight(o, r), 60)

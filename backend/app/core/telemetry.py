@@ -50,6 +50,7 @@ DEFAULT_PRICES: dict[str, float] = {
     "brave GET /res/v1/web/search": 0.003,
     "serper POST /search": 0.001,
     "tavily POST /search": 0.008,
+    "serpapi GET /search.json": 0.015,  # a Google Flights search on a paid plan (the free plan: 250 a month)
 }
 QUOTA_PROVIDERS = {"railradar", "irctc1"}
 
@@ -59,6 +60,7 @@ HOSTS = {
     "railradar.in": "railradar", "irctc1.p.rapidapi.com": "irctc1", "api.open-meteo.com": "open-meteo",
     "api.search.brave.com": "brave", "google.serper.dev": "serper", "api.tavily.com": "tavily",
     "query.wikidata.org": "wikidata", "en.wikipedia.org": "wikipedia", "www.wikidata.org": "wikipedia",
+    "serpapi.com": "serpapi",
 }
 
 _ID = re.compile(r"/(?:[A-Za-z0-9_-]{20,}|\d{3,}|[A-Z]{2,5})(?=/|$)")

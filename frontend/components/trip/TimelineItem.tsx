@@ -154,6 +154,9 @@ function JourneyTicket({ item }: { item: ItineraryItem }) {
   const start = item.start_at;
   return (
     <div className="mt-3.5 rounded-xl border border-line bg-haze/50 p-3.5 sm:p-4" aria-label={`From ${item.meta?.from_name} to ${item.meta?.to_name}`}>
+      {item.meta?.depart_local && (
+        <p className="mb-2.5 text-[12px] font-medium text-ink-mute">Local time at each airport</p>
+      )}
       {legs.length > 1 ? (
         <ol className="space-y-3">
           {legs.map((leg, i) => {
@@ -171,14 +174,15 @@ function JourneyTicket({ item }: { item: ItineraryItem }) {
                 <p className="mb-2 truncate text-[13px] font-semibold text-ink-soft">
                   {leg.name}{leg.number ? ` ${leg.number}` : ""}{leg.service_class ? ` · ${leg.service_class}` : ""}
                 </p>
-                <Segment dep={leg.depart_at.slice(11, 16)} arr={leg.arrive_at.slice(11, 16)} from={leg.from_name} to={leg.to_name}
+                <Segment dep={leg.depart_local || leg.depart_at.slice(11, 16)} arr={leg.arrive_local || leg.arrive_at.slice(11, 16)} from={leg.from_name} to={leg.to_name}
                          mins={leg.duration_minutes} Icon={Icon} nextDay={daysBetween(start, leg.arrive_at)} />
               </li>
             );
           })}
         </ol>
       ) : (
-        <Segment dep={item.time ?? item.meta?.when ?? "—"} arr={item.end_time ?? "—"} from={item.meta?.from_name} to={item.meta?.to_name} mins={item.duration_minutes}
+        <Segment dep={item.meta?.depart_local ?? item.time ?? item.meta?.when ?? "—"} arr={item.meta?.arrive_local ?? item.end_time ?? "—"}
+                 from={item.meta?.from_name} to={item.meta?.to_name} mins={item.meta?.duration_minutes ?? item.duration_minutes}
                  Icon={Icon} nextDay={daysBetween(item.start_at, item.end_at)} />
       )}
     </div>

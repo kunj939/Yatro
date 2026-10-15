@@ -16,6 +16,7 @@ export interface Source {
 export interface TransportLeg {
   name: string; number: string | null; service_class: string | null; from_name: string; to_name: string;
   depart_at: string; arrive_at: string; duration_minutes: number; cost_per_person: number;
+  depart_local?: string; arrive_local?: string;  // a flight's own airport clocks (ADR 0020)
 }
 
 export interface ItineraryItem {

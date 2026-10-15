@@ -21,6 +21,7 @@ DEFAULTS: dict[str, int] = {
     "google-place-details": 7 * D, "google-reverse": 7 * D, "google-transit": 12 * H,
     "wikidata": 30 * D,  # CC0 data, ours to keep; refreshed monthly to pick up new pages
     "wikipedia": 30 * D,  # article introductions for the trip chat (CC BY-SA, always linked back)
+    "serpapi-flights": 6 * H,  # flight schedules and prices: a plan and its re-plans share one search
     "open-meteo": 3 * H, "search": 12 * H,
     "irctc1-station": 1 * D, "irctc1-between": 12 * H, "railradar": 12 * H,
 }

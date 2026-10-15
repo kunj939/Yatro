@@ -52,6 +52,7 @@ class Settings(BaseSettings):
 
     # --- Indian Railways timetable (third-party, via RapidAPI "IRCTC1") ----
     irctc_rapidapi_key: str | None = None
+    serpapi_api_key: str | None = None  # real flights from Google Flights via SerpApi (providers/google_flights.py)
     irctc_rapidapi_host: str = "irctc1.p.rapidapi.com"
     railradar_api_key: str | None = None
 

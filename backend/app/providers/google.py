@@ -710,7 +710,15 @@ class GoogleTransportProvider(TransportProvider):
                         flexible(direction, "train", "", train_min, Decimal("0"), 3, F.train_fare(km, "2S"))
 
         if "flight" in modes and km > 350:
-            flights = airport_flights(origin, dest, window_start, window_end, currency)
+            from app.providers import google_flights  # real flights when a SerpApi key is set (ADR 0020)
+            flights = google_flights.flights(origin, dest, depart_day, return_day, currency)
+            if flights:
+                ways = {f.direction for f in flights}
+                # a direction Google Flights had nothing for keeps the estimated flight, so the trip still plans
+                flights += [f for f in airport_flights(origin, dest, window_start, window_end, currency) or []
+                            if f.direction not in ways]
+            else:
+                flights = airport_flights(origin, dest, window_start, window_end, currency)
             if flights is not None:
                 out += flights
             else:  # an airport we don't know at one end: city to city, with time for the airports included

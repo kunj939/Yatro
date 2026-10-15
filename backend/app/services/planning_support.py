@@ -16,7 +16,7 @@ from app.services import age_fit
 from app.services import destination_profile
 from app.services import fare_model as F
 from app.services.engine_types import Candidate, DayFrame, PlanInput
-from app.services.feasibility import BOARDING_BUFFER, EXIT_BUFFER, NIGHT_ARRIVAL_BEFORE, Combo
+from app.services.feasibility import NIGHT_ARRIVAL_BEFORE, Combo, boarding_minutes, exit_minutes
 from app.services.intent import interests_from_notes
 from app.services.ranking import _quality, score_attraction, score_restaurant
 from app.utils import hours as H
@@ -266,10 +266,10 @@ def choose_station_access(options: list[TransportData], inp: PlanInput, origin: 
         # The metro has to be running when you board it: not at 04:54 (first train about 05:15), and a train that
         # reaches the station at 22:50 can't be followed by a metro home. Outside those hours, the cab stays.
         if t.direction == "outbound":
-            board = t.depart_at - timedelta(minutes=0 if t.flexible else BOARDING_BUFFER) - timedelta(minutes=metro_min)
+            board = t.depart_at - timedelta(minutes=boarding_minutes(t)) - timedelta(minutes=metro_min)
             board += timedelta(minutes=METRO_WALK_MINUTES)  # the walk to the platform comes first
         else:
-            board = t.arrive_at + timedelta(minutes=EXIT_BUFFER)
+            board = t.arrive_at + timedelta(minutes=exit_minutes(t))
         if not metro_runs_at(home_area, board):
             continue
         if t.flexible:  # estimated timing: keep "leave home" / "home again" where they were

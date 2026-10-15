@@ -33,8 +33,10 @@ _ITEM_KEYS = ("id", "day_index", "kind", "start_at", "end_at", "time", "end_time
               "opening_time", "closing_time", "explanation")
 _META_KEYS = ("mode", "service_class", "number", "operator", "from_name", "to_name", "changes", "change_at",
               "change_minutes", "when", "fare_label", "fare_note", "provenance_label", "provenance_warning", "freshness",
-              "google_expired", "maps_url", "address", "rating", "rating_count", "meal", "why_go", "source", "wiki_links")
-_LEG_KEYS = ("name", "number", "service_class", "from_name", "to_name", "depart_at", "arrive_at", "duration_minutes")
+              "google_expired", "maps_url", "address", "rating", "rating_count", "meal", "why_go", "source", "wiki_links",
+              "depart_local", "arrive_local")
+_LEG_KEYS = ("name", "number", "service_class", "from_name", "to_name", "depart_at", "arrive_at", "duration_minutes",
+             "depart_local", "arrive_local")
 
 
 # --- Links ------------------------------------------------------------------------------------------------------------
