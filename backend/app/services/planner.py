@@ -619,7 +619,8 @@ class Planner:
         mode = FE.local_mode(inp, combo.outbound)
         # at least one ride to reach each meal, plus the ride back at the end of each day
         rides = sum(len(_meal_stops(f, inp.styles)) + 1 for f in frames)
-        local = F.local_leg_cost(3000, mode, inp.travellers) * rides
+        city = F.city_cab_factor(inp.destination_text) if mode == "cab" else 1
+        local = F.local_leg_cost(3000, mode, inp.travellers) * city * rides
         return FE.MinCost(combo.cost, round_rupees(stay), round_rupees(food), round_rupees(local), nights, rooms,
                           combo.outbound.mode if combo.outbound else None)
 
@@ -711,6 +712,7 @@ class Planner:
     def _breakdown(self, inp, combo: FE.Combo, frames: list[DayFrame], hotel: Candidate | None,
                    rooms: int) -> BudgetBreakdown:
         lines: list[BudgetLine] = combo.budget_lines(inp.travellers, inp.currency)
+        F.price_rides(frames, inp.travellers, inp.destination_text)  # each ride for its hour and the city
         if hotel and combo.nights > 0:
             lines.append(BudgetLine("stay", f"{hotel.place.name} — {combo.nights} night{'s' if combo.nights > 1 else ''}"
                                             f" × {rooms} {'bed' if inp.stay == 'hostel' else 'room'}{'s' if rooms > 1 else ''}",

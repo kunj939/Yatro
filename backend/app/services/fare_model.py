@@ -6,6 +6,8 @@ labelled `estimated` in the UI so users know to confirm it. Tune the constants p
 from __future__ import annotations
 
 import math
+from dataclasses import replace
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from app.utils.money import round_rupees
@@ -32,9 +34,22 @@ FLIGHT_BASE = Decimal("2600")
 FLIGHT_PER_KM = Decimal("2.8")
 
 # --- Local (per vehicle) ------------------------------------------------------------
-LOCAL_CAB_BASE = Decimal("60")
-LOCAL_CAB_PER_KM = Decimal("17")
-LOCAL_CAB_MIN = Decimal("90")
+# An app cab (Uber Go, Ola Mini, Rapido Cab) off-peak: about ₹10-12 a km plus a small base fare (ADR 0018). Peak hours,
+# late nights and cities without app cabs are priced on top of this by `price_rides`.
+LOCAL_CAB_BASE = Decimal("50")
+LOCAL_CAB_PER_KM = Decimal("12")
+LOCAL_CAB_MIN = Decimal("80")
+PEAK_HOURS = ((8, 11), (17, 21))  # office rush: surge pricing is the rule, not the exception
+PEAK_FACTOR = Decimal("1.5")
+NIGHT_FACTOR = Decimal("1.25")  # 23:00 to 06:00: night charges
+# Places where app cabs don't run or cost more: local taxi unions (Goa), hill roads. Matched on the destination's name.
+CITY_CAB: list[tuple[tuple[str, ...], Decimal]] = [
+    (("goa", "panaji", "panjim", "calangute", "baga", "anjuna", "candolim", "margao", "madgaon", "palolem", "vasco",
+      "mapusa", "colva"), Decimal("1.75")),
+    (("shimla", "manali", "mussoorie", "nainital", "darjeeling", "gangtok", "ooty", "munnar", "kodaikanal", "leh",
+      "dharamshala", "mcleod", "coorg", "madikeri", "srinagar", "gulmarg", "pahalgam", "rishikesh", "auli",
+      "kasauli", "lonavala", "mahabaleshwar", "shillong"), Decimal("1.4")),
+]
 LOCAL_TRANSIT_PER_PERSON = Decimal("25")
 WALK_MAX_M = 900
 
@@ -93,6 +108,44 @@ def local_leg_cost(distance_m: int, mode: str, travellers: int) -> Decimal:
         return round_rupees(OWN_CAR_FUEL_PER_KM * km + 20)  # + parking
     fare = max(LOCAL_CAB_MIN, LOCAL_CAB_BASE + LOCAL_CAB_PER_KM * km)
     return round_rupees(fare * vehicles_for(travellers))
+
+
+def city_cab_factor(destination: str | None) -> Decimal:
+    """How much more a cab costs at the destination than an app cab in a big city: 1 for most places."""
+    name = (destination or "").lower()
+    for places, factor in CITY_CAB:
+        if any(p in name for p in places):
+            return factor
+    return Decimal(1)
+
+
+def ride_factor(at: datetime | None) -> Decimal:
+    """Surge in the office rush, night charges late at night, the normal fare otherwise."""
+    if at is None:
+        return Decimal(1)
+    if any(a <= at.hour < b for a, b in PEAK_HOURS):
+        return PEAK_FACTOR
+    if at.hour >= 23 or at.hour < 6:
+        return NIGHT_FACTOR
+    return Decimal(1)
+
+
+def price_rides(frames, travellers: int, destination: str | None) -> None:
+    """Price each day's cab rides for when they happen and where: the base fare from the distance (so it can run again
+    on the same frames), times the city's factor, times the peak or night factor at the time of leaving. Walks, buses
+    and own cars are left as they are."""
+    city = city_cab_factor(destination)
+    for f in frames:
+        legs = []  # (owner, attribute, leg, leaving at)
+        for s in f.stops:
+            if s.leg and s.leg.mode == "cab":
+                legs.append((s, "leg", s.leg, (s.arrive or s.start) - timedelta(minutes=s.leg.minutes) if (s.arrive or s.start) else None))
+        if f.final_leg and f.final_leg.mode == "cab":
+            last = f.stops[-1].end if f.stops and f.stops[-1].end else f.start
+            legs.append((f, "final_leg", f.final_leg, last))
+        for owner, attr, leg, at in legs:
+            cost = round_rupees(local_leg_cost(leg.distance_m, "cab", travellers) * city * ride_factor(at))
+            setattr(owner, attr, replace(leg, cost=cost))
 
 
 def local_leg_minutes(drive_seconds: int, distance_m: int, mode: str) -> int:

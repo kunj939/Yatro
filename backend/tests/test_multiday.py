@@ -31,9 +31,9 @@ def test_every_day_has_its_meals_and_sights(client):
 
 
 def test_budget_that_cannot_feed_everyone_is_infeasible(client):
-    out = _plan(client, register(client), 5000)
+    out = _plan(client, register(client), 4000)  # ₹4,500 still is too: cheaper cabs (ADR 0018) made ₹5,000 just fit
     assert out["status"] == "infeasible"
     f = out["feasibility"] if "feasibility" in out and out["feasibility"] else out["trip"]["feasibility"]
-    assert f["message"] == "The requested trip is not feasible within ₹5,000."
+    assert f["message"] == "The requested trip is not feasible within ₹4,000."
     assert any(a["key"] == "higher_budget" for a in f["adjustments"])
     assert all(a.get("saves", 1) > 0 for a in f["adjustments"] if a["key"] == "cheaper_hotel")

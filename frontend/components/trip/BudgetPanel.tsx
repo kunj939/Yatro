@@ -78,7 +78,7 @@ export function BudgetPanel({ budget, expenses, currency }: { budget: BudgetBrea
                   <span className="text-[18px] font-bold">{money(c.amount, currency)}</span>
                   {/* "typical" is the usual share of this budget; spending less than it isn't news, so only a clear overspend is shown */}
                   {c.typical > 0 && diff > c.typical * 0.1 && (
-                    <span className="block text-[13px] text-caution">{money(diff, currency)} more than usual</span>
+                    <span className="block text-[13px] text-caution">{money(Math.round(diff), currency)} more than usual</span>
                   )}
                 </span>
               </header>
