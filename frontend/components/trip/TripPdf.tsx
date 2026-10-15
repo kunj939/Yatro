@@ -76,7 +76,7 @@ const dayCost = (items: SharedItem[]) => items.reduce((n, i) => n + (i.cost || 0
 
 const PIN = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-function ItemRow({ i, cur, pin }: { i: SharedItem; cur: string; pin?: number }) {
+function ItemRow({ i, cur, pin, place }: { i: SharedItem; cur: string; pin?: number; place?: string }) {
   const k = KIND[i.kind] ?? { label: i.kind.toUpperCase(), color: MUTE };
   const estimated = i.cost && i.cost_state !== "verified_official" && i.cost_state !== "verified_provider";
   return (
@@ -86,7 +86,9 @@ function ItemRow({ i, cur, pin }: { i: SharedItem; cur: string; pin?: number }) 
       <View style={{ flex: 1, paddingRight: 8 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
           {pin ? <Text style={s.pin}>{PIN[pin - 1] ?? ""}</Text> : null}
-          <Text style={{ fontWeight: 700, fontSize: 10.5, flex: 1 }}>{i.title}</Text>
+          {place ? (  // the stop's name opens it in Google Maps
+            <Link src={place} style={{ fontWeight: 700, fontSize: 10.5, flex: 1, color: "white", textDecoration: "none" }}>{i.title}</Link>
+          ) : <Text style={{ fontWeight: 700, fontSize: 10.5, flex: 1 }}>{i.title}</Text>}
         </View>
         {i.subtitle ? <Text style={{ color: MUTE, fontSize: 8.5, marginTop: 2 }}>{i.subtitle}</Text> : null}
       </View>
@@ -153,16 +155,6 @@ export function TripPdf({ view, url, maps }: { view: SharedTrip; url: string; ma
         </View>
 
         {it.summary ? (<><Text style={s.h2}>The plan</Text><Text style={{ color: SOFT, lineHeight: 1.35 }}>{it.summary}</Text></>) : null}
-        {it.tips.length ? (
-          <>
-            <Text style={s.h2}>Good to know</Text>
-            {it.tips.slice(0, 5).map((t, n) => (
-              <View key={n} style={{ flexDirection: "row", gap: 6, marginBottom: 4 }}>
-                <Text style={{ color: LIME }}>•</Text><Text style={{ color: SOFT, flex: 1, lineHeight: 1.4 }}>{t}</Text>
-              </View>
-            ))}
-          </>
-        ) : null}
         <Footer url={url} />
       </Page>
 
@@ -173,7 +165,7 @@ export function TripPdf({ view, url, maps }: { view: SharedTrip; url: string; ma
           return (
             <View key={d.index} style={{ marginBottom: 22 }}>
               {/* the header never sits alone at the bottom of a page: it moves over with the first stops */}
-              <View wrap={false} minPresenceAhead={60}>
+              <View wrap={false} minPresenceAhead={140}>
                 <View style={s.dayHead}>
                   <View>
                     <Text style={{ color: tone, fontSize: 9, fontWeight: 700, letterSpacing: 1.2 }}>{d.label.toUpperCase()}</Text>
@@ -185,6 +177,11 @@ export function TripPdf({ view, url, maps }: { view: SharedTrip; url: string; ma
                   </View>
                 </View>
                 <View style={{ height: 3, backgroundColor: tone, borderRadius: 2, marginBottom: 6, width: 60 }} />
+                {maps?.routes[d.index] ? (
+                  <Link src={maps.routes[d.index]} style={{ color: tone, fontSize: 9, fontWeight: 700, textDecoration: "none", marginBottom: 6 }}>
+                    Open this day's route in Google Maps
+                  </Link>
+                ) : null}
               </View>
               {/* the day's stops on a map, numbered as in the list below (Google Static Maps, lib/pdfMaps.ts) */}
               {maps?.maps[d.index] ? (
@@ -192,7 +189,7 @@ export function TripPdf({ view, url, maps }: { view: SharedTrip; url: string; ma
                   <Image src={maps.maps[d.index]} style={{ width: "100%", height: 245, borderRadius: 8, objectFit: "cover" }} />
                 </View>
               ) : null}
-              {shown(d.items).map((i) => <ItemRow key={i.id} i={i} cur={cur} pin={maps?.numbers[i.id]} />)}
+              {shown(d.items).map((i) => <ItemRow key={i.id} i={i} cur={cur} pin={maps?.numbers[i.id]} place={maps?.places[i.id]} />)}
             </View>
           );
         })}

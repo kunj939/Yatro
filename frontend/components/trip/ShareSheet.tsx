@@ -35,14 +35,20 @@ export function ShareSheet({ trip, open, onClose, onChanged }: { trip: Trip; ope
   const [pdf, setPdf] = useState<File | null>(null);
   const [pdfState, setPdfState] = useState<"idle" | "making" | "ready" | "failed">("idle");
   const [pdfNote, setPdfNote] = useState<string | null>(null);
+  const [mapNote, setMapNote] = useState<string | null>(null);
 
   useEffect(() => {
-    setPdf(null); setPdfNote(null);
+    setPdf(null); setPdfNote(null); setMapNote(null);
     if (!result) { setPdfState("idle"); return; }
     let live = true;
     setPdfState("making");
     buildTripPdf(tokenOf(result.url), result.url, trip)
-      .then((f) => { if (live) { setPdf(f); setPdfState("ready"); } })
+      .then(({ file, maps }) => {
+        if (!live) return;
+        setPdf(file); setPdfState("ready");
+        // the day maps are pictures from Google's Maps Static API: say plainly when they couldn't be added
+        if (maps === "failed") setMapNote("The day maps couldn't be added (the site's Google key doesn't allow map pictures yet). The PDF links each day and stop to Google Maps instead.");
+      })
       .catch(() => live && setPdfState("failed"));
     return () => { live = false; };
   }, [result]);
@@ -145,6 +151,7 @@ export function ShareSheet({ trip, open, onClose, onChanged }: { trip: Trip; ope
                 <Download className="h-4 w-4" aria-hidden />Download PDF
               </button>
               {pdfNote && <p role="status" className="text-[13px] text-ink-soft sm:col-span-2">{pdfNote}</p>}
+              {mapNote && <p role="status" className="text-[13px] text-ink-mute sm:col-span-2">{mapNote}</p>}
               {canShare && <button className="btn-dark sm:col-span-2" onClick={nativeShare}><Share2 className="h-4 w-4" aria-hidden />Share…</button>}
               {result.wa_me_url && (
                 <a className="btn-dark sm:col-span-2" href={result.wa_me_url} target="_blank" rel="noopener noreferrer">

@@ -1,4 +1,5 @@
 import type { ItineraryItem, Trip } from "./types";
+import { dayRouteUrl } from "./tripLinks";
 
 /** A map for each day of the PDF: Google Static Maps with the day's stops numbered in order and the routes between them
  *  drawn. Built from the owner's own trip (the public view carries no coordinates), only from Google content that is
@@ -10,7 +11,12 @@ const MAPPED = new Set(["activity", "meal", "sunset", "stay"]);
 const LABELS = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const MAX_URL = 8000;
 
-export type PdfMaps = { maps: Record<number, string>; numbers: Record<string, number> };
+/** maps: a picture per day; numbers: each mapped stop's pin; routes / places: Google Maps links for each day and each
+ *  stop (these need no key); status: whether pictures were made ("none": no key, "failed": the key can't). */
+export type PdfMaps = {
+  maps: Record<number, string>; numbers: Record<string, number>; routes: Record<number, string>;
+  places: Record<string, string>; status: "added" | "none" | "failed";
+};
 
 const point = (i: ItineraryItem) =>
   typeof i.meta?.lat === "number" && typeof i.meta?.lng === "number" && !i.meta?.google_expired
@@ -62,12 +68,22 @@ async function asDataUrl(url: string): Promise<string | null> {
 
 export async function pdfDayMaps(trip: Trip | undefined, fetchImage: (url: string) => Promise<string | null> = asDataUrl,
                                   key: string = KEY): Promise<PdfMaps> {
-  const out: PdfMaps = { maps: {}, numbers: {} };
+  const out: PdfMaps = { maps: {}, numbers: {}, routes: {}, places: {}, status: "none" };
   const days = trip?.itinerary?.days ?? [];
+  for (const d of days) {
+    const route = dayRouteUrl(d.items);
+    if (route) out.routes[d.index] = route;
+    for (const i of d.items) {
+      const at = MAPPED.has(i.kind) ? point(i) : null;
+      if (at) out.places[i.id] = `https://www.google.com/maps/search/?api=1&query=${at}`;
+    }
+  }
   if (!key || !days.length) return out;
   const urls = days.map((d) => [d.index, dayUrl(d.items, out.numbers, key)] as const);
   const images = await Promise.all(urls.map(([, u]) => (u ? fetchImage(u) : Promise.resolve(null))));
   urls.forEach(([index], n) => { if (images[n]) out.maps[index] = images[n]!; });
+  const tried = urls.some(([, u]) => !!u);
+  out.status = Object.keys(out.maps).length ? "added" : tried ? "failed" : "none";
   if (!Object.keys(out.maps).length) out.numbers = {};  // no maps: no numbers pointing at them
   return out;
 }
