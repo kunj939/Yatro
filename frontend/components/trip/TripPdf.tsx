@@ -3,8 +3,9 @@
 // The plan as a PDF, in the site's dark-and-lime look: a cover with the trip at a glance, then a page per day.
 // Built in the browser from the public share view (exactly what the share link shows) and loaded only when someone
 // asks for it (lib/tripPdf.ts), so the library never weighs on the normal pages.
-import { Document, Font, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Font, Image, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { SharedItem, SharedTrip } from "@/lib/types";
+import type { PdfMaps } from "@/lib/pdfMaps";
 import { dateSpan, dayDate, shortMoney } from "@/lib/shareCard";
 
 let fontsReady = false;
@@ -37,6 +38,8 @@ const s = StyleSheet.create({
   title: { fontFamily: "Head", fontSize: 30, lineHeight: 1.1, marginTop: 26 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
   chip: { paddingVertical: 5, paddingHorizontal: 11, borderRadius: 999, backgroundColor: "#1d2320", color: SOFT, fontSize: 10 },
+  pin: { width: 13, height: 13, borderRadius: 7, backgroundColor: "#659600", color: "white", fontSize: 7.5, fontWeight: 700,
+    textAlign: "center", paddingTop: 1.5 },
   stat: { flex: 1, backgroundColor: CARD, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: LINE },
   statLabel: { color: MUTE, fontSize: 8, letterSpacing: 1 },
   statValue: { fontSize: 16, fontWeight: 700, marginTop: 4 },
@@ -71,7 +74,9 @@ function Brand() {
 const shown = (items: SharedItem[]) => items.filter((i) => i.kind !== "free");
 const dayCost = (items: SharedItem[]) => items.reduce((n, i) => n + (i.cost || 0), 0);
 
-function ItemRow({ i, cur }: { i: SharedItem; cur: string }) {
+const PIN = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+function ItemRow({ i, cur, pin }: { i: SharedItem; cur: string; pin?: number }) {
   const k = KIND[i.kind] ?? { label: i.kind.toUpperCase(), color: MUTE };
   const estimated = i.cost && i.cost_state !== "verified_official" && i.cost_state !== "verified_provider";
   return (
@@ -79,7 +84,10 @@ function ItemRow({ i, cur }: { i: SharedItem; cur: string }) {
       <Text style={s.time}>{i.time || (i.meta?.when as string) || ""}</Text>
       <Text style={[s.badge, { color: k.color }]}>{k.label}</Text>
       <View style={{ flex: 1, paddingRight: 8 }}>
-        <Text style={{ fontWeight: 700, fontSize: 10.5 }}>{i.title}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          {pin ? <Text style={s.pin}>{PIN[pin - 1] ?? ""}</Text> : null}
+          <Text style={{ fontWeight: 700, fontSize: 10.5, flex: 1 }}>{i.title}</Text>
+        </View>
         {i.subtitle ? <Text style={{ color: MUTE, fontSize: 8.5, marginTop: 2 }}>{i.subtitle}</Text> : null}
       </View>
       <Text style={{ width: 70, textAlign: "right", fontWeight: 700, color: i.cost ? "white" : "#5fe3c5" }}>
@@ -89,7 +97,7 @@ function ItemRow({ i, cur }: { i: SharedItem; cur: string }) {
   );
 }
 
-export function TripPdf({ view, url }: { view: SharedTrip; url: string }) {
+export function TripPdf({ view, url, maps }: { view: SharedTrip; url: string; maps?: PdfMaps }) {
   registerFonts();
   const { trip, itinerary: it } = view;
   const cur = trip.currency;
@@ -178,7 +186,13 @@ export function TripPdf({ view, url }: { view: SharedTrip; url: string }) {
                 </View>
                 <View style={{ height: 3, backgroundColor: tone, borderRadius: 2, marginBottom: 6, width: 60 }} />
               </View>
-              {shown(d.items).map((i) => <ItemRow key={i.id} i={i} cur={cur} />)}
+              {/* the day's stops on a map, numbered as in the list below (Google Static Maps, lib/pdfMaps.ts) */}
+              {maps?.maps[d.index] ? (
+                <View wrap={false} style={{ marginBottom: 8 }}>
+                  <Image src={maps.maps[d.index]} style={{ width: "100%", height: 245, borderRadius: 8, objectFit: "cover" }} />
+                </View>
+              ) : null}
+              {shown(d.items).map((i) => <ItemRow key={i.id} i={i} cur={cur} pin={maps?.numbers[i.id]} />)}
             </View>
           );
         })}

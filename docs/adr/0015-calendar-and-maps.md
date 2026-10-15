@@ -46,3 +46,20 @@ Once the trip is planned, people want it where they will look during the trip: t
 - Update (same day): the trip page no longer shows a .ics download button (the subscription covers it); the
   `calendar.ics` endpoint stays for anyone who needs a one-off file. The calendar, WhatsApp, Share (with the PDF),
   My Maps and Email actions now sit in one slim bar (`PlanActions`).
+
+## Addendum (2026-10-16): a map for each day in the PDF
+
+**Decision.**
+- **The map.** Each day page of the PDF opens with a map of that day: a Google Static Maps image (`lib/pdfMaps.ts`).
+  - The day's stops are numbered in order, and the stop list below carries the same numbers.
+  - The road routes between stops are drawn from the plan's own route lines. When they would make the request too
+    long, straight lines are drawn instead.
+- **Where it's built.** The public share view carries no coordinates, so the maps are built from the owner's own trip
+  in the share sheet. Only coordinates that are still current Google content are used (I6): an expired stop is left
+  off the map.
+- **The key.** The images use the browser key `NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY`, which needs the **Maps Static
+  API** enabled. Google's own logo and attribution are part of each image.
+- **Failure is quiet.** Each image is fetched before the PDF is made, with an 8 s limit. With no key, no network, or
+  the API not enabled, the PDF is made without maps and without numbers: the PDF itself never fails.
+
+**Consequences.** One Static Maps request per day each time someone makes a PDF.

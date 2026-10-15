@@ -1,14 +1,17 @@
 import { createElement } from "react";
 import { endpoints } from "./api";
+import { pdfDayMaps } from "./pdfMaps";
+import type { Trip } from "./types";
 
-/** The trip as a PDF file, made in the browser from the public share view (what the link shows, nothing more).
+/** The trip as a PDF file, made in the browser from the public share view (what the link shows, nothing more), with a
+ * map for each day drawn from the owner's own trip when one can be had (lib/pdfMaps.ts).
  * The PDF library and the document are loaded only here, when someone asks for a PDF. */
-export async function buildTripPdf(token: string, url: string): Promise<File> {
-  const [{ pdf }, { TripPdf }, view] = await Promise.all([
-    import("@react-pdf/renderer"), import("@/components/trip/TripPdf"), endpoints.shared(token),
+export async function buildTripPdf(token: string, url: string, trip?: Trip): Promise<File> {
+  const [{ pdf }, { TripPdf }, view, maps] = await Promise.all([
+    import("@react-pdf/renderer"), import("@/components/trip/TripPdf"), endpoints.shared(token), pdfDayMaps(trip),
   ]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const blob = await pdf(createElement(TripPdf, { view, url }) as any).toBlob();
+  const blob = await pdf(createElement(TripPdf, { view, url, maps }) as any).toBlob();
   const name = (view.itinerary.title || view.trip.title).replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "").slice(0, 60) || "trip";
   return new File([blob], `${name}-Yaitro.pdf`, { type: "application/pdf" });
 }

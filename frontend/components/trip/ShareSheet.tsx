@@ -41,7 +41,7 @@ export function ShareSheet({ trip, open, onClose, onChanged }: { trip: Trip; ope
     if (!result) { setPdfState("idle"); return; }
     let live = true;
     setPdfState("making");
-    buildTripPdf(tokenOf(result.url), result.url)
+    buildTripPdf(tokenOf(result.url), result.url, trip)
       .then((f) => { if (live) { setPdf(f); setPdfState("ready"); } })
       .catch(() => live && setPdfState("failed"));
     return () => { live = false; };
