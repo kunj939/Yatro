@@ -281,7 +281,7 @@ class Planner:
         hotels: list[Candidate] = []
         may_stay = inp.stay != "no_stay" and PS.return_day(inp) > inp.start.date()
         if may_stay:
-            centre = PS.centroid(attractions[:6], (dest.lat, dest.lng))
+            centre = PS.sights_hub(attractions[:8], (dest.lat, dest.lng))
             try:
                 hotels = PS.hotel_candidates(self.p.hotels.hotels(dest, inp.stay), inp, centre)
             except ProviderUnavailable:

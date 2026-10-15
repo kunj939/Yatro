@@ -176,6 +176,17 @@ def estimated_hotel(dest: PlaceData, tier: str, currency: str = "INR") -> Candid
     return c
 
 
+def sights_hub(cands: list[Candidate], fallback: tuple[float, float]) -> tuple[float, float]:
+    """Where to look for a hotel: the sight with the least total distance to the others (a medoid). With sights spread
+    over a region (North and South Goa) their average falls between the clusters, far from all of them; the medoid
+    sits in the cluster where most of them are."""
+    if not cands:
+        return fallback
+    pts = [c.place for c in cands]
+    best = min(pts, key=lambda p: sum(haversine_m(p.lat, p.lng, q.lat, q.lng) for q in pts))
+    return best.lat, best.lng
+
+
 def centroid(cands: list[Candidate], fallback: tuple[float, float]) -> tuple[float, float]:
     if not cands:
         return fallback

@@ -23,7 +23,7 @@ def test_rush_hour_and_late_night_cost_more():
 
 
 def test_cities_without_app_cabs():
-    assert F.city_cab_factor("Goa") == Decimal("1.75") and F.city_cab_factor("Baga Beach, Goa") == Decimal("1.75")
+    assert F.city_cab_factor("Goa") == Decimal("1.5") and F.city_cab_factor("Baga Beach, Goa") == Decimal("1.5")
     assert F.city_cab_factor("Manali, Himachal Pradesh") == Decimal("1.4") and F.city_cab_factor("Jaipur") == 1
 
 
@@ -44,12 +44,13 @@ def test_each_ride_is_priced_for_when_it_leaves():
     assert [s.leg.cost for s in f.stops] == [Decimal(165), Decimal(110)]
 
 
-def test_goa_rides_cost_its_taxi_rates_and_walks_stay_free():
-    f = _day(10, 1, start_h=14)  # leaves 13:40: no rush
+def test_goa_rides_cost_its_taxi_rates_with_no_rush_surge_and_walks_stay_free():
+    f = _day(10, 2, start_h=10)  # leaves 09:40 and 10:40: the rush, but Goa's taxis don't surge
     f.final_leg = Leg(400, 5, "walk", Decimal(0), "estimated")
     F.price_rides([f], 2, "Goa")
-    assert f.stops[0].leg.cost == Decimal(298)  # (₹50 + 10 km × ₹12) × 1.75
+    assert [s.leg.cost for s in f.stops] == [Decimal(255), Decimal(255)]  # (₹50 + 10 km × ₹12) × 1.5
     assert f.final_leg.cost == 0
+    assert F.planning_cab_factor("Goa") == Decimal("1.5") and F.planning_cab_factor("Jaipur") == Decimal("1.2")
 
 
 def test_a_goa_plan_fits_the_budget_it_was_built_for(client):
@@ -68,3 +69,17 @@ def test_a_goa_plan_fits_the_budget_it_was_built_for(client):
         assert out["status"] == "ready", (budget, out.get("feasibility"))
         b = out["trip"]["itinerary"]["budget"]
         assert b["status"] != "over" and b["planned"] <= budget, (budget, b["planned"], b["status"])
+
+
+def test_hotels_are_looked_for_where_most_sights_are_not_between_two_clusters():
+    """North Goa's beaches and forts and South Goa's: their average falls inland, 30 km from both, and every ride from a
+    hotel there is long. The hub is a sight in the bigger cluster."""
+    from types import SimpleNamespace
+    from app.services import planning_support as PS
+    from app.utils.geo import haversine_m
+    north = [(15.55 + i * 0.01, 73.76 + i * 0.01) for i in range(5)]  # Calangute, Baga, Aguada...
+    south = [(15.02 + i * 0.01, 74.03) for i in range(3)]  # Palolem, Cabo de Rama...
+    sights = [SimpleNamespace(place=SimpleNamespace(lat=a, lng=b)) for a, b in north + south]
+    hub, mid = PS.sights_hub(sights, (0, 0)), PS.centroid(sights, (0, 0))
+    assert hub in north
+    assert min(haversine_m(*mid, *p) for p in north) > 20000  # the average is far from every northern sight

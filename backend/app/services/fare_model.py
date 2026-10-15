@@ -45,10 +45,11 @@ NIGHT_FACTOR = Decimal("1.25")  # 23:00 to 06:00: night charges
 # While a day is being built its rides have no times yet, so the scheduler prices them at the city's fare times this
 # allowance for the rush (about two rides in five fall in it). `price_rides` then prices each for its real time.
 PLANNING_RUSH_ALLOWANCE = Decimal("1.2")
-# Places where app cabs don't run or cost more: local taxi unions (Goa), hill roads. Matched on the destination's name.
+# Places where app cabs don't run or cost more: local taxi unions (Goa: about ₹18 a km, like the GoaMiles app), hill
+# roads. Matched on the destination's name. Their taxis charge fixed rates, so the app-cab rush surge doesn't apply.
 CITY_CAB: list[tuple[tuple[str, ...], Decimal]] = [
     (("goa", "panaji", "panjim", "calangute", "baga", "anjuna", "candolim", "margao", "madgaon", "palolem", "vasco",
-      "mapusa", "colva"), Decimal("1.75")),
+      "mapusa", "colva"), Decimal("1.5")),
     (("shimla", "manali", "mussoorie", "nainital", "darjeeling", "gangtok", "ooty", "munnar", "kodaikanal", "leh",
       "dharamshala", "mcleod", "coorg", "madikeri", "srinagar", "gulmarg", "pahalgam", "rishikesh", "auli",
       "kasauli", "lonavala", "mahabaleshwar", "shillong"), Decimal("1.4")),
@@ -124,14 +125,15 @@ def city_cab_factor(destination: str | None) -> Decimal:
 
 def planning_cab_factor(destination: str | None) -> Decimal:
     """What the scheduler multiplies a cab fare by, so the day it builds fits the budget the plan will show."""
-    return city_cab_factor(destination) * PLANNING_RUSH_ALLOWANCE
+    city = city_cab_factor(destination)
+    return city * PLANNING_RUSH_ALLOWANCE if city == 1 else city  # no surge where taxis charge fixed rates
 
 
-def ride_factor(at: datetime | None) -> Decimal:
-    """Surge in the office rush, night charges late at night, the normal fare otherwise."""
+def ride_factor(at: datetime | None, surge: bool = True) -> Decimal:
+    """Surge in the office rush (app cabs only), night charges late at night, the normal fare otherwise."""
     if at is None:
         return Decimal(1)
-    if any(a <= at.hour < b for a, b in PEAK_HOURS):
+    if surge and any(a <= at.hour < b for a, b in PEAK_HOURS):
         return PEAK_FACTOR
     if at.hour >= 23 or at.hour < 6:
         return NIGHT_FACTOR
@@ -143,6 +145,7 @@ def price_rides(frames, travellers: int, destination: str | None) -> None:
     on the same frames), times the city's factor, times the peak or night factor at the time of leaving. Walks, buses
     and own cars are left as they are."""
     city = city_cab_factor(destination)
+    surge = city == 1  # app cabs surge in the rush; a union taxi's fixed rate doesn't
     for f in frames:
         legs = []  # (owner, attribute, leg, leaving at)
         for s in f.stops:
@@ -152,7 +155,7 @@ def price_rides(frames, travellers: int, destination: str | None) -> None:
             last = f.stops[-1].end if f.stops and f.stops[-1].end else f.start
             legs.append((f, "final_leg", f.final_leg, last))
         for owner, attr, leg, at in legs:
-            cost = round_rupees(local_leg_cost(leg.distance_m, "cab", travellers) * city * ride_factor(at))
+            cost = round_rupees(local_leg_cost(leg.distance_m, "cab", travellers) * city * ride_factor(at, surge))
             setattr(owner, attr, replace(leg, cost=cost))
 
 

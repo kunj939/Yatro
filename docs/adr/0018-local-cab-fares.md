@@ -62,3 +62,25 @@ refused at ₹30,000 for being ₹1,123 over.
   change is now dropped when the message names no amount.
 - **Chat reply.** When a change leaves a plan over budget because of pinned choices, the chat says so with the
   amount, instead of only "Done".
+
+## Addendum: no surge on fixed-rate taxis, and hotels where the sights are
+
+**What was seen.** A Goa plan had ₹16,018 of local travel for 24 rides, about ₹667 a ride. Two things stacked:
+- The ride price multiplied Goa's taxi factor (1.75) by the rush surge (1.5), which comes to about ₹31 a km. App cabs
+  surge, but Goa's union taxis and hill-station taxis charge fixed rates.
+- The hotel was about 35 km from the day's sights, so each day had a long ride out and a long ride back. Hotels were
+  looked for around the average of the top sights. With sights in North and South Goa, that average falls inland,
+  far from both.
+
+**Decision.**
+- **Surge.** The rush surge applies only where app cabs run (city factor 1). Fixed-rate places pay their city
+  factor, plus night charges. The scheduler's allowance matches: 1.2 for app-cab cities, none elsewhere.
+- **Goa's factor** goes from 1.75 to 1.5, about ₹18 a km, close to the GoaMiles app.
+- **Where hotels are looked for** (`planning_support.sights_hub`): the sight with the least total distance to the
+  other top 8 (a medoid), instead of their average. It sits in the cluster where most sights are, and hotels are
+  still kept within 6 km of it when there are any.
+
+**Consequences.**
+- A Goa ride of 10 km costs ₹255 at any hour (₹50 + 10 km × ₹12, × 1.5).
+- New Goa plans stay in one cluster instead of commuting between both. A hotel the traveller pinned is kept where
+  it is, and its distance is still paid for in rides.
