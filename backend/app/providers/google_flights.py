@@ -22,7 +22,8 @@ from app.core.config import get_settings
 from app.providers import http
 from app.providers import ttl as ttls
 from app.providers.airports import AIRPORTS, airport_label, nearest_airports
-from app.providers.cache import cached, peek
+from app.core.errors import ProviderUnavailable
+from app.providers.cache import cached, peek, store
 from app.providers.types import PlaceData, TransportData
 from app.services import fare_model as F
 from app.utils.geo import estimate_road, haversine_m
@@ -43,6 +44,7 @@ def enabled() -> bool:
 
 
 REUSE_WEEKS = 4  # a search answers the same weekday up to this many weeks either side (one timetable season)
+SAVED_WEEKS = 8  # the saved copy (60 days) answers the same weekday this far either side when SerpApi can't
 
 
 def _search(frm: list[str], to: list[str], day: date, currency: str, market: str) -> dict:
@@ -57,14 +59,39 @@ def _search(frm: list[str], to: list[str], day: date, currency: str, market: str
     def fetch():
         r = http.request("GET", SERPAPI, provider="SerpApi Google Flights",
                          params={**route, "outbound_date": day.isoformat(), "api_key": s.serpapi_api_key})
-        return {"day": day.isoformat(), "seen": date.today().isoformat(), "data": r.json()}
+        data = r.json()
+        if data.get("error"):  # "out of searches", a bad key, no results: an answer that must never be cached
+            if "no results" in str(data["error"]).lower():
+                data = {"best_flights": [], "other_flights": []}
+            else:
+                raise ProviderUnavailable(f"Google Flights: {str(data['error'])[:120]}")
+        found = {"day": day.isoformat(), "seen": date.today().isoformat(), "data": data}
+        store("flight-schedules", [route, day.isoformat()], found, ttls.get("flight-schedules"))  # the free backup
+        return found
 
     for weeks in range(1, REUSE_WEEKS + 1):  # the nearest weeks first, earlier before later
         for near in (day - timedelta(weeks=weeks), day + timedelta(weeks=weeks)):
             hit = peek("serpapi-flights", [route, near.isoformat()])
             if hit:
                 return hit
-    return cached("serpapi-flights", [route, day.isoformat()], ttls.get("serpapi-flights"), fetch)  # never the API key
+    try:
+        return cached("serpapi-flights", [route, day.isoformat()], ttls.get("serpapi-flights"), fetch)  # never the API key
+    except Exception:
+        saved = _saved(route, day)  # out of searches or down: the last real schedule for this weekday, if kept
+        if saved:
+            log.info("Google Flights unavailable; using the schedule saved for %s", saved.get("day"))
+            return {**saved, "saved": True}
+        raise
+
+
+def _saved(route: dict, day: date) -> dict | None:
+    """The saved search nearest to `day` on the same weekday, up to eight weeks either side, or None."""
+    for weeks in range(0, SAVED_WEEKS + 1):
+        for near in ((day,) if weeks == 0 else (day - timedelta(weeks=weeks), day + timedelta(weeks=weeks))):
+            hit = peek("flight-schedules", [route, near.isoformat()])
+            if hit:
+                return hit
+    return None
 
 
 def _local(value: str, shift_days: int = 0) -> datetime | None:
@@ -82,7 +109,7 @@ def _airport(code: str, raw_name: str | None) -> tuple[str, float | None, float 
 
 
 def journey(group: dict, direction: str, home: PlaceData, currency: str, shift_days: int = 0,
-            searched: str | None = None, seen: str | None = None) -> TransportData | None:
+            searched: str | None = None, seen: str | None = None, saved: bool = False) -> TransportData | None:
     """One Google Flights result as one journey, in each airport's local time; None when it can't be trusted whole
     (no price, no times, more than two stops). `shift_days`: the result was searched for another date (the same
     weekday, `searched`), so its times are moved to this one and the price is only an estimate."""
@@ -129,20 +156,21 @@ def journey(group: dict, direction: str, home: PlaceData, currency: str, shift_d
         cost_per_person=Decimal(str(price)), service_class=first.get("travel_class") or "Economy",
         distance_m=int(haversine_m(flat, flng, tlat, tlng)) if flat is not None and tlat is not None else None,
         from_name=frm, to_name=to, from_lat=flat, from_lng=flng, to_lat=tlat, to_lng=tlng, comfort=5,
-        verification_state="estimated" if shift_days else "verified_provider",
+        verification_state="estimated" if shift_days or saved else "verified_provider",
         source=("Google Flights (via SerpApi): " + (f"schedule and price for {searched}, on the same weekday" if shift_days
                                                     else f"schedule and price as seen on {seen or 'the day of planning'}")),
         access_minutes=acc_min, access_cost=to_currency(F.local_leg_cost(acc_m, "cab", 1), currency) if acc_m else Decimal(0),
         access_distance_m=acc_m,
         meta={"schedule_state": "live", "number": first.get("flight_number") if len(segs) == 1 else None,
               "operator": ", ".join(airlines), "changes": len(segs) - 1,
-              "change_at": f"{stop.get('name')} ({stop.get('id')})" if stop else None,
+              "change_at": _airport(stop.get("id", ""), stop.get("name"))[0] if stop else None,  # "Delhi … (DEL)"
               "change_minutes": int(stop.get("duration") or 0) if stop else None,
               "legs": legs if len(segs) > 1 else None, "check_in_minutes": CHECK_IN[intl], "exit_minutes": EXIT[intl],
               "depart_local": f"{depart_at:%H:%M}", "arrive_local": f"{arrive_at:%H:%M}", "duration_minutes": total,
-              "fare_label": (f"Google Flights price for {_nice(searched)}" if shift_days
+              "fare_label": (f"Google Flights price seen {_nice(seen)} (saved)" if saved
+                             else f"Google Flights price for {_nice(searched)}" if shift_days
                              else f"Google Flights price, seen {_nice(seen)}" if seen else "Google Flights price"),
-              "schedule_from": searched if shift_days else None, "international": intl,
+              "schedule_from": searched if shift_days or saved else None, "international": intl,
               "overnight": any(lg["overnight"] for lg in legs) or arrive_at.date() > depart_at.date()})
     if (arrive_at - depart_at).total_seconds() <= 0 and not intl:
         return None  # a domestic flight that lands before it leaves: the data is wrong
@@ -170,19 +198,22 @@ def flights(origin: PlaceData, dest: PlaceData, depart_day: date, return_day: da
         return None  # one airport serves both places: nobody flies
     market = (country_for(origin.lat, origin.lng) or "in").lower()
     out: list[TransportData] = []
-    try:
-        for direction, frm, to, day in (("outbound", oc, dc, depart_day), ("return", dc, oc, return_day)):
+    for direction, frm, to, day in (("outbound", oc, dc, depart_day), ("return", dc, oc, return_day)):
+        try:  # each direction on its own: one that can't be read keeps its estimate (google.py adds it back)
             found = _search(frm, to, day, currency, market)
+        except Exception as exc:  # noqa: BLE001 - an optional source
+            log.warning("Google Flights unavailable for %s %s -> %s: %s", direction, origin.name, dest.name, exc)
+            continue
+        try:
             data, searched = found.get("data") or {}, found.get("day") or day.isoformat()
             shift = (day - date.fromisoformat(searched)).days  # 0, or whole weeks: the same weekday
             groups = [*(data.get("best_flights") or []), *(data.get("other_flights") or [])]
             for g in groups[:MAX_RESULTS * 2]:
-                t = journey(g, direction, origin, currency, shift, searched, found.get("seen"))
+                t = journey(g, direction, origin, currency, shift, searched, found.get("seen"), bool(found.get("saved")))
                 if t:
                     out.append(t)
                 if sum(1 for x in out if x.direction == direction) >= MAX_RESULTS:
                     break
-    except Exception as exc:  # noqa: BLE001 - an optional source: the estimate stands
-        log.warning("Google Flights unavailable for %s -> %s: %s", origin.name, dest.name, exc)
-        return None
+        except Exception as exc:  # noqa: BLE001 - an answer we can't read: that direction keeps its estimate
+            log.warning("Google Flights answer unreadable for %s %s -> %s: %s", direction, origin.name, dest.name, exc)
     return out or None

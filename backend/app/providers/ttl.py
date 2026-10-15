@@ -22,6 +22,7 @@ DEFAULTS: dict[str, int] = {
     "wikidata": 30 * D,  # CC0 data, ours to keep; refreshed monthly to pick up new pages
     "wikipedia": 30 * D,  # article introductions for the trip chat (CC BY-SA, always linked back)
     "serpapi-flights": 7 * D,  # one flight search per route and weekday, a week (ADR 0020): the price says when seen
+    "flight-schedules": 60 * D,  # every real flight search, kept as a free backup when SerpApi can't answer
     "open-meteo": 3 * H, "search": 12 * H,
     "irctc1-station": 1 * D, "irctc1-between": 12 * H, "railradar": 12 * H,
 }

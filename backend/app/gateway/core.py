@@ -41,7 +41,7 @@ TIMEOUTS = {
 }
 READ_PROVIDERS = {"google-places", "google-routes", "google-geocoding", "brave", "serper", "tavily", "open-meteo", "railradar", "irctc1",
                   "wikidata", "wikipedia", "serpapi"}
-QUOTA_WORDS = {"railradar": ("quota", "limit"), "irctc1": ("quota",), "google-places": ("quota", "resource_exhausted"),
+QUOTA_WORDS = {"railradar": ("quota", "limit"), "irctc1": ("quota",), "serpapi": ("run out of searches",), "google-places": ("quota", "resource_exhausted"),
                "google-routes": ("quota", "resource_exhausted"), "google-geocoding": ("quota", "over_query_limit")}
 
 

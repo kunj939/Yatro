@@ -125,3 +125,38 @@ def test_one_search_per_route_and_weekday_answers_the_same_weekday_another_week(
     assert t.meta["schedule_from"] == "2026-11-07" and t.meta["fare_label"] == "Google Flights price for 7 Nov"
     GF._search(["IXR"], ["LHR"], date(2026, 11, 8), "INR", "in")  # a Sunday: a search of its own
     assert calls == ["2026-11-07", "2026-11-08"]
+
+
+def test_errors_are_never_cached_and_the_saved_schedule_answers_when_serpapi_cannot(monkeypatch):
+    """Like a saved rail timetable: every real search is also kept 60 days. Out of searches (or down), the plan uses
+    the saved schedule for the same weekday, its price an estimate "(saved)"; an error answer is never cached."""
+    from app.core.config import get_settings
+    from app.providers import cache as C
+    store, kept = {}, {}
+
+    def cached(name, key, ttl, fetch):
+        k = C.cache_key(name, *key)
+        if k not in store:
+            store[k] = fetch()  # a raising fetch leaves nothing behind
+        return store[k]
+    monkeypatch.setattr(GF, "cached", cached)
+    monkeypatch.setattr(GF, "peek", lambda name, key: (store if name == "serpapi-flights" else kept).get(C.cache_key(name, *key)))
+    monkeypatch.setattr(GF, "store", lambda name, key, value, ttl: kept.__setitem__(C.cache_key(name, *key), value))
+    monkeypatch.setattr(get_settings(), "serpapi_api_key", "test-key")
+
+    answers = iter([{"best_flights": [ONE_STOP]}, {"error": "Your account has run out of searches."}])
+
+    class R:
+        def json(self):
+            return next(answers)
+    monkeypatch.setattr(GF.http, "request", lambda *a, **k: R())
+
+    from app.providers.airports import nearest_airports
+    oc = [a[0] for a in nearest_airports(RANCHI.lat, RANCHI.lng, 2)]
+    dc = [a[0] for a in nearest_airports(LONDON.lat, LONDON.lng, 2)]
+    GF._search(oc, dc, date(2026, 11, 7), "INR", "in")  # a real answer: cached and saved
+    store.clear()  # a week later the cache has gone, the saved copy hasn't
+    later = GF._search(oc, dc, date(2026, 11, 7), "INR", "in")  # SerpApi: out of searches
+    assert later["saved"] and later["day"] == "2026-11-07" and not store  # the error wasn't cached
+    out = GF.flights(RANCHI, LONDON, date(2026, 11, 7), date(2026, 11, 12), "INR")  # no saved return: outbound only
+    assert out and all(t.verification_state == "estimated" and t.meta["fare_label"].endswith("(saved)") for t in out)

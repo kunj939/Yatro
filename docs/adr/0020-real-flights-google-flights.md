@@ -72,3 +72,28 @@ call is one route on one date. What can be saved is asking twice for the same th
 - **Own date.** A result searched for the trip's own date says when its price was seen ("Google Flights price,
   seen 16 Oct").
 - **A new call** is made only for a route and weekday with nothing within 4 weeks, at most once a week each.
+
+## Addendum: a free backup, like saved rail timetables
+
+**Context.** No free flight source gives future schedules with prices:
+- AviationStack and OpenSky give live and past flights, not what will fly next month;
+- Duffel's test mode has only a made-up airline.
+
+What we can keep for free is what we already asked.
+
+**Decision.**
+- **Saved copy.** Every real search is also stored 60 days (`flight-schedules`, `cache.store`). When SerpApi can't
+  answer (out of searches, a bad key, down), the plan uses the saved search for the same route nearest the date on
+  the same weekday, up to 8 weeks away.
+  - Its price is "Estimated", labelled "Google Flights price seen 16 Oct (saved)".
+  - The plan says to check the flight runs that day.
+- **Fallback chain.** With nothing saved, the estimated flight stands: live search → saved schedule → estimate.
+- **Errors are never cached.** An error answer ("Your account has run out of searches.") is raised, not kept for
+  a week. "No results" is kept as an empty answer.
+- **One direction at a time.** Each direction stands alone, so a failed return search doesn't lose a good outbound
+  one.
+- **Quota.** A 429 with "run out of searches" counts as SerpApi's quota in the gateway.
+
+**Checked live** (16 Oct, two searches): Ranchi → London, 7 Nov out and 12 Nov back, gave 15 journeys. For example,
+Air India Express IX 1069 then Air India AI 161, changing at Delhi: 17:00 Ranchi to 06:35 London, 19 h 05 min,
+₹34,105.

@@ -143,6 +143,12 @@ def cached(provider: str, key_parts: list[Any], ttl: timedelta, fetch: Callable[
         return v
     record_cache(provider, False)
     value = fetch()
+    _write(provider, key, value, ttl, now)
+    return value
+
+
+def _write(provider: str, key: str, value: Any, ttl: timedelta, now: datetime) -> None:
+    s = get_settings()
     try:
         with SessionLocal() as db:
             db.execute(delete(ApiCache).where(ApiCache.cache_key == key))
@@ -153,4 +159,8 @@ def cached(provider: str, key_parts: list[Any], ttl: timedelta, fetch: Callable[
     if s.cache_lru_entries > 0:
         lru.put(key, value, ttl.total_seconds(), s.cache_lru_entries)
     _redis_put(key, value, ttl)
-    return value
+
+
+def store(provider: str, key_parts: list[Any], value: Any, ttl: timedelta) -> None:
+    """Keep a value under these parts for `ttl`, replacing what was there (a copy kept longer than the cache)."""
+    _write(provider, cache_key(provider, *key_parts), value, ttl, datetime.now(UTC))
