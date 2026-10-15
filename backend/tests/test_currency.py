@@ -210,3 +210,14 @@ def test_a_replan_uses_the_stored_coordinates_without_resolving_again():
     pl.p.places.resolve = lambda *a: (_ for _ in ()).throw(AssertionError("should not resolve again"))
     pl._sync_locale(trip)
     assert trip.currency == "JPY" and trip.budget == Decimal(180000)
+
+def test_a_budget_typed_in_rupees_for_london_is_converted_to_pounds(client):
+    """The wizard asked in ₹ (London not resolved yet) and the trip runs in £: ₹5,00,000 must become about £4,750,
+    not £5,00,000. A budget typed in the destination's own money is kept as it is."""
+    from tests.conftest import register, trip_payload
+    user = register(client)
+    london = {"name": "London", "lat": 51.5072, "lng": -0.1276}
+    t = client.post("/api/trips", headers=user, json=trip_payload(destination=london, budget=500000, budget_currency="INR")).json()
+    assert t["currency"] == "GBP" and 3000 < t["budget"] < 7000, t["budget"]
+    same = client.post("/api/trips", headers=user, json=trip_payload(destination=london, budget=2000, budget_currency="GBP")).json()
+    assert same["budget"] == 2000

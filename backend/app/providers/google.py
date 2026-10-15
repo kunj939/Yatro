@@ -712,6 +712,8 @@ class GoogleTransportProvider(TransportProvider):
         if "flight" in modes and km > 350:
             from app.providers import google_flights  # real flights when a SerpApi key is set (ADR 0020)
             flights = google_flights.flights(origin, dest, depart_day, return_day, currency)
+            why = ("no flight search key is set" if not google_flights.enabled()
+                   else "Google Flights didn't answer for this route")  # shown with an estimated flight (ADR 0020)
             if flights:
                 ways = {f.direction for f in flights}
                 # a direction Google Flights had nothing for keeps the estimated flight, so the trip still plans
@@ -719,6 +721,9 @@ class GoogleTransportProvider(TransportProvider):
                             if f.direction not in ways]
             else:
                 flights = airport_flights(origin, dest, window_start, window_end, currency)
+            for f in flights or []:
+                if f.verification_state == "estimated" and f.flexible:
+                    f.source = f"{f.source} ({why})"
             if flights is not None:
                 out += flights
             else:  # an airport we don't know at one end: city to city, with time for the airports included

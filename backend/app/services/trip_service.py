@@ -7,6 +7,7 @@ import re
 import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -72,6 +73,11 @@ def create_trip(db: Session, user: User, data: TripCreate) -> Trip:
     # London runs on Europe/London and shows £, not IST and ₹. Falls back to India only when the wizard
     # didn't have coordinates for the destination (a freely typed name with no autocomplete pick).
     timezone, currency = locale_for(data.destination.lat, data.destination.lng)
+    budget = D(data.budget)
+    typed_in = (data.budget_currency or "").upper()
+    rate = approx_rate(typed_in, currency) if typed_in and typed_in != currency else None
+    if rate:  # ₹5,00,000 typed for London is about £4,750, not £5,00,000
+        budget = D(budget * rate).quantize(Decimal("1"))
     trip = Trip(owner_id=user.id, status="draft",
                 title=(data.title or default_title(data.origin.name, data.destination.name, data.start_date,
                                                    end_date if data.end_time > time(6) else end_date - timedelta(days=1))),
@@ -79,7 +85,7 @@ def create_trip(db: Session, user: User, data: TripCreate) -> Trip:
                 origin_lng=data.origin.lng, destination_name=data.destination.name,
                 destination_place_id=data.destination.place_id, destination_lat=data.destination.lat,
                 destination_lng=data.destination.lng, start_date=data.start_date, end_date=end_date,
-                start_time=data.start_time, end_time=data.end_time, budget=data.budget, travellers=data.travellers,
+                start_time=data.start_time, end_time=data.end_time, budget=budget, travellers=data.travellers,
                 timezone=timezone, currency=currency)
     trip.preferences = TripPreferences(traveller_type=data.traveller_type, age_groups=list(data.age_groups),
                                        transport_modes=list(data.transport_modes),

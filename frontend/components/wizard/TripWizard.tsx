@@ -206,7 +206,7 @@ export function TripWizard() {
     try {
       const trip = await endpoints.createTrip({
         origin: s.origin, destination: s.destination, start_date: s.start_date, end_date: effectiveEnd,
-        start_time: s.start_time, end_time: s.end_time, budget: s.budget, travellers: s.travellers,
+        start_time: s.start_time, end_time: s.end_time, budget: s.budget, budget_currency: currency, travellers: s.travellers,
         traveller_type: s.traveller_type, age_groups: s.age_groups, transport_modes: s.transport_modes, food: s.food, trip_styles: s.trip_styles,
         stay: nights > 0 ? s.stay : (s.stay === "no_stay" ? "no_stay" : s.stay), notes: s.notes || null,
         interests: s.interests.length ? s.interests : undefined,

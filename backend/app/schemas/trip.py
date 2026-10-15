@@ -38,6 +38,9 @@ class TripCreate(APIModel):
     start_time: time = time(7, 0)
     end_time: time = time(22, 0)
     budget: Decimal = Field(gt=0, le=Decimal("9999999999"))  # fits Numeric(12, 2); rupiah, dong and won budgets run to millions
+    budget_currency: str | None = Field(default=None, min_length=3, max_length=3,
+                                        description="The currency the budget was typed in (the wizard's label). When it "
+                                                    "isn't the destination's, the budget is converted.")
     travellers: int = Field(default=1, ge=1, le=20)
     traveller_type: TravellerType = "solo"
     age_groups: list[AgeGroup] = Field(default_factory=list, max_length=4,

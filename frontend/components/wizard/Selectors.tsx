@@ -5,7 +5,7 @@ import {
   Heart, HeartHandshake, Landmark, Leaf, Minus, Mountain, Palette, Plane, Plus, Scale, ShoppingBag, Shuffle, Soup,
   Smile, Sparkles, Sunset, Tent, TrainFront, TramFront, Trees, User, UsersRound, UtensilsCrossed, Wallet, Wine,
 } from "lucide-react";
-import { budgetScale, currencySymbol, money } from "@/lib/format";
+import { budgetScale, convertApprox, currencySymbol, money } from "@/lib/format";
 import { INTEREST_CHIPS, MAX_INTERESTS } from "@/lib/interests";
 import { brand } from "@/lib/brand";
 
@@ -71,6 +71,9 @@ export function BudgetInput({ value, onChange, travellers, days, currency }: {
       )}
       <p className="mt-3 text-sm text-ink-mute">Covers travel, stay, food, entry fees and local transport.</p>
       {value > 0 && value < min && <p className="mt-2 text-sm text-danger">The minimum budget is {money(min, currency)}.</p>}
+      {currency !== "INR" && value > 0 && (
+        <p className="num mt-2 text-sm text-ink-mute">About {money(convertApprox(value, currency, "INR"), "INR")} in rupees. The trip is planned in {currency}.</p>
+      )}
     </div>
   );
 }
