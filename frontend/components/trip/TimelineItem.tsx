@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BedDouble, Car, ChevronDown, Clock, Coffee, ExternalLink, Footprints, Home, Landmark, Map as MapIcon, MessageCircle, Plane, Bus, Repeat, Sparkles, Sunset, TrainFront, TramFront, UtensilsCrossed } from "lucide-react";
+import { BedDouble, Binoculars, Car, Castle, ChevronDown, Church, Clock, Coffee, Droplets, ExternalLink, Flame, Flower2, Footprints, Home, Hotel, Landmark, Map as MapIcon, MessageCircle, Mountain, Palette, PawPrint, Plane, Bus, Repeat, ShoppingBag, Sparkles, Sunset, TrainFront, TramFront, TreePalm, Trees, UtensilsCrossed, Waves, Wine } from "lucide-react";
 import type { ItineraryItem, TransportLeg } from "@/lib/types";
 import { endpoints } from "@/lib/api";
 import { MODE_LABEL, km, minutes, money } from "@/lib/format";
@@ -10,7 +10,25 @@ import { VerificationBadge } from "../VerificationBadge";
 import { placeSource } from "@/lib/sources";
 import { askAboutStop } from "./TripChat";
 
-const KIND_ICON: Record<string, any> = { activity: Landmark, meal: UtensilsCrossed, sunset: Sunset, stay: BedDouble, arrival: Home, free: Coffee };
+const KIND_ICON: Record<string, any> = { activity: Landmark, meal: UtensilsCrossed, sunset: Sunset, stay: Hotel, arrival: Home, free: Coffee };
+// What kind of place a stop is, from its name first ("Baga Beach", "Amer Fort") and then its tags: a beach gets a palm,
+// a fort a castle, a temple a diya flame. The first match wins, so the specific words come before the general ones.
+const PLACE_ICON: [RegExp, string[], any][] = [
+  [/\b(beach|bay|coast|shore)\b/i, ["beach"], TreePalm],
+  [/\b(falls|waterfall)\b/i, ["waterfall"], Droplets],
+  [/\b(lake|sagar|talab|dam|river|ghats?|backwaters?|lagoon)\b/i, ["lake"], Waves],
+  [/\b(fort|forts|qila|castle|palace|mahal|haveli)\b/i, ["fort", "palace", "royal"], Castle],
+  [/\b(church|cathedral|basilica|chapel)\b/i, [], Church],
+  [/\b(temple|mandir|mosque|masjid|gurudwara|gurdwara|dargah|ashram|monastery|stupa)\b/i, ["temple", "spiritual"], Flame],
+  [/\b(gallery|art)\b/i, ["gallery"], Palette],
+  [/\b(market|bazaar|bazar|mall|emporium|haat)\b/i, ["market", "shopping"], ShoppingBag],
+  [/\b(zoo|aquarium|safari|bird)\b/i, ["zoo"], PawPrint],
+  [/\b(garden|gardens|bagh|botanical)\b/i, ["garden"], Flower2],
+  [/\b(park|forest|sanctuary|wildlife|reserve|valley)\b/i, ["nature", "national_park"], Trees],
+  [/\b(point|viewpoint|view|tower|lookout)\b/i, ["viewpoint", "observation"], Binoculars],
+  [/\b(hill|hills|peak|mountain|trek)\b/i, ["mountain"], Mountain],
+  [/\b(club|pub|bar|lounge)\b/i, ["nightlife"], Wine],
+];
 const MODE_ICON: Record<string, any> = { train: TrainFront, bus: Bus, flight: Plane, cab: Car, own_car: Car, walk: Footprints, transit: TramFront };
 // Decorative tints so a glance down the day tells travel from sights from meals. None of them is a claim about
 // the data — provenance is only ever shown by the VerificationBadge.
@@ -22,6 +40,13 @@ export const KIND_LABEL: Record<string, string> = { transport: "Travel", activit
 
 export function itemIcon(item: ItineraryItem) {
   if (item.kind === "transport") return MODE_ICON[item.meta?.mode] ?? TrainFront;
+  if (item.kind === "stay") return item.meta?.stay === "hostel" || /\bhostel\b/i.test(item.title) ? BedDouble : Hotel;
+  if (item.kind === "meal") return (item.meta?.tags ?? []).includes("cafe") || /\bcaf[eé]\b|coffee/i.test(item.title) ? Coffee : UtensilsCrossed;
+  if (item.kind === "activity") {
+    const tags: string[] = item.meta?.tags ?? [];
+    const hit = PLACE_ICON.find(([re]) => re.test(item.title)) ?? PLACE_ICON.find(([, tg]) => tg.some((x) => tags.includes(x)));
+    if (hit) return hit[2];
+  }
   return KIND_ICON[item.kind] ?? Landmark;
 }
 

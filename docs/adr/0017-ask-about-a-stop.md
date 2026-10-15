@@ -48,3 +48,34 @@ much, not what a place is.
 **Consequences.**
 - Wikipedia is called at most once per place a month for all travellers: free, and with no key.
 - The chat never states facts about a place that aren't in its article or the plan.
+
+## Addendum: a large chat, place icons, no "Good to know"
+
+- **Large chat.** The chat opens large from its header button, or by itself when "Ask" is tapped on a stop.
+  - On a desktop it is a panel on the right (480 px wide, full height under the navbar), so the plan stays in view.
+  - On a phone it fills the screen.
+  - Esc, the backdrop or the button make it small again.
+  - It is rendered into the page body through a portal: a transformed parent in the sidebar would otherwise hold a
+    fixed panel inside it.
+- **First view.** The first view is a hint ("tap the chat icon on any stop"), then two labelled groups: "Ask" (3
+  questions) and "Change" (up to 4 chips). It used to be a wall of 11 chips.
+- **Place icons.** Each sight's icon comes from its name first, then its tags:
+  - beach: palm;
+  - waterfall: drops;
+  - lake or ghat: waves;
+  - fort or palace: castle;
+  - church: church;
+  - temple, mosque or gurudwara: flame;
+  - gallery: palette;
+  - market: bag;
+  - zoo: paw;
+  - garden: flower;
+  - park or forest: trees;
+  - viewpoint: binoculars;
+  - hill: mountain;
+  - club or bar: glass.
+
+  Hotels get a hotel icon (a bed for a hostel), and cafés a cup. The icons are decorative, like the tints: they make
+  no claim about the data.
+- **"Good to know" removed** from the trip page. The model wrote generic tips there ("check the timings", "keep your
+  camera ready") that added nothing to the plan. The tips are still in the data and in the chat's view of the trip.

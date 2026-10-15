@@ -326,11 +326,6 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                     </SideCard>
                   )}
                   {it.warnings.length > 0 && <PlanNotes notes={it.warnings} />}
-                  {it.tips.length > 0 && (
-                    <SideCard icon={Wallet} title="Good to know">
-                      <ul className="list-disc space-y-1.5 pl-4">{it.tips.map((t, i) => <li key={i}>{t}</li>)}</ul>
-                    </SideCard>
-                  )}
                   <SideCard icon={ListChecks} title="How this plan was checked" folded>
                     <ol className="space-y-1.5">
                       {it.pipeline_trace.map((s) => (

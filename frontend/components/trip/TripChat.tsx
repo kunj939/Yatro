@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, ExternalLink, MapPin, Mic, MicOff, Send, Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { BookOpen, ExternalLink, MapPin, Maximize2, MessageCircle, Mic, MicOff, Minimize2, Send, Sparkles, Volume2, VolumeX, X } from "lucide-react";
 import { ApiError, endpoints } from "@/lib/api";
 
 type Source = { label: string; title?: string; url: string };
@@ -34,6 +35,7 @@ export function TripChat({ tripId, chips, busy, readOnly, replansLeft, onChange 
   const [speak, setSpeak] = useState(true);
   const [lang, setLang] = useState<"en-IN" | "hi-IN">("en-IN");
   const [focus, setFocus] = useState<Focus | null>(null);
+  const [big, setBig] = useState(false);  // open large: a panel on a desktop, the whole screen on a phone
   const recRef = useRef<any>(null);
   const boxRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -51,13 +53,19 @@ export function TripChat({ tripId, chips, busy, readOnly, replansLeft, onChange 
     list?.scrollTo({ top: last ? Math.max(0, last.offsetTop - 12) : list.scrollHeight, behavior: "smooth" });
   }, [msgs, key]);
   useEffect(() => () => { recRef.current?.abort?.(); window.speechSynthesis?.cancel(); }, []);
+  useEffect(() => {
+    if (!big) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setBig(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [big]);
 
-  // "Ask" on a stop: only the chat that is on screen (phone or desktop layout) answers it
+  // "Ask" on a stop: only the chat that is on screen (phone or desktop layout) answers it, opened large beside the plan
   useEffect(() => {
     function onAsk(e: Event) {
       const d = (e as CustomEvent<{ id: string; title: string; question: string; sight: boolean }>).detail;
-      if (!boxRef.current || boxRef.current.offsetParent === null) return;
-      boxRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (!boxRef.current || boxRef.current.getClientRects().length === 0) return;
+      setBig(true);
       const f = { id: d.id, title: d.title, sight: d.sight };
       setFocus(f);
       sendRef.current(d.question, false, f);
@@ -132,8 +140,11 @@ export function TripChat({ tripId, chips, busy, readOnly, replansLeft, onChange 
       <Sparkles className="h-3.5 w-3.5" aria-hidden />
     </span>
   );
-  return (
-    <section ref={boxRef} className="card flex flex-col overflow-hidden !p-0" aria-label="Trip assistant">
+  const panel = (
+    <section ref={boxRef} aria-label="Trip assistant" role={big ? "dialog" : undefined} aria-modal={big || undefined}
+             className={`card flex flex-col overflow-hidden !p-0 ${big
+               ? "fixed inset-0 z-[70] !rounded-none lg:inset-auto lg:bottom-5 lg:right-5 lg:top-24 lg:w-[480px] lg:!rounded-3xl lg:shadow-[0_30px_80px_-24px_rgba(20,30,10,0.45)]"
+               : ""}`}>
       <header className="flex items-start justify-between gap-3 border-b border-line bg-gradient-to-br from-signal-soft/70 via-paper to-paper px-5 py-4">
         <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-signal text-on-signal shadow-[0_8px_20px_-10px_rgb(var(--signal)/0.9)]">
@@ -147,25 +158,38 @@ export function TripChat({ tripId, chips, busy, readOnly, replansLeft, onChange 
             </p>
           </div>
         </div>
-        <button type="button" onClick={() => { setSpeak(!speak); window.speechSynthesis?.cancel(); }} aria-pressed={speak}
-                title={speak ? "Spoken questions get spoken answers" : "Answers are text only"}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line bg-paper text-ink-soft hover:border-ink/30">
-          {speak ? <Volume2 className="h-4 w-4" aria-hidden /> : <VolumeX className="h-4 w-4" aria-hidden />}
-          <span className="sr-only">{speak ? "Mute spoken answers" : "Speak answers"}</span>
-        </button>
+        <div className="flex shrink-0 gap-1.5">
+          <button type="button" onClick={() => { setSpeak(!speak); window.speechSynthesis?.cancel(); }} aria-pressed={speak}
+                  title={speak ? "Spoken questions get spoken answers" : "Answers are text only"}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-line bg-paper text-ink-soft hover:border-ink/30">
+            {speak ? <Volume2 className="h-4 w-4" aria-hidden /> : <VolumeX className="h-4 w-4" aria-hidden />}
+            <span className="sr-only">{speak ? "Mute spoken answers" : "Speak answers"}</span>
+          </button>
+          <button type="button" onClick={() => setBig(!big)} title={big ? "Make smaller" : "Open large"}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-line bg-paper text-ink-soft hover:border-ink/30">
+            {big ? <Minimize2 className="h-4 w-4" aria-hidden /> : <Maximize2 className="h-4 w-4" aria-hidden />}
+            <span className="sr-only">{big ? "Make the chat smaller" : "Open the chat large"}</span>
+          </button>
+        </div>
       </header>
 
-      <div ref={listRef} className="relative max-h-[30rem] min-h-[13rem] space-y-4 overflow-y-auto px-5 py-5" aria-live="polite">
+      <div ref={listRef} className={`relative space-y-4 overflow-y-auto px-5 py-5 ${big ? "min-h-0 flex-1" : "max-h-[30rem] min-h-[13rem]"}`} aria-live="polite">
         {msgs.length === 0 ? (
-          <div>
-            <p className="text-[14px] leading-relaxed text-ink-soft">
-              Try one of these, or tap <span className="font-semibold text-ink">Ask</span> on any stop in your plan to learn about it.
+          <div className="space-y-4">
+            <p className="flex items-start gap-2.5 rounded-2xl bg-signal-soft/60 px-3.5 py-3 text-[13.5px] leading-relaxed text-ink-soft">
+              <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-signal-deep" aria-hidden />
+              <span>Tap the <span className="font-semibold text-ink">chat icon</span> on any stop in your plan to learn why it's famous, or ask here.</span>
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {[...ASK, ...chips].map((c) => (
-                <button key={c} type="button" className="chip-off !rounded-full !px-3 !py-1.5 text-[13.5px]" disabled={working} onClick={() => send(c)}>{c}</button>
-              ))}
-            </div>
+            {[["Ask", ASK], ["Change", chips.slice(0, 4)]].filter(([, list]) => list.length > 0).map(([label, list]) => (
+              <div key={label as string}>
+                <p className="mb-2 text-[11.5px] font-bold uppercase tracking-wider text-ink-mute">{label as string}</p>
+                <div className="flex flex-wrap gap-2">
+                  {(list as string[]).map((c) => (
+                    <button key={c} type="button" className="chip-off !rounded-full !px-3 !py-1.5 text-[13.5px]" disabled={working} onClick={() => send(c)}>{c}</button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ) : msgs.map((m, i) => m.role === "user" ? (
           <div key={i} data-asked className="flex flex-col items-end gap-1">
@@ -256,5 +280,20 @@ export function TripChat({ tripId, chips, busy, readOnly, replansLeft, onChange 
         </div>
       </div>
     </section>
+  );
+  if (!big) return panel;
+  // Large, it sits on the page itself (a parent's transform would otherwise pin a fixed panel inside the sidebar)
+  return (
+    <>
+      <div className="card flex items-center justify-between gap-3 p-4 text-[14px] text-ink-soft">
+        <span className="inline-flex items-center gap-2"><Sparkles className="h-4 w-4 text-signal-deep" aria-hidden />Trip assistant is open</span>
+        <button type="button" onClick={() => setBig(false)} className="chip-off !rounded-full !px-3 !py-1 text-[13px]">Make smaller</button>
+      </div>
+      {createPortal(
+        <>
+          <div className="fixed inset-0 z-[65] bg-ink/20 backdrop-blur-[2px] lg:bg-transparent lg:backdrop-blur-0" onClick={() => setBig(false)} aria-hidden />
+          {panel}
+        </>, document.body)}
+    </>
   );
 }
