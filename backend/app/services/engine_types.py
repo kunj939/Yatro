@@ -90,6 +90,7 @@ class Leg:
     cost: Decimal
     state: str
     polyline: str | None = None
+    transit: dict | None = None  # a public-transport leg's lines and stops (RouteResult.transit)
 
 
 @dataclass

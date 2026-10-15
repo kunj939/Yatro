@@ -31,7 +31,8 @@ GOOGLE_MAX_AGE = timedelta(days=30)
 UNAVAILABLE = "Details unavailable — open in Google Maps"
 COUNTER = "google_refresh"
 # Meta keys that came from Google. Everything else in meta (our keys, times, per-person costs) is ours.
-GOOGLE_META_KEYS = ("lat", "lng", "address", "rating", "rating_count", "tags", "website", "veg_only", "about")
+GOOGLE_META_KEYS = ("lat", "lng", "address", "rating", "rating_count", "tags", "website", "veg_only", "about",
+                    "transit")  # transit: the lines and stops of a public-transport leg, from Google Routes
 # Titles built as "<our words><Google place name>": our words are kept, the name goes.
 _PREFIXES = {"Check out: ": "your stay", "Check in: ": "your stay", "Start from ": "your stay", "Back to ": "your stay",
              "Back at ": "your last stop"}

@@ -9,6 +9,7 @@ import { directionsUrl } from "@/lib/tripLinks";
 import { VerificationBadge } from "../VerificationBadge";
 import { placeSource } from "@/lib/sources";
 import { askAboutStop } from "./TripChat";
+import { stepName, stepRoute, type Transit } from "@/lib/transit";
 
 const KIND_ICON: Record<string, any> = { activity: Landmark, meal: UtensilsCrossed, sunset: Sunset, stay: Hotel, arrival: Home, free: Coffee };
 // What kind of place a stop is, from its name first ("Baga Beach", "Amer Fort") and then its tags: a beach gets a palm,
@@ -59,9 +60,12 @@ function Rail({ first, last, dot, dotCls = "" }: { first?: boolean; last?: boole
   );
 }
 
+const STEP_ICON: Record<string, any> = { metro: TramFront, tram: TramFront, "local train": TrainFront, train: TrainFront, bus: Bus };
+
 function Leg({ item, currency }: { item: ItineraryItem; currency?: string }) {
   if (!item.travel_minutes_from_prev && !item.distance_from_prev_m) return null;
   const Icon = MODE_ICON[item.travel_mode ?? ""] ?? Car;
+  const transit: Transit | null = item.meta?.transit ?? null;
   return (
     <div className="flex gap-3 sm:gap-4">
       <div className="hidden w-[60px] shrink-0 sm:block md:w-[72px]" />
@@ -75,6 +79,24 @@ function Leg({ item, currency }: { item: ItineraryItem; currency?: string }) {
         <span>{km(item.distance_from_prev_m)}</span>
         {!!item.travel_cost && <><span aria-hidden>·</span><span>{money(item.travel_cost, currency)}</span></>}
         {item.leg_state && !["verified_provider", "demo"].includes(item.leg_state) && <VerificationBadge state={item.leg_state} />}
+        {/* the bus, metro or local train to take: lines and stops from the live timetable (ADR 0019) */}
+        {transit && transit.steps.length > 0 && (
+          <ol className="w-full space-y-1.5 pt-1">
+            {transit.steps.map((s, i) => {
+              const StepIcon = STEP_ICON[s.vehicle] ?? Bus;
+              return (
+                <li key={i} className="flex items-start gap-2 text-[13px]">
+                  <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md bg-signal-soft text-signal-deep"><StepIcon className="h-3 w-3" aria-hidden /></span>
+                  <span className="min-w-0">
+                    <span className="font-semibold text-ink">{stepName(s)}</span>
+                    {s.headsign && <span className="text-ink-mute"> towards {s.headsign}</span>}
+                    {stepRoute(s) && <span className="block text-ink-soft">{stepRoute(s)}</span>}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
       </div>
     </div>
   );

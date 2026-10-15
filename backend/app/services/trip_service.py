@@ -21,6 +21,7 @@ from app.models.user import User
 from app.providers.registry import Providers
 from app.schemas.trip import MAX_DAYS, PreferencesPatch, TripCreate
 from app.services import age_fit, expense_service, quota_service
+from app.services import feasibility as FE
 from app.services import intent as intent_service
 from app.core import telemetry
 from app.services.engine_types import StageReporter
@@ -367,9 +368,10 @@ def intent_patch(db: Session, providers: Providers, user: User, trip: Trip, mess
     if trip_styles:
         gained = [s for s in styles if s not in (p.trip_styles or [])]
         labels.append(", ".join(STYLE_WORDS.get(s, s) for s in gained) if gained else "a simpler style")
-    elif intent.add_styles:
-        issues.append("It already leans " + ("cheaper" if "budget" in intent.add_styles else "that way")
-                      + ", so there's no more I can tighten there; adjust the budget or stay if you want to go further.")
+    elif intent.add_styles and "budget" not in intent.add_styles:
+        issues.append("It already leans that way, so there's nothing more to change there.")
+    # "make it cheaper" again, on a plan already in the cheaper style: the next real steps (below, after stay/transport)
+    tighten = "budget" in intent.add_styles and not trip_styles
     pace = None
     if intent.pace and intent.pace != p.pace:
         pace = intent.pace
@@ -408,6 +410,28 @@ def intent_patch(db: Session, providers: Providers, user: User, trip: Trip, mess
         labels.append("travel by " + ", ".join(MODE_WORDS.get(m, m) for m in modes))
     elif intent.transport_only or intent.transport_add or intent.transport_remove:
         issues.append("Your travel choices already match that.")
+
+    if tighten:
+        steps = []
+        # a hotel one level cheaper (not below an economy room for a family; a hostel only for solo travellers and
+        # friends), unless the traveller chose this hotel themselves
+        it_now = trip.current_itinerary
+        stay_key = next(((i.meta or {}).get("key") for i in (it_now.items if it_now else []) if i.kind == "stay"), None)
+        floor = "hostel" if (traveller_type or p.traveller_type) in ("solo", "friends") else "oyo"
+        order = FE.STAY_ORDER[:FE.STAY_ORDER.index(floor) + 1]
+        if stay is None and p.stay in order[:-1] and stay_key not in set(p.pinned_place_ids or []):
+            stay = order[order.index(p.stay) + 1]
+            steps.append(STAY_WORDS[stay])
+        # buses instead of cabs to get around: the biggest saving where sights are spread out (₹25 a ride, not ₹400)
+        now = transport_modes or cur_modes
+        if "cab" in now and not (intent.transport_only or intent.transport_add):
+            transport_modes = [m for m in now if m != "cab"] + ([] if "bus" in now else ["bus"])
+            steps.append("buses instead of cabs to get around")
+        if steps:
+            labels.append("cheaper: " + " and ".join(steps))
+        else:
+            issues.append("It's already as cheap as I can make it with these choices: the next step is a higher "
+                          "budget, fewer days, or skipping some paid sights.")
 
     # a train asked for by name: a preference, kept across later changes (see _keep_train_preference)
     prefer = None

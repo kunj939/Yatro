@@ -90,6 +90,37 @@ BUS_TYPES = {"BUS", "INTERCITY_BUS", "TROLLEYBUS"}
 _NON_LATIN = re.compile(r"[\u0900-\u0DFF\u0F00-\u0FFF\u1000-\u109F\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]")
 
 
+LOCAL_VEHICLE = {"SUBWAY": "metro", "METRO_RAIL": "metro", "LIGHT_RAIL": "metro", "MONORAIL": "metro", "TRAM": "tram",
+                 "BUS": "bus", "INTERCITY_BUS": "bus", "TROLLEYBUS": "bus", "SHARE_TAXI": "shared taxi",
+                 "COMMUTER_TRAIN": "local train", "HEAVY_RAIL": "train", "RAIL": "train", "FERRY": "ferry"}
+
+
+def local_transit(route: dict) -> dict | None:
+    """The public-transport rides in a Google route, in order: what to take (metro, bus, local train), the line, where
+    to get on and off, and how many stops; with the fare when Google has one. Stop names in a script an English
+    reader can't read are left out rather than shown garbled. None when the route is walking only."""
+    steps = []
+    for leg in route.get("legs", []):
+        for s in leg.get("steps", []):
+            d = s.get("transitDetails")
+            if not d:
+                continue
+            line = d.get("transitLine", {})
+            stops = d.get("stopDetails", {})
+            name = (line.get("nameShort") or line.get("name") or "").strip()
+            frm = _stop_label((stops.get("departureStop") or {}).get("name"), "")
+            to = _stop_label((stops.get("arrivalStop") or {}).get("name"), "")
+            steps.append({"vehicle": LOCAL_VEHICLE.get(line.get("vehicle", {}).get("type", ""), "bus"),
+                          "line": name if name and not _NON_LATIN.search(name) else None,
+                          "from": frm or None, "to": to or None, "stops": d.get("stopCount"),
+                          "headsign": _stop_label(d.get("headsign"), "") or None})
+    if not steps:
+        return None
+    fare = route.get("travelAdvisory", {}).get("transitFare")
+    amount = (float(fare.get("units", 0) or 0) + (fare.get("nanos", 0) or 0) / 1e9) if fare else None
+    return {"steps": steps, "fare": amount, "currency": fare.get("currencyCode") if fare else None}
+
+
 def _stop_label(raw: str | None, city: str) -> str:
     raw = (raw or "").strip()
     return raw if raw and not _NON_LATIN.search(raw) else city
@@ -242,19 +273,24 @@ class GoogleMapsProvider(MapsProvider):
             if mode == "drive":
                 body["routingPreference"] = "TRAFFIC_AWARE"
 
+        fields = "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline"
+        if mode == "transit":
+            fields += ",routes.legs.steps.transitDetails,routes.legs.steps.travelMode,routes.travelAdvisory.transitFare"
+
         def fetch():
             r = http.request("POST", f"{ROUTES}/directions/v2:computeRoutes", provider="Google Routes",
-                             headers=_headers("routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline"),
-                             json=body)
+                             headers=_headers(fields), json=body)
             return r.json()
 
-        data = cached("google-routes", [body], ttls.get("google-routes"), fetch)
+        data = cached("google-transit" if mode == "transit" else "google-routes", [body],
+                      ttls.get("google-transit" if mode == "transit" else "google-routes"), fetch)
         routes = data.get("routes") or []
         if not routes:
             raise ProviderUnavailable("No route found.")
         r = routes[0]
         return RouteResult(int(r.get("distanceMeters", 0)), _duration_s(r.get("duration")),
-                           (r.get("polyline") or {}).get("encodedPolyline"), "verified_provider", mode)
+                           (r.get("polyline") or {}).get("encodedPolyline"), "verified_provider", mode,
+                           local_transit(r) if mode == "transit" else None)
 
     def compute_matrix(self, points, mode="drive") -> MatrixResult:
         if len(points) ** 2 > 625:

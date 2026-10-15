@@ -73,6 +73,9 @@ class RouteResult:
     polyline: str | None
     state: VerificationState
     mode: str
+    # public transport only: {"steps": [{vehicle, line, from, to, stops, headsign}], "fare": float | None,
+    # "currency": str | None}, from the provider's own timetable; None when the route is all walking
+    transit: dict | None = None
 
 
 @dataclass

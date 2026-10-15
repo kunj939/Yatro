@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Coffee, MessageCircle, Navigation, Sparkles } from "lucide-react";
+import { Bus, ChevronDown, Coffee, MessageCircle, Navigation, Sparkles } from "lucide-react";
 import type { Itinerary, ItineraryItem } from "@/lib/types";
 import { MODE_LABEL, minutes, money, niceDate } from "@/lib/format";
 import { dayRouteUrl } from "@/lib/tripLinks";
 import { KIND_TONE, TimelineItem, itemIcon } from "./TimelineItem";
 import { askAboutStop } from "./TripChat";
+import { transitSummary } from "@/lib/transit";
 
 /** What a day costs and how many real stops it has — shared by the day headers and the overview strip. */
 export function dayStats(items: ItineraryItem[]) {
@@ -46,6 +47,7 @@ function CompactRow({ item, onChange, highlight, currency, near, tripId }: {
   }
   const Icon = itemIcon(item);
   const when = item.time ?? item.meta?.when ?? "—";
+  const ride = transitSummary(item.meta?.transit);  // "Metro Yellow Line from Rajiv Chowk" (ADR 0019)
   const travel = item.travel_minutes_from_prev
     ? `${minutes(item.travel_minutes_from_prev)} ${(MODE_LABEL[item.travel_mode ?? ""] ?? "travel").toLowerCase()} from the last stop`
     : null;
@@ -72,6 +74,11 @@ function CompactRow({ item, onChange, highlight, currency, near, tripId }: {
           </span>
           {(detail || travel) && (
             <span className="block truncate text-[13px] text-ink-mute">{[detail, travel].filter(Boolean).join(" · ")}</span>
+          )}
+          {ride && (
+            <span className="mt-0.5 flex min-w-0 items-start gap-1 text-[12.5px] font-medium text-ink-soft">
+              <Bus className="mt-0.5 h-3 w-3 shrink-0 text-signal-deep" aria-hidden /><span className="line-clamp-2">{ride}</span>
+            </span>
           )}
           {item.meta?.why_go && (
             <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[12.5px] font-medium text-signal-deep">

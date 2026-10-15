@@ -560,16 +560,36 @@ class DayScheduler:
 def apply_real_routes(maps: MapsProvider, frames: list[DayFrame], travel: Travel) -> tuple[str, int]:
     """Route every consecutive pair through the MapsProvider (parallel, cached). Returns (state, failures)."""
     pairs: set[tuple] = set()
+    day_of: dict[tuple, datetime] = {}  # a public-transport route needs a day to read the timetable for
     for f in frames:
         pts = [f.start_point] + [s.point for s in f.stops] + [f.end_point]
-        pairs.update(zip(pts, pts[1:]))
+        for pair in zip(pts, pts[1:]):
+            pairs.add(pair)
+            day_of.setdefault(pair, f.start.replace(hour=10, minute=0))
     pairs = {p for p in pairs if p[0] != p[1]}
     failures = 0
+
+    def transit_leg(a, b, at) -> Leg | None:
+        """The bus, metro or local train for this hop, with its line and stops; None when there's none to take."""
+        try:
+            r = maps.compute_route(a, b, "transit", depart_at=at)
+        except ProviderUnavailable:
+            return None
+        if not r.transit:
+            return None  # all walking: the drive/walk estimate below stands
+        fare = r.transit.get("fare")
+        cost = (round_rupees(Decimal(str(fare)) * travel.travellers) if fare and r.transit.get("currency") in (None, "INR")
+                else travel.ride_cost(r.distance_m, "transit"))
+        return Leg(r.distance_m, max(1, round(r.duration_s / 60)) + 5, "transit", cost, r.state, r.polyline, r.transit)
 
     def route(pair):
         a, b = pair
         est = travel.leg(a, b)
         mode = "walk" if est.mode == "walk" else "drive"
+        if mode == "drive" and travel.local_mode == "transit":
+            leg = transit_leg(a, b, day_of.get(pair))
+            if leg is not None:
+                return pair, leg
         try:
             r = maps.compute_route(a, b, mode)
         except ProviderUnavailable:

@@ -739,7 +739,8 @@ class Planner:
                 rides += 1
             if local:
                 mode = {"cab": "cab", "transit": "metro/bus", "own_car": "fuel & parking"}.get(
-                    next((s.leg.mode for s in f.stops if s.leg and s.leg.mode != "walk"), "cab"), "cab")
+                    next((leg.mode for leg in [*(s.leg for s in f.stops), f.final_leg] if leg and leg.mode != "walk"),
+                         "cab"), "cab")
                 day = f" (day {max(f.index, (f.day - inp.start.date()).days) + 1})" if len(frames) > 1 else ""
                 lines.append(BudgetLine("local", f"Local {mode}, {rides} ride{'s' if rides > 1 else ''}{day}",
                                         round_rupees(local), "estimated"))
@@ -895,6 +896,7 @@ class Planner:
             return True
 
         night = combo.night_arrival and a.hotel is not None
+        back_transit = None  # the bus/metro back to the hotel at the end of the day being drafted
 
         def stay_draft(at, first: bool, di: int, leg: dict, extra: list[dict] | None = None) -> None:
             """The hotel line: the check-in carries the nights and the cost; later evenings are "Back to"."""
@@ -907,7 +909,8 @@ class Planner:
                 reasons=([{"key": "stay", "text": f"a {FE.STAY_LABEL.get(inp.stay, inp.stay)} stay as you asked"},
                           {"key": "nearby", "text": "central to the places you're visiting"}, *(extra or [])] if first else []),
                 meta={"lat": a.hotel.place.lat, "lng": a.hotel.place.lng, "key": a.hotel.key,
-                      "nightly": float(a.hotel.unit_cost), "stars": a.hotel.place.hotel.stars if a.hotel.place.hotel else None})
+                      "nightly": float(a.hotel.unit_cost), "stars": a.hotel.place.hotel.stars if a.hotel.place.hotel else None,
+                      "transit": back_transit})
 
         if combo.outbound:
             o = combo.outbound
@@ -969,9 +972,11 @@ class Planner:
                           # why it's worth going, in our words (no Google figures), and where the place came from
                           "why_go": why_go(c) if s.kind in ("activity", "sunset") else None,
                           "about": c.place.description, "source": c.place.provider,
+                          "transit": s.leg.transit if s.leg else None,  # the bus/metro to take here, from Google
                           "wiki_links": (c.place.meta or {}).get("wiki_links")})
                 prev_name, prev_end = c.place.name, s.end
             fl = f.final_leg
+            back_transit = fl.transit if fl else None
             leg = {"distance_m": fl.distance_m if fl else None, "travel_minutes": fl.minutes if fl else None,
                    "travel_mode": fl.mode if fl else None, "travel_cost": fl.cost if fl else Decimal(0),
                    "leg_state": fl.state if fl else None, "polyline": fl.polyline if fl else None}

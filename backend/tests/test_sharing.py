@@ -17,7 +17,7 @@ from app.services import share_service
 from tests.conftest import register, trip_payload
 
 BUDGET = 7321  # unusual on purpose: searched for in the public output
-MEMBER_BUDGET = 4444
+MEMBER_BUDGET = 4444.5  # with a decimal point, so it can never turn up by chance inside a random id
 OWNER_UPI = "owner.secret@okbank"
 
 

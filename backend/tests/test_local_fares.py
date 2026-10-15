@@ -83,3 +83,23 @@ def test_hotels_are_looked_for_where_most_sights_are_not_between_two_clusters():
     hub, mid = PS.sights_hub(sights, (0, 0)), PS.centroid(sights, (0, 0))
     assert hub in north
     assert min(haversine_m(*mid, *p) for p in north) > 20000  # the average is far from every northern sight
+
+
+def test_make_it_cheaper_on_a_cheap_plan_takes_the_next_real_steps(client):
+    """On a plan already in the cheaper style, "make it cheaper" used to answer "it already leans cheaper" and change
+    nothing. It now takes the next steps: a hotel one level down and buses instead of cabs to get around."""
+    from tests.conftest import register
+    from tests.test_scenarios import _payload, _say, _use
+    user = register(client)
+    sc = dict(o="Mumbai", d="Goa", days=4, start="08:00", end="22:00", budget=45000, n=1, modes=["train", "cab"],
+              food="both", styles=["budget"], stay="tier2", tt="normal")
+    _use(sc)
+    trip_id = client.post("/api/trips", headers=user, json=_payload(sc)).json()["id"]
+    before = client.post(f"/api/trips/{trip_id}/plan", headers=user).json()["trip"]["itinerary"]["total_cost"]
+    out = _say(client, user, trip_id, "Make it cheaper").json()
+    assert out["status"] == "ready", out
+    t = out["trip"]
+    assert t["preferences"]["stay"] == "budget" and "cab" not in t["preferences"]["transport_modes"]
+    assert t["itinerary"]["total_cost"] < before
+    local = [c for c in t["itinerary"]["budget"]["categories"] if c["key"] == "local"]
+    assert not local or all("cab" not in l["label"].lower() for l in local[0]["items"] if "ride" in l["label"])
