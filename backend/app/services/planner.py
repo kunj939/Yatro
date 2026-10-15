@@ -843,6 +843,8 @@ class Planner:
             if t.mode == "flight" and t.meta.get("depart_local"):  # a real flight: each airport's own clock
                 subtitle += (f". Leaves {t.meta['depart_local']}, lands {t.meta['arrive_local']}, local times; be at the "
                              f"airport {_hours(t.meta.get('check_in_minutes') or 120)} before")
+                if t.meta.get("schedule_from"):  # times from a search for the same weekday another week
+                    subtitle += ". Times from Google Flights for the same day another week: check it flies on your date"
             elif t.meta.get("airport_minutes") and not t.meta.get("legs"):
                 subtitle += f", including about {_hours(t.meta['airport_minutes'])} at the airports (check-in, security)"
             add(kind="transport", day_index=day_index, start=t.depart_at, end=t.arrive_at,

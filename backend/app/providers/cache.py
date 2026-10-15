@@ -103,18 +103,15 @@ def _redis_put(key: str, value: Any, ttl: timedelta) -> None:
         log.debug("redis cache write failed", exc_info=True)
 
 
-def cached(provider: str, key_parts: list[Any], ttl: timedelta, fetch: Callable[[], Any]) -> Any:
-    key = cache_key(provider, *key_parts)
-    now = datetime.now(UTC)
+def _read(key: str, now: datetime) -> Any:
+    """A live cached value from the fastest tier that has it, or _MISS."""
     s = get_settings()
     if s.cache_lru_entries > 0:
         v = lru.get(key)
         if v is not _MISS:
-            record_cache(provider, True)
             return v
     v = _redis_get(key)
     if v is not _MISS:
-        record_cache(provider, True)
         return v
     try:
         with SessionLocal() as db:
@@ -122,12 +119,28 @@ def cached(provider: str, key_parts: list[Any], ttl: timedelta, fetch: Callable[
             if row is not None:
                 expires = row.expires_at if row.expires_at.tzinfo else row.expires_at.replace(tzinfo=UTC)
                 if expires > now:
-                    record_cache(provider, True)
                     if s.cache_lru_entries > 0:  # fill the faster tier, for what is left of the entry's life
                         lru.put(key, row.response, (expires - now).total_seconds(), s.cache_lru_entries)
                     return row.response
     except Exception:  # cache must never break planning
         log.debug("cache read failed", exc_info=True)
+    return _MISS
+
+
+def peek(provider: str, key_parts: list[Any]) -> Any:
+    """The cached value for these parts if there is a live one, else None. Never fetches."""
+    v = _read(cache_key(provider, *key_parts), datetime.now(UTC))
+    return None if v is _MISS else v
+
+
+def cached(provider: str, key_parts: list[Any], ttl: timedelta, fetch: Callable[[], Any]) -> Any:
+    key = cache_key(provider, *key_parts)
+    now = datetime.now(UTC)
+    s = get_settings()
+    v = _read(key, now)
+    if v is not _MISS:
+        record_cache(provider, True)
+        return v
     record_cache(provider, False)
     value = fetch()
     try:

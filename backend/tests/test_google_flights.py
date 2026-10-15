@@ -73,7 +73,8 @@ def test_both_directions_from_google_flights_with_a_key_and_the_estimate_without
 
     def search(frm, to, day, currency, market):
         asked.append((frm, to, day, market))
-        return {"best_flights": [ONE_STOP if day == date(2026, 11, 7) else DIRECT_HOME], "other_flights": []}
+        return {"day": day.isoformat(), "seen": "2026-10-16",
+                "data": {"best_flights": [ONE_STOP if day == date(2026, 11, 7) else DIRECT_HOME], "other_flights": []}}
 
     monkeypatch.setattr(GF, "_search", search)
     monkeypatch.setattr(get_settings(), "serpapi_api_key", None)
@@ -88,3 +89,39 @@ def test_both_directions_from_google_flights_with_a_key_and_the_estimate_without
         raise RuntimeError("SerpApi 503")
     monkeypatch.setattr(GF, "_search", down)
     assert GF.flights(RANCHI, LONDON, date(2026, 11, 7), date(2026, 11, 12), "INR") is None
+
+
+def test_one_search_per_route_and_weekday_answers_the_same_weekday_another_week(monkeypatch):
+    """Searched for Saturday 7 Nov, a trip on Saturday 14 Nov reuses it: the times move a week, the price becomes an
+    estimate ("for 7 Nov"), and the plan says to check the flight runs that day. One API call, not two."""
+    from app.core.config import get_settings
+    from app.providers import cache as C
+    calls = []
+
+    class R:
+        def json(self):
+            return {"best_flights": [ONE_STOP], "other_flights": []}
+
+    def request(method, url, **kw):
+        calls.append(kw["params"]["outbound_date"])
+        return R()
+
+    store = {}
+
+    def cached(name, key, ttl, fetch):
+        k = C.cache_key(name, *key)
+        if k not in store:
+            store[k] = fetch()
+        return store[k]
+    monkeypatch.setattr(GF, "cached", cached)
+    monkeypatch.setattr(GF, "peek", lambda name, key: store.get(C.cache_key(name, *key)))
+    monkeypatch.setattr(GF.http, "request", request)
+    monkeypatch.setattr(get_settings(), "serpapi_api_key", "test-key")
+    first = GF._search(["IXR"], ["LHR"], date(2026, 11, 7), "INR", "in")
+    again = GF._search(["IXR"], ["LHR"], date(2026, 11, 14), "INR", "in")
+    assert calls == ["2026-11-07"] and again == first
+    t = GF.journey(ONE_STOP, "outbound", RANCHI, "INR", shift_days=7, searched="2026-11-07", seen="2026-10-16")
+    assert t.depart_at == datetime(2026, 11, 14, 6, 10) and t.verification_state == "estimated"
+    assert t.meta["schedule_from"] == "2026-11-07" and t.meta["fare_label"] == "Google Flights price for 7 Nov"
+    GF._search(["IXR"], ["LHR"], date(2026, 11, 8), "INR", "in")  # a Sunday: a search of its own
+    assert calls == ["2026-11-07", "2026-11-08"]

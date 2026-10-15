@@ -54,3 +54,21 @@ AI 111 to Heathrow, landing at 16:25 London time, then the hotel.
 - These are Google Flights results read by a third party. The price can change before booking, so the plan says
   "Google Flights price" and the traveller checks before buying.
 - To book inside Yaitro later, Duffel is the path.
+
+## Addendum: one search a week per route and weekday
+
+**Context.** The free plan has 250 searches a month. One search can't fetch "all flights for a week": each SerpApi
+call is one route on one date. What can be saved is asking twice for the same thing.
+
+**Decision.**
+- **Kept a week.** A search is kept 7 days (`serpapi-flights`) under its route and date, and shared by every
+  traveller.
+- **Other dates reuse it.** A date with no search of its own takes the nearest search for the same route on the
+  **same weekday**, up to 4 weeks either side. `cache.peek` reads the cache without fetching. Ranchi → London
+  searched for Saturday 7 Nov also answers Saturday 14 Nov, with no call.
+  - The times move to the new date.
+  - The price becomes "Estimated", labelled "Google Flights price for 7 Nov".
+  - The subtitle says "check it flies on your date": not every flight runs every week.
+- **Own date.** A result searched for the trip's own date says when its price was seen ("Google Flights price,
+  seen 16 Oct").
+- **A new call** is made only for a route and weekday with nothing within 4 weeks, at most once a week each.

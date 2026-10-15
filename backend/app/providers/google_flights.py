@@ -15,14 +15,14 @@ Nothing here is required: without a key, or on any failure, the caller keeps its
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from app.core.config import get_settings
 from app.providers import http
 from app.providers import ttl as ttls
 from app.providers.airports import AIRPORTS, airport_label, nearest_airports
-from app.providers.cache import cached
+from app.providers.cache import cached, peek
 from app.providers.types import PlaceData, TransportData
 from app.services import fare_model as F
 from app.utils.geo import estimate_road, haversine_m
@@ -42,22 +42,34 @@ def enabled() -> bool:
     return bool(get_settings().serpapi_api_key)
 
 
+REUSE_WEEKS = 4  # a search answers the same weekday up to this many weeks either side (one timetable season)
+
+
 def _search(frm: list[str], to: list[str], day: date, currency: str, market: str) -> dict:
+    """One search per route and date, kept a week (`serpapi-flights`) and shared by every trip; a date with no search
+    of its own reuses the nearest search on the same weekday up to four weeks away, so Ranchi -> London searched for
+    Saturday 7 Nov also answers Saturday 14 Nov. Returns {"day": the date searched, "seen": when, "data": Google
+    Flights' answer}; the caller moves the times to its own date when they differ."""
     s = get_settings()
-    params = {"engine": "google_flights", "departure_id": ",".join(frm), "arrival_id": ",".join(to),
-              "outbound_date": day.isoformat(), "type": "2", "travel_class": "1", "adults": "1",
-              "currency": currency, "hl": "en", "gl": market}
+    route = {"engine": "google_flights", "departure_id": ",".join(frm), "arrival_id": ",".join(to), "type": "2",
+             "travel_class": "1", "adults": "1", "currency": currency, "hl": "en", "gl": market}
 
     def fetch():
-        r = http.request("GET", SERPAPI, provider="SerpApi Google Flights", params={**params, "api_key": s.serpapi_api_key})
-        return r.json()
+        r = http.request("GET", SERPAPI, provider="SerpApi Google Flights",
+                         params={**route, "outbound_date": day.isoformat(), "api_key": s.serpapi_api_key})
+        return {"day": day.isoformat(), "seen": date.today().isoformat(), "data": r.json()}
 
-    return cached("serpapi-flights", [params], ttls.get("serpapi-flights"), fetch)  # the key is never part of the cache key
+    for weeks in range(1, REUSE_WEEKS + 1):  # the nearest weeks first, earlier before later
+        for near in (day - timedelta(weeks=weeks), day + timedelta(weeks=weeks)):
+            hit = peek("serpapi-flights", [route, near.isoformat()])
+            if hit:
+                return hit
+    return cached("serpapi-flights", [route, day.isoformat()], ttls.get("serpapi-flights"), fetch)  # never the API key
 
 
-def _local(value: str) -> datetime | None:
+def _local(value: str, shift_days: int = 0) -> datetime | None:
     try:
-        return datetime.strptime(value, "%Y-%m-%d %H:%M")
+        return datetime.strptime(value, "%Y-%m-%d %H:%M") + timedelta(days=shift_days)
     except (TypeError, ValueError):
         return None
 
@@ -69,16 +81,19 @@ def _airport(code: str, raw_name: str | None) -> tuple[str, float | None, float 
     return (f"{raw_name} ({code})" if raw_name else code), None, None
 
 
-def journey(group: dict, direction: str, home: PlaceData, currency: str) -> TransportData | None:
+def journey(group: dict, direction: str, home: PlaceData, currency: str, shift_days: int = 0,
+            searched: str | None = None, seen: str | None = None) -> TransportData | None:
     """One Google Flights result as one journey, in each airport's local time; None when it can't be trusted whole
-    (no price, no times, more than two stops)."""
+    (no price, no times, more than two stops). `shift_days`: the result was searched for another date (the same
+    weekday, `searched`), so its times are moved to this one and the price is only an estimate."""
     segs = group.get("flights") or []
     price = group.get("price")
     if not segs or price is None or len(segs) - 1 > MAX_STOPS:
         return None
     first, last = segs[0], segs[-1]
     dep_code, arr_code = first["departure_airport"].get("id", ""), last["arrival_airport"].get("id", "")
-    dep_local, arr_local = _local(first["departure_airport"].get("time")), _local(last["arrival_airport"].get("time"))
+    dep_local = _local(first["departure_airport"].get("time"), shift_days)
+    arr_local = _local(last["arrival_airport"].get("time"), shift_days)
     if not dep_local or not arr_local:
         return None
     depart_at, arrive_at = dep_local, arr_local  # each airport's own clock, as on the ticket
@@ -88,7 +103,7 @@ def journey(group: dict, direction: str, home: PlaceData, currency: str) -> Tran
         minutes = int(s.get("duration") or 0)
         frm_name, _, _ = _airport(s["departure_airport"].get("id", ""), s["departure_airport"].get("name"))
         to_name, _, _ = _airport(s["arrival_airport"].get("id", ""), s["arrival_airport"].get("name"))
-        d, a = _local(s["departure_airport"].get("time")), _local(s["arrival_airport"].get("time"))
+        d, a = _local(s["departure_airport"].get("time"), shift_days), _local(s["arrival_airport"].get("time"), shift_days)
         if not d or not a:
             return None
         legs.append({"name": s.get("airline") or "Flight", "number": s.get("flight_number"),
@@ -114,7 +129,9 @@ def journey(group: dict, direction: str, home: PlaceData, currency: str) -> Tran
         cost_per_person=Decimal(str(price)), service_class=first.get("travel_class") or "Economy",
         distance_m=int(haversine_m(flat, flng, tlat, tlng)) if flat is not None and tlat is not None else None,
         from_name=frm, to_name=to, from_lat=flat, from_lng=flng, to_lat=tlat, to_lng=tlng, comfort=5,
-        verification_state="verified_provider", source="Google Flights (via SerpApi): schedule and price when searched",
+        verification_state="estimated" if shift_days else "verified_provider",
+        source=("Google Flights (via SerpApi): " + (f"schedule and price for {searched}, on the same weekday" if shift_days
+                                                    else f"schedule and price as seen on {seen or 'the day of planning'}")),
         access_minutes=acc_min, access_cost=to_currency(F.local_leg_cost(acc_m, "cab", 1), currency) if acc_m else Decimal(0),
         access_distance_m=acc_m,
         meta={"schedule_state": "live", "number": first.get("flight_number") if len(segs) == 1 else None,
@@ -123,11 +140,20 @@ def journey(group: dict, direction: str, home: PlaceData, currency: str) -> Tran
               "change_minutes": int(stop.get("duration") or 0) if stop else None,
               "legs": legs if len(segs) > 1 else None, "check_in_minutes": CHECK_IN[intl], "exit_minutes": EXIT[intl],
               "depart_local": f"{depart_at:%H:%M}", "arrive_local": f"{arrive_at:%H:%M}", "duration_minutes": total,
-              "fare_label": "Google Flights price", "international": intl,
+              "fare_label": (f"Google Flights price for {_nice(searched)}" if shift_days
+                             else f"Google Flights price, seen {_nice(seen)}" if seen else "Google Flights price"),
+              "schedule_from": searched if shift_days else None, "international": intl,
               "overnight": any(lg["overnight"] for lg in legs) or arrive_at.date() > depart_at.date()})
     if (arrive_at - depart_at).total_seconds() <= 0 and not intl:
         return None  # a domestic flight that lands before it leaves: the data is wrong
     return t
+
+
+def _nice(iso: str | None) -> str:
+    try:
+        return date.fromisoformat(iso).strftime("%d %b").lstrip("0") if iso else ""
+    except ValueError:
+        return iso or ""
 
 
 def flights(origin: PlaceData, dest: PlaceData, depart_day: date, return_day: date,
@@ -146,10 +172,12 @@ def flights(origin: PlaceData, dest: PlaceData, depart_day: date, return_day: da
     out: list[TransportData] = []
     try:
         for direction, frm, to, day in (("outbound", oc, dc, depart_day), ("return", dc, oc, return_day)):
-            data = _search(frm, to, day, currency, market)
+            found = _search(frm, to, day, currency, market)
+            data, searched = found.get("data") or {}, found.get("day") or day.isoformat()
+            shift = (day - date.fromisoformat(searched)).days  # 0, or whole weeks: the same weekday
             groups = [*(data.get("best_flights") or []), *(data.get("other_flights") or [])]
             for g in groups[:MAX_RESULTS * 2]:
-                t = journey(g, direction, origin, currency)
+                t = journey(g, direction, origin, currency, shift, searched, found.get("seen"))
                 if t:
                     out.append(t)
                 if sum(1 for x in out if x.direction == direction) >= MAX_RESULTS:
