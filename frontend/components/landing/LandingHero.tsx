@@ -47,8 +47,8 @@ export function LandingHero() {
             return (
               <li key={i} aria-hidden={copy || undefined}>
                 <Link href={`/plan?to=${encodeURIComponent(d.city)}`} tabIndex={copy ? -1 : undefined}
-                      className="card group relative block h-40 w-60 overflow-hidden !rounded-2xl transition-transform duration-300 hover:-translate-y-1">
-                  <Image src={d.src} alt={copy ? "" : d.alt} fill sizes="240px" className="kenburns object-cover"
+                      className="card group relative block h-48 w-72 overflow-hidden !rounded-3xl ring-1 ring-black/5 transition-transform duration-300 hover:-translate-y-1">
+                  <Image src={d.src} alt={copy ? "" : d.alt} fill sizes="288px" className="photo-pop kenburns object-cover"
                          style={{ animationDelay: `${-(i % DESTINATION_PHOTOS.length) * 2}s` }} />
                   <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                   <span className="absolute inset-x-3.5 bottom-3 flex items-end justify-between gap-2 text-white">

@@ -1,5 +1,6 @@
-/** Destination photos on the landing page. All from Pexels (free to use, no attribution required by the Pexels
- *  license), downloaded at 640 px and served from /public/photos. The Pexels id is kept so each can be traced. */
+/** Destination photos on the landing page and in the footer. All from Pexels (free to use, no attribution required
+ *  by the Pexels license), downloaded at 1600 px wide (sharp on high-density screens; Next.js serves smaller copies
+ *  where they're shown small) and kept in /public/photos. The Pexels id is kept so each can be traced. */
 export type Photo = { city: string; country: string; src: string; alt: string; pexels: number };
 
 export const DESTINATION_PHOTOS: Photo[] = [
@@ -13,4 +14,7 @@ export const DESTINATION_PHOTOS: Photo[] = [
   { city: "Alleppey", country: "Kerala", src: "/photos/alleppey.jpg", alt: "A houseboat on the palm-lined backwaters of Kerala", pexels: 35347829 },
 ];
 
-export const TRAIN_PHOTO = { src: "/photos/train.jpg", alt: "An Indian Railways train curving along the tracks", pexels: 29528961 };
+export const TRAIN_PHOTO = { city: "Indian Railways", country: "", src: "/photos/train.jpg", alt: "An Indian Railways train curving along the tracks", pexels: 29528961 };
+
+/** Wide landscapes that take turns behind the footer's wordmark. */
+export const FOOTER_PHOTOS = ["Udaipur", "Leh", "Bali"].map((c) => DESTINATION_PHOTOS.find((d) => d.city === c)!);

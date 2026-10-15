@@ -215,6 +215,17 @@ section[id] { scroll-margin-top: 96px; }
 /* Photos that drift slowly, like a short travel clip, rather than sitting still. */
 @keyframes kenburns { from { transform: scale(1.02) translate(0, 0); } to { transform: scale(1.14) translate(-2%, -1.5%); } }
 .kenburns { animation: kenburns 16s ease-in-out infinite alternate; transform-origin: center; }
+/* Photos a touch richer than the camera left them; decorative only. */
+.photo-pop { filter: saturate(1.12) contrast(1.04); }
+/* The footer's photos: three take turns over 21 s, each fading in, holding with a slow zoom, then fading out. */
+@keyframes footer-slide {
+  0% { opacity: 0; transform: scale(1.03); }
+  8% { opacity: 1; }
+  33% { opacity: 1; }
+  42% { opacity: 0; transform: scale(1.12); }
+  100% { opacity: 0; transform: scale(1.12); }
+}
+.footer-slide { opacity: 0; animation: footer-slide 21s linear infinite; }
 .mask-x { -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent); }
 
 @keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
@@ -254,7 +265,8 @@ section[id] { scroll-margin-top: 96px; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .train-run, .window-blink, .board-live, .marquee, .float-y, .kenburns { animation: none; }
+  .train-run, .window-blink, .board-live, .marquee, .float-y, .kenburns, .footer-slide { animation: none; }
+  .footer-slide:first-of-type { opacity: 1; }
   .ys-line { stroke-dashoffset: 0; animation: none; }
   .ys-stop { opacity: 1; animation: none; }
   .ys-budget { transform: scaleX(0.84); animation: none; }

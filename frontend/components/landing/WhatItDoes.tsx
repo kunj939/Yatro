@@ -47,11 +47,14 @@ export function WhatItDoes() {
         <ol className="mt-12 grid gap-4 md:grid-cols-3">
           {STEPS.map(({ Icon, img, title, text }, i) => (
             <Reveal as="li" key={title} delay={i * 90} className="card card-hover relative overflow-hidden">
-              <div className="relative h-40 overflow-hidden">
-                <Image src={img.src} alt={img.alt} fill sizes="(min-width: 768px) 360px, 100vw" className="kenburns object-cover"
+              <div className="relative h-48 overflow-hidden">
+                <Image src={img.src} alt={img.alt} fill sizes="(min-width: 768px) 400px, 100vw" className="photo-pop kenburns object-cover"
                        style={{ animationDelay: `${-i * 5}s` }} />
-                <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
+                <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
                 <span className="absolute bottom-3 left-4 rounded-full bg-white/95 px-3 py-1 text-[12px] font-bold uppercase tracking-[0.12em] text-[#10131a]">Step {i + 1}</span>
+                <span className="absolute bottom-3.5 right-4 text-[12.5px] font-semibold text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)]">
+                  {img.city}{img.country ? `, ${img.country}` : ""}
+                </span>
               </div>
               <div className="p-6">
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-signal-soft text-signal-deep"><Icon className="h-5 w-5" aria-hidden /></span>

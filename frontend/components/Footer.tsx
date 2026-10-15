@@ -1,9 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowUp, ArrowUpRight, Mail, MapPin } from "lucide-react";
 import { Logo } from "./Logo";
 import { brand } from "@/lib/brand";
+import { FOOTER_PHOTOS } from "@/lib/photos";
 
 const COLUMNS = [
   { title: "Product", links: [["Plan my trip", "/plan"], ["Why Yaitro", "/#features"], ["Budget demo", "/#try"], ["Pricing", "/#pricing"]] },
@@ -69,9 +71,15 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Oversized wordmark that fades into the page edge — decorative only. */}
-      <div aria-hidden className="pointer-events-none select-none overflow-hidden">
-        <p className="container-x -mb-[0.22em] bg-gradient-to-b from-ink/[0.10] to-transparent bg-clip-text text-center wordmark text-[clamp(5.5rem,24vw,19rem)] leading-none text-transparent">
+      {/* Oversized wordmark over travel photos that take turns (a slow zoom and a crossfade) and melt into the footer
+          above — decorative only. */}
+      <div aria-hidden className="pointer-events-none relative isolate select-none overflow-hidden">
+        {FOOTER_PHOTOS.map((p, i) => (
+          <Image key={p.src} src={p.src} alt="" fill sizes="100vw" className="footer-slide photo-pop -z-10 object-cover"
+                 style={{ animationDelay: `${i * 7}s`, objectPosition: "center 60%" }} />
+        ))}
+        <span className="absolute inset-0 -z-10 bg-gradient-to-b from-[rgb(var(--paper))] via-[rgb(var(--paper)/0.35)] to-black/25" />
+        <p className="container-x -mb-[0.22em] pt-10 text-center wordmark text-[clamp(5.5rem,24vw,19rem)] leading-none text-white/90 [text-shadow:0_6px_40px_rgba(0,0,0,0.25)]">
           {brand.name}
         </p>
       </div>
