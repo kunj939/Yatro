@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, Baby, CalendarDays, Share2, ChevronDown, Clock, CloudSun, Database, FlaskConical, History, Info, ListChecks, ListOrdered, Map as MapIcon, MapPin, Navigation, Repeat, Send, Sparkles, Users, Wallet } from "lucide-react";
+import { ArrowDown, Baby, CalendarDays, Share2, ChevronDown, Clock, CloudSun, FlaskConical, History, Info, ListChecks, ListOrdered, Map as MapIcon, MapPin, Navigation, Repeat, Send, Sparkles, Users, Wallet } from "lucide-react";
 import type { Adjustment, ItineraryItem, Trip } from "@/lib/types";
 import { ApiError } from "@/lib/api";
 import { usePlanStream } from "@/lib/usePlanStream";
@@ -320,32 +320,32 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
                       </div>
                     </SideCard>
                   )}
-                  {canShare && (
-                    <SideCard icon={Share2} title="Shared links" folded>
-                      <SharedLinks tripId={trip.id} refreshKey={shareTick} />
-                    </SideCard>
-                  )}
-                  {it.warnings.length > 0 && <PlanNotes notes={it.warnings} />}
-                  <SideCard icon={ListChecks} title="How this plan was checked" folded>
-                    <ol className="space-y-1.5">
-                      {it.pipeline_trace.map((s) => (
-                        <li key={s.key}>
-                          <span className="font-medium text-ink">{s.label}</span>
-                          {s.detail && <span className="block text-[13px] text-ink-mute">{s.detail}</span>}
-                        </li>
-                      ))}
-                    </ol>
-                    <div className="mt-4 flex flex-wrap gap-1.5 border-t border-line pt-3">
-                      {VERIFICATION_LEGEND.map((l) => <span key={l.key} title={l.hint}><VerificationBadge state={l.key} /></span>)}
-                    </div>
-                  </SideCard>
-                  <SideCard icon={Database} title="Where this data comes from" folded>
-                    <ul className="space-y-2">
-                      {planSources(it).map((s) => (
-                        <li key={s.what}><span className="block text-[13px] text-ink-mute">{s.what}</span><span className="font-medium text-ink">{s.from}</span></li>
-                      ))}
-                    </ul>
-                  </SideCard>
+                  <PlanDetails tabs={[
+                    ...(it.warnings.length ? [{ key: "notes", label: "Notes", count: it.warnings.length, body: (
+                      <ul className="list-disc space-y-2 pl-5 leading-relaxed">{it.warnings.map((n, i) => <li key={i}>{n}</li>)}</ul>) }] : []),
+                    { key: "checks", label: "Checks", body: (
+                      <>
+                        <ol className="space-y-2">
+                          {it.pipeline_trace.map((s) => (
+                            <li key={s.key} className="flex gap-2.5">
+                              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-signal" aria-hidden />
+                              <span><span className="font-medium text-ink">{s.label}</span>
+                                {s.detail && <span className="block text-[13px] text-ink-mute">{s.detail}</span>}</span>
+                            </li>
+                          ))}
+                        </ol>
+                        <div className="mt-4 flex flex-wrap gap-1.5 border-t border-line pt-3">
+                          {VERIFICATION_LEGEND.map((l) => <span key={l.key} title={l.hint}><VerificationBadge state={l.key} /></span>)}
+                        </div>
+                      </>) },
+                    { key: "sources", label: "Sources", body: (
+                      <ul className="space-y-2">
+                        {planSources(it).map((s) => (
+                          <li key={s.what}><span className="block text-[13px] text-ink-mute">{s.what}</span><span className="font-medium text-ink">{s.from}</span></li>
+                        ))}
+                      </ul>) },
+                    ...(canShare ? [{ key: "links", label: "Links", body: <SharedLinks tripId={trip.id} refreshKey={shareTick} /> }] : []),
+                  ]} />
                   {trip.versions.length > 1 && (
                     <SideCard icon={History} title="Versions">
                       <ol className="space-y-2">
@@ -422,22 +422,32 @@ function SideCard({ icon: Icon, title, children, folded = false }: { icon: any; 
   );
 }
 
-/** Quiet, collapsed notes about the plan (an estimated timetable, a must-see that didn't fit...): there if wanted, never
- *  in the way. Replaces the stack of warning boxes that used to sit above the itinerary. */
-function PlanNotes({ notes }: { notes: string[] }) {
+/** The plan's reference detail in one card with tabs, instead of a stack of dropdowns: its notes (an estimated
+ *  timetable, a must-see that didn't fit...), how it was checked, where the data comes from, and the shared links. */
+function PlanDetails({ tabs }: { tabs: { key: string; label: string; count?: number; body: React.ReactNode }[] }) {
+  const [open, setOpen] = useState(tabs[0]?.key);
+  const shown = tabs.find((x) => x.key === open) ?? tabs[0];
+  if (!shown) return null;
   return (
-    <details className="group rounded-2xl border border-line bg-paper/70 p-4 text-[14px] text-ink-soft backdrop-blur">
-      <summary className="flex cursor-pointer list-none items-center gap-2.5 text-[16px] font-bold text-ink">
-        <span className="grid h-7 w-7 place-items-center rounded-lg bg-haze-2"><Info className="h-4 w-4 text-ink-soft" aria-hidden /></span>
-        Plan notes
-        <span className="num rounded-full bg-haze-2 px-2 py-0.5 text-xs font-semibold text-ink-soft">{notes.length}</span>
-        <ChevronDown className="ml-auto h-4 w-4 text-ink-mute transition-transform group-open:rotate-180" aria-hidden />
-      </summary>
-      <ul className="mt-3 list-disc space-y-2 pl-5 leading-relaxed">{notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
-    </details>
+    <section className="rounded-2xl border border-line bg-paper/80 p-4 text-[14px] text-ink-soft backdrop-blur sm:p-5" aria-label="More about this plan">
+      <h2 className="mb-3 flex items-center gap-2.5 text-[16px] font-bold text-ink">
+        <span className="grid h-7 w-7 place-items-center rounded-lg bg-signal-soft"><Info className="h-4 w-4 text-signal-deep" aria-hidden /></span>
+        More about this plan
+      </h2>
+      <div className="mb-3 flex gap-1 rounded-xl bg-haze p-1" role="tablist">
+        {tabs.map((x) => (
+          <button key={x.key} type="button" role="tab" aria-selected={x.key === shown.key} onClick={() => setOpen(x.key)}
+                  className={`inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[13px] font-semibold transition-colors ${
+                    x.key === shown.key ? "bg-paper text-ink shadow-sm" : "text-ink-mute hover:text-ink"}`}>
+            {x.label}
+            {!!x.count && <span className="num rounded-full bg-haze-2 px-1.5 text-[11px] text-ink-soft">{x.count}</span>}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel" className="fade-up" key={shown.key}>{shown.body}</div>
+    </section>
   );
 }
-
 
 /** Type anything: the engine reads English and Hinglish, applies what it understands and says plainly what it
  *  couldn't. A request that changes nothing gets an answer here — never a red error — and the text stays put. */

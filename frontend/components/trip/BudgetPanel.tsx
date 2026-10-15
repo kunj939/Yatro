@@ -1,6 +1,5 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
 import type { BudgetBreakdown, ExpenseSummary } from "@/lib/types";
 import { money } from "@/lib/format";
 import { VerificationBadge } from "../VerificationBadge";
@@ -18,7 +17,10 @@ const BAR: Record<string, string> = {
 
 export function BudgetPanel({ budget, expenses, currency }: { budget: BudgetBreakdown; expenses?: ExpenseSummary; currency?: string }) {
   const st = STATUS[budget.status] ?? STATUS.within;
-  const cats = budget.categories.filter((c) => c.key !== "buffer" && (c.amount > 0 || c.items.length));
+  // biggest first, and inside each the biggest line first: where the money goes, in the order it matters
+  const cats = budget.categories.filter((c) => c.key !== "buffer" && (c.amount > 0 || c.items.length))
+    .sort((a, b) => b.amount - a.amount)
+    .map((c) => ({ ...c, items: [...c.items].sort((a, b) => b.amount - a.amount) }));
   const buffer = budget.categories.find((c) => c.key === "buffer")?.amount ?? Math.max(0, budget.planned - budget.subtotal);
   const scale = Math.max(budget.budget, budget.planned);
   const spent = expenses?.total ?? 0;
@@ -60,49 +62,51 @@ export function BudgetPanel({ budget, expenses, currency }: { budget: BudgetBrea
         </ul>
       </section>
 
-      <section className="card divide-y divide-line overflow-hidden" aria-label="Budget by category">
+      <section className="grid grid-cols-1 items-start gap-4 md:grid-cols-2" aria-label="Budget by category">
         {cats.map((c) => {
           const diff = c.typical ? c.amount - c.typical : 0;
+          const share = (c.amount / Math.max(1, budget.planned)) * 100;
           return (
-            <details key={c.key} className="group p-5 transition-colors open:bg-haze/40 hover:bg-haze/40 md:px-6" open={c.key === "transport"}>
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-                <span className="flex min-w-0 flex-1 items-center gap-2.5">
+            <article key={c.key} className="card p-5">
+              <header className="flex items-start justify-between gap-3">
+                <span className="flex min-w-0 items-center gap-2.5">
                   <span className={`h-3 w-3 shrink-0 rounded-full ${BAR[c.key] ?? "bg-ink-mute"}`} />
-                  <span className="font-semibold">{c.label}</span>
-                  <span className="num ml-1 hidden text-xs text-ink-mute sm:inline">{Math.round((c.amount / Math.max(1, budget.planned)) * 100)}%</span>
-                  <ChevronDown className="h-4 w-4 text-ink-mute transition-transform group-open:rotate-180" aria-hidden />
+                  <span className="font-bold">{c.label}</span>
+                  <span className="num rounded-full bg-haze-2 px-2 py-0.5 text-xs font-semibold text-ink-soft">{Math.round(share)}%</span>
                 </span>
-                <span aria-hidden className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-haze-2 md:block">
-                  <span className={`block h-full rounded-full ${BAR[c.key] ?? "bg-ink-mute"}`} style={{ width: `${Math.min(100, (c.amount / Math.max(1, budget.planned)) * 100)}%` }} />
-                </span>
-                <span className="num min-w-[9.5rem] text-right">
-                  <span className="font-bold">{money(c.amount, currency)}</span>
+                <span className="num text-right">
+                  <span className="text-[18px] font-bold">{money(c.amount, currency)}</span>
                   {/* "typical" is the usual share of this budget; spending less than it isn't news, so only a clear overspend is shown */}
                   {c.typical > 0 && diff > c.typical * 0.1 && (
                     <span className="block text-[13px] text-caution">{money(diff, currency)} more than usual</span>
                   )}
                 </span>
-              </summary>
+              </header>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-haze-2" aria-hidden>
+                <div className={`h-full rounded-full ${BAR[c.key] ?? "bg-ink-mute"}`} style={{ width: `${Math.min(100, share)}%` }} />
+              </div>
               {c.items.length > 0 && (
-                <ul className="mt-3 space-y-2 pl-5">
+                <ul className="mt-3 divide-y divide-line/70">
                   {c.items.map((l, i) => (
-                    <li key={i} className="flex items-start justify-between gap-3 text-[14px]">
-                      <span className="text-ink-soft">{l.label} <VerificationBadge state={l.state} /></span>
+                    <li key={i} className="flex items-start justify-between gap-3 py-2 text-[14px]">
+                      <span className="min-w-0 text-ink-soft">{l.label} <VerificationBadge state={l.state} /></span>
                       <span className="num shrink-0 font-semibold">{money(l.amount, currency)}</span>
                     </li>
                   ))}
                 </ul>
               )}
-            </details>
+            </article>
           );
         })}
-        <div className="flex items-center justify-between gap-3 p-5 md:px-6">
-          <span>
-            <span className="font-semibold">Safety buffer</span>
-            <span className="block text-[13px] text-ink-mute">Kept aside for fare changes, tips and small extras</span>
-          </span>
-          <span className="num font-bold">{money(buffer, currency)}</span>
-        </div>
+        {buffer > 0 && (
+          <article className="card flex items-center justify-between gap-3 p-5">
+            <span>
+              <span className="font-bold">Safety buffer</span>
+              <span className="block text-[13px] text-ink-mute">Kept aside for fare changes, tips and small extras</span>
+            </span>
+            <span className="num text-[18px] font-bold">{money(buffer, currency)}</span>
+          </article>
+        )}
       </section>
 
       {expenses && (

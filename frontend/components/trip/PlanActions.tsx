@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarPlus, ChevronDown, Mail, Map as MapIcon, MessageCircle, RefreshCw, Share2 } from "lucide-react";
+import { CalendarPlus, ChevronDown, Map as MapIcon, MessageCircle, RefreshCw, Share2 } from "lucide-react";
 import { ApiError, endpoints, type CalendarLinks } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useFlags } from "@/lib/flags";
@@ -13,7 +13,6 @@ import { remember, remembered, tokenOf } from "./ShareSheet";
  *  - WhatsApp: a private link (budget hidden, ends 30 days after the trip) and the message, opened on the person's OWN number; they
  *    tap Send themselves (no WhatsApp Business API; ADR 0006, invariant I9).
  *  - Share: the share sheet (link, message, and the PDF to send or download).
- *  - Email: the plan to their own inbox.
  *  - Calendar: a feed Google, Apple or Outlook subscribe to, so a changed plan updates there too (ADR 0015).
  *  - My Maps: the whole trip as a KML file for Google My Maps. */
 export function PlanActions({ trip, onShare }: { trip: Trip; onShare?: () => void }) {
@@ -65,13 +64,6 @@ export function PlanActions({ trip, onShare }: { trip: Trip; onShare?: () => voi
       tab?.close();
       setError(e instanceof ApiError || e instanceof Error ? e.message : "Couldn't prepare the message. Try again.");
     } finally { setBusy(null); }
-  }
-
-  async function email() {
-    start("mail");
-    try { setNote(`Emailed to ${(await endpoints.emailPlan(trip.id)).sent_to}.`); }
-    catch (e) { setError(e instanceof ApiError ? e.message : "Couldn't send the email. Try again."); }
-    finally { setBusy(null); }
   }
 
   async function subscribe(app: "google" | "apple" | "outlook") {
@@ -143,11 +135,6 @@ export function PlanActions({ trip, onShare }: { trip: Trip; onShare?: () => voi
         <button type="button" onClick={myMaps} className={plain} title="The whole trip on one map, a colour per day">
           <MapIcon className="h-4 w-4" aria-hidden />My Maps
         </button>
-        {flags.planEmails && (
-          <button type="button" onClick={email} disabled={!!busy} className={plain}>
-            <Mail className="h-4 w-4" aria-hidden />{busy === "mail" ? "Sending…" : "Email"}
-          </button>
-        )}
       </div>
       {note && <p role="status" className="mt-2 px-1 text-[13px] font-semibold text-teal-deep">{note}</p>}
       {error && <p role="alert" className="mt-2 px-1 text-[13px] font-medium text-danger">{error}</p>}
