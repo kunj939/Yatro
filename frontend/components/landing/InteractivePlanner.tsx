@@ -47,7 +47,7 @@ function plan(budget: number, style: Style) {
   return { transport, kept, stops, buffer, planned: spent + buffer, remaining: budget - spent - buffer, feasible };
 }
 
-const PRESETS = [{ label: "Shoestring", v: 200 }, { label: "Comfortable", v: 400 }, { label: "Treat yourselves", v: 650 }];
+const PRESETS = [{ label: "Shoestring", v: 200 }, { label: "Comfortable", v: 400 }, { label: "Splurge", v: 650 }];
 
 export function InteractivePlanner() {
   const [budget, setBudget] = useState(400);
@@ -60,81 +60,83 @@ export function InteractivePlanner() {
   const seg = (v: number) => `${Math.max(0, (v / budget) * 100)}%`;
 
   return (
-    <section id="try" className="relative py-24" aria-labelledby="try-heading">
-      <div className="container-x grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-        <Reveal className="min-w-0 lg:sticky lg:top-28">
+    <section id="try" className="relative py-16 md:py-20" aria-labelledby="try-heading">
+      <div className="container-x grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-12">
+        <Reveal className="min-w-0">
           <span className="eyebrow">Live demo</span>
-          <h2 id="try-heading" className="mt-5 text-title font-bold">Move the budget. <span className="accent highlight">Watch the day change.</span></h2>
-          <p className="mt-4 max-w-md text-lg leading-relaxed text-ink-soft">
-            A sample couple&apos;s day trip from Rome to Florence. We count every euro before adding anything, so
-            the plan grows or shrinks honestly. No pretending.
+          <h2 id="try-heading" className="mt-4 text-title font-bold">Move the budget. <span className="accent highlight">Watch the day change.</span></h2>
+          <p className="mt-3 max-w-md leading-relaxed text-ink-soft">
+            A sample couple&apos;s day trip, Rome to Florence. Every euro is counted before anything gets added. No pretending.
           </p>
-          <div className="spotlight mt-9 card rounded-2xl p-5">
+          <div className="spotlight mt-6 card rounded-2xl p-4 md:p-5">
             <label htmlFor="budget-range" className="flex items-baseline justify-between font-semibold">
               <span>Total budget for two</span>
-              <span className="num text-2xl">{eur(budget)}</span>
+              <span className="num text-xl">{eur(budget)}</span>
             </label>
             <input id="budget-range" type="range" min={MIN} max={MAX} step={10} value={budget}
-                   onChange={(e) => setBudget(Number(e.target.value))}
-                   className="range mt-5 w-full" style={{ ["--fill" as string]: `${fill}%` }} />
-            <div className="num mt-2 flex justify-between text-sm text-ink-mute"><span>{eur(MIN)}</span><span>{eur(MAX)}</span></div>
-            <div className="mt-4 flex flex-wrap gap-2">
+                   onChange={(e) => setBudget(Number(e.target.value))} aria-valuetext={`${eur(budget)}, between ${eur(MIN)} and ${eur(MAX)}`}
+                   className="range mt-4 w-full" style={{ ["--fill" as string]: `${fill}%` }} />
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {PRESETS.map((pr) => (
                 <button key={pr.v} type="button" onClick={() => setBudget(pr.v)}
-                        className={`rounded-full border px-3 py-1 text-[13px] font-medium transition-all duration-200 ${
+                        className={`rounded-full border px-2.5 py-1 text-[12px] font-medium transition-all duration-200 ${
                           budget === pr.v ? "border-signal bg-signal-soft text-ink" : "border-line text-ink-soft hover:border-ink/30 hover:text-ink"}`}>
-                  {pr.label} · {eur(pr.v)}
+                  {pr.label}<span className="hidden sm:inline"> · {eur(pr.v)}</span>
                 </button>
               ))}
             </div>
+            <fieldset className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
+              <legend className="sr-only">Style</legend>
+              <span aria-hidden className="font-semibold">Style</span>
+              <div className="flex rounded-full bg-haze p-1">
+                {(["budget", "balanced", "premium"] as Style[]).map((st) => (
+                  <button key={st} type="button" onClick={() => setStyle(st)} aria-pressed={style === st}
+                          className={`rounded-full px-3 py-1 text-[13px] font-medium transition-all duration-200 ${
+                            style === st ? "bg-signal text-[rgb(var(--on-signal))] shadow-[0_4px_12px_-6px_rgb(var(--signal)/0.8)]" : "text-ink-soft hover:text-ink"}`}>
+                    {st[0].toUpperCase() + st.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
           </div>
-          <fieldset className="mt-6">
-            <legend className="font-semibold">Style</legend>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(["budget", "balanced", "premium"] as Style[]).map((s) => (
-                <button key={s} type="button" onClick={() => setStyle(s)} aria-pressed={style === s}
-                        className={style === s ? "chip-on" : "chip-off"}>{s[0].toUpperCase() + s.slice(1)}</button>
-              ))}
-            </div>
-          </fieldset>
         </Reveal>
 
         <Reveal delay={120} className="min-w-0">
           <div className="spotlight overflow-hidden card rounded-2xl" aria-live="polite">
             {p.feasible ? (
               <>
-                <div className="flex items-center gap-3 border-b border-line p-5 md:px-7">
-                  <span key={p.transport.key} className="fade-up grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-night text-signal ring-1 ring-signal/20">
-                    <Icon className="h-5 w-5" aria-hidden />
+                <div className="flex items-center gap-3 border-b border-line px-4 py-3.5 md:px-6">
+                  <span key={p.transport.key} className="fade-up grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-night text-signal ring-1 ring-signal/20">
+                    <Icon className="h-4 w-4" aria-hidden />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold">{p.transport.label}</p>
-                    <p className="text-sm text-ink-mute">Roma Termini ⇄ Firenze S.M.N., for two</p>
+                    <p className="text-[15px] font-semibold leading-snug">{p.transport.label}</p>
+                    <p className="truncate text-[13px] text-ink-mute">Roma Termini ⇄ Firenze S.M.N., for two</p>
                   </div>
                   <span className="num font-semibold">{eur(p.transport.cost)}</span>
                 </div>
-                <ul className="divide-y divide-line px-5 md:px-7">
+                <ul className="divide-y divide-line px-4 md:px-6">
                   {STOPS.map((s) => {
                     const k = p.kept.find((x) => x.name === s.name);
                     return (
-                      <li key={s.name} className={`flex items-center gap-3 py-3 transition-all duration-300 ${k ? "" : "opacity-40"}`}>
+                      <li key={s.name} className={`flex items-center gap-3 py-2 text-[14px] transition-all duration-300 ${k ? "" : "opacity-40"}`}>
                         <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full transition-colors duration-300 ${k ? "bg-teal-soft text-teal" : "bg-haze-2 text-ink-mute"}`}>
                           {k ? <Check className="h-3 w-3" aria-label="Included" /> : <Minus className="h-3 w-3" aria-label="Left out" />}
                         </span>
                         <span className={`min-w-0 flex-1 truncate ${k ? "" : "line-through"}`}>{s.name}</span>
                         <span className="hidden text-xs text-ink-mute sm:inline">{s.kind}</span>
-                        <span className="num w-14 text-right text-sm font-medium">{k ? eur(k.cost) : "—"}</span>
+                        <span className="num w-12 text-right font-medium">{k ? eur(k.cost) : "—"}</span>
                       </li>
                     );
                   })}
                 </ul>
-                <div className="m-5 rounded-xl bg-haze p-4 md:mx-7">
-                  <div className="flex h-2.5 overflow-hidden rounded-full bg-haze-2" role="img" aria-label="How the budget is used">
+                <div className="m-4 mt-2 rounded-xl bg-haze px-4 py-3 md:mx-6">
+                  <div className="flex h-2 overflow-hidden rounded-full bg-haze-2" role="img" aria-label="How the budget is used">
                     <span className="bg-night-3 transition-all duration-500 dark:bg-ink-soft" style={{ width: seg(p.transport.cost) }} />
                     <span className="bg-signal transition-all duration-500" style={{ width: seg(p.stops) }} />
                     <span className="bg-spark/70 transition-all duration-500" style={{ width: seg(p.buffer) }} />
                   </div>
-                  <div className="num mt-4 grid grid-cols-3 gap-3 text-center">
+                  <div className="num mt-3 grid grid-cols-3 gap-3 text-center text-[15px]">
                     <div><p className="text-xs text-ink-mute">Budget</p><p className="font-bold">{eur(budget)}</p></div>
                     <div><p className="text-xs text-ink-mute">Planned</p><p className="font-bold">{eur(Math.round(planned))}</p></div>
                     <div><p className="text-xs text-ink-mute">Remaining</p><p className="font-bold text-teal-deep">{eur(Math.round(remaining))}</p></div>
@@ -142,7 +144,7 @@ export function InteractivePlanner() {
                 </div>
               </>
             ) : (
-              <div className="p-7">
+              <div className="p-6">
                 <span className="inline-flex rounded-full bg-danger-soft px-3 py-1 text-xs font-semibold text-danger">Not feasible</span>
                 <p className="mt-4 text-xl font-bold">This trip doesn&apos;t fit in {eur(budget)}.</p>
                 <p className="mt-3 text-ink-soft">Even the slow train plus two simple meals costs more than this for two. {brand.name} would suggest somewhere closer, or at least {eur(FLOOR)}, instead of quietly skipping meals.</p>
