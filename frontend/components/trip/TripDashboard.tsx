@@ -113,7 +113,9 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
         setTab("timeline");
       }
       setMessage("");
-      return `Done. ${out.trip.itinerary?.change_note || done}`;
+      const left = out.trip.itinerary?.remaining ?? 0;
+      const over = left < 0 ? ` Heads up: the plan is now ${money(-left, out.trip.currency)} over your budget, because of choices you pinned (see Plan notes).` : "";
+      return `Done. ${out.trip.itinerary?.change_note || done}${over}`;
     } catch (err) {
       const text = err instanceof ApiError ? err.message : "Re-planning failed. Your current plan is unchanged.";
       setError(text);

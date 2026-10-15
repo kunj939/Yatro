@@ -176,3 +176,13 @@ def test_a_place_name_is_not_also_read_as_a_wish_for_that_kind_of_place():
     assert got.add_place_names == ["sikandra fort"] and got.interests == [] and not got.avoid_tags
     got = read("add Sadar Bazaar and more forts")
     assert got.add_place_names == ["sadar bazaar"] and "fort" in got.interests
+
+
+def test_a_model_never_invents_a_budget_change_for_make_it_cheaper():
+    """A live model once read "Make it cheaper" as a budget cut to nothing ("That would leave nothing to spend"): with no
+    amount in the message, its budget change is dropped and the cheaper style stays."""
+    llm = FakeLLM(_model(budget_change={"mode": "decrease", "amount": 49126}, add_styles=["budget"]))
+    got = understand(llm, "Make it cheaper", CTX, POOL)
+    assert got.budget_change is None and got.add_styles == ["budget"]
+    llm = FakeLLM(_model(budget_change={"mode": "set", "amount": 8000}))
+    assert understand(llm, "budget aath hazaar kar do, 8000", CTX, POOL).budget_change == {"mode": "set", "amount": 8000.0}

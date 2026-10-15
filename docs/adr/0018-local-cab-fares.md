@@ -40,3 +40,25 @@ Date: 2026-10-15. Status: accepted.
 - A city sightseeing day costs less than before, but more in the rush hours than at midday.
 - Goa and hill stations cost more than big cities, as they do in practice.
 - Every local fare is still labelled Estimated.
+
+## Addendum: the scheduler plans at the same fares
+
+**What went wrong.** The first version priced the city and the rush only when the budget was drawn up, after the
+days had been built. The scheduler still chose stops at big-city fares. On a Goa trip whose hotel was 35 km from the
+sights, the rides came out about ₹10,000 dearer than it had allowed:
+- a plan with pinned choices went over budget (₹49,126 to ₹59,190, after "make it cheaper");
+- a plan without pins would have been refused instead.
+
+**Fix.** `Travel` now prices every cab leg it plans with at the city's rate times a rush allowance of 1.2
+(`planning_cab_factor`; about two rides in five fall in the rush). This covers estimated legs, measured routes, the
+reserve kept for later days, and the typical short ride. The cheapest-workable estimate uses the same factor.
+`price_rides` then sets each ride's exact price for its hour, and the day still fits.
+
+The test is a 4-day Goa trip. It must plan, and stay within budget, at ₹30,000 and ₹45,000. Without this fix it was
+refused at ₹30,000 for being ₹1,123 over.
+
+**Also.**
+- **Made-up budget changes.** A live model read "make it cheaper" as a budget cut to nothing. A model's budget
+  change is now dropped when the message names no amount.
+- **Chat reply.** When a change leaves a plan over budget because of pinned choices, the chat says so with the
+  amount, instead of only "Done".

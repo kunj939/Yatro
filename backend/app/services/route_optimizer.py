@@ -24,6 +24,7 @@ from app.services.plan_quality import MAX_HOP_M
 from app.services.ranking import food_ok, serves
 from app.utils import hours as H
 from app.utils.geo import estimate_road
+from app.utils.money import round_rupees
 from app.utils.sun import sun_times
 
 MEALS = {  # earliest start, latest start, minutes
@@ -56,9 +57,10 @@ class Travel:
     let a plan be rebuilt once the real routes turn out slower than the estimates, instead of dropping stops."""
 
     def __init__(self, local_mode: str, travellers: int, scale: float = 1.0, real: dict | None = None,
-                 walk_max_m: int = F.WALK_MAX_M):
+                 walk_max_m: int = F.WALK_MAX_M, cab_factor: Decimal = Decimal(1)):
         self.local_mode = local_mode
         self.travellers = travellers
+        self.cab_factor = cab_factor  # the city's cab fares and the rush (fare_model.planning_cab_factor)
         self.walk_max_m = walk_max_m  # shorter for a party with children or older travellers (services/age_fit.py)
         self.scale = scale
         self.real: dict[tuple, Leg] = dict(real or {})
@@ -72,8 +74,14 @@ class Travel:
             dist, dur = estimate_road(*a, *b)
             mode = "walk" if dist <= self.walk_max_m else self.local_mode
             self._raw[key] = Leg(dist, F.local_leg_minutes(dur, dist, mode) if dist else 0, mode,
-                                 F.local_leg_cost(dist, mode, self.travellers), "estimated")
+                                 self.ride_cost(dist, mode), "estimated")
         return self._raw[key]
+
+    def ride_cost(self, distance_m: int, mode: str | None = None) -> Decimal:
+        """A local leg's fare as the plan will price it: a cab at the city's rates with the rush allowed for."""
+        mode = mode or self.local_mode
+        cost = F.local_leg_cost(distance_m, mode, self.travellers)
+        return round_rupees(cost * self.cab_factor) if mode == "cab" else cost
 
     def leg(self, a: tuple[float, float], b: tuple[float, float]) -> Leg:
         key = (a, b)
@@ -349,9 +357,8 @@ class DayScheduler:
             for m in _meal_stops(f, self.inp.styles):
                 costs = [(snack_version(r) if m.meal == "snack" else r).group_cost(self.inp.travellers)
                          for r in self.restaurants if serves(r, m.meal)]
-                total += (min(costs) if costs else Decimal(0)) + F.local_leg_cost(3000, self.travel.local_mode,
-                                                                                    self.inp.travellers)
-            total += F.local_leg_cost(3000, self.travel.local_mode, self.inp.travellers)
+                total += (min(costs) if costs else Decimal(0)) + self.travel.ride_cost(3000)
+            total += self.travel.ride_cost(3000)
         return total
 
     def build(self, frame: DayFrame, spent: Decimal, later: list[DayFrame] | None = None) -> tuple[list[Stop], Decimal]:
@@ -359,7 +366,7 @@ class DayScheduler:
         # Restaurants may be revisited on another day (with a small penalty); sights never repeat.
         self.meal_history |= {k for k in self.used if k in self._restaurant_keys}
         self.used -= self._restaurant_keys
-        self._ride = F.local_leg_cost(3000, self.travel.local_mode, self.inp.travellers)  # a typical short ride
+        self._ride = self.travel.ride_cost(3000)  # a typical short ride
         later = later or []
         ess_later = self.later_days_reserve(later)
         self._cap = self.allowance - ess_later
@@ -569,8 +576,8 @@ def apply_real_routes(maps: MapsProvider, frames: list[DayFrame], travel: Travel
             return pair, None
         local_mode = "walk" if mode == "walk" else travel.local_mode
         minutes = F.local_leg_minutes(r.duration_s, r.distance_m, local_mode)
-        return pair, Leg(r.distance_m, minutes, local_mode, F.local_leg_cost(r.distance_m, local_mode,
-                                                                            travel.travellers), r.state, r.polyline)
+        return pair, Leg(r.distance_m, minutes, local_mode, travel.ride_cost(r.distance_m, local_mode), r.state,
+                         r.polyline)
 
     states = set()
     with ContextThreadPool(max_workers=8) as pool:

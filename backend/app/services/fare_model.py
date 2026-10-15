@@ -42,6 +42,9 @@ LOCAL_CAB_MIN = Decimal("80")
 PEAK_HOURS = ((8, 11), (17, 21))  # office rush: surge pricing is the rule, not the exception
 PEAK_FACTOR = Decimal("1.5")
 NIGHT_FACTOR = Decimal("1.25")  # 23:00 to 06:00: night charges
+# While a day is being built its rides have no times yet, so the scheduler prices them at the city's fare times this
+# allowance for the rush (about two rides in five fall in it). `price_rides` then prices each for its real time.
+PLANNING_RUSH_ALLOWANCE = Decimal("1.2")
 # Places where app cabs don't run or cost more: local taxi unions (Goa), hill roads. Matched on the destination's name.
 CITY_CAB: list[tuple[tuple[str, ...], Decimal]] = [
     (("goa", "panaji", "panjim", "calangute", "baga", "anjuna", "candolim", "margao", "madgaon", "palolem", "vasco",
@@ -117,6 +120,11 @@ def city_cab_factor(destination: str | None) -> Decimal:
         if any(p in name for p in places):
             return factor
     return Decimal(1)
+
+
+def planning_cab_factor(destination: str | None) -> Decimal:
+    """What the scheduler multiplies a cab fare by, so the day it builds fits the budget the plan will show."""
+    return city_cab_factor(destination) * PLANNING_RUSH_ALLOWANCE
 
 
 def ride_factor(at: datetime | None) -> Decimal:

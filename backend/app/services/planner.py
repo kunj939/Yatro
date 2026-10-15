@@ -619,7 +619,7 @@ class Planner:
         mode = FE.local_mode(inp, combo.outbound)
         # at least one ride to reach each meal, plus the ride back at the end of each day
         rides = sum(len(_meal_stops(f, inp.styles)) + 1 for f in frames)
-        city = F.city_cab_factor(inp.destination_text) if mode == "cab" else 1
+        city = F.planning_cab_factor(inp.destination_text) if mode == "cab" else 1
         local = F.local_leg_cost(3000, mode, inp.travellers) * city * rides
         return FE.MinCost(combo.cost, round_rupees(stay), round_rupees(food), round_rupees(local), nights, rooms,
                           combo.outbound.mode if combo.outbound else None)
@@ -674,7 +674,8 @@ class Planner:
             return None
         frames = PS.build_frames(combo, hotel_here, dest)
         travel = Travel(FE.local_mode(inp, combo.outbound), inp.travellers, scale, known,
-                        walk_max_m=age_fit.walk_limit_m(inp.age_groups, F.WALK_MAX_M))
+                        walk_max_m=age_fit.walk_limit_m(inp.age_groups, F.WALK_MAX_M),
+                        cab_factor=F.planning_cab_factor(inp.destination_text))
         sched = DayScheduler(inp, travel, attractions, restaurants, set(), allowance)
         spent = Decimal(0)
         for i, f in enumerate(frames):

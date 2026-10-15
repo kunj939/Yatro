@@ -50,3 +50,21 @@ def test_goa_rides_cost_its_taxi_rates_and_walks_stay_free():
     F.price_rides([f], 2, "Goa")
     assert f.stops[0].leg.cost == Decimal(298)  # (₹50 + 10 km × ₹12) × 1.75
     assert f.final_leg.cost == 0
+
+
+def test_a_goa_plan_fits_the_budget_it_was_built_for(client):
+    """The scheduler prices rides the way the budget will (the city's taxi rates, the rush allowed for), so it builds
+    a Goa day that fits. When it planned at big-city fares, the rides came out dearer than it had allowed: a plan with
+    pinned choices went over budget (₹49,126 → ₹59,190 after "make it cheaper"), one without was refused."""
+    from tests.conftest import register
+    from tests.test_scenarios import _payload, _use
+    user = register(client)
+    for budget in (30000, 45000):
+        sc = dict(o="Mumbai", d="Goa", days=4, start="08:00", end="22:00", budget=budget, n=1, modes=["train", "cab"],
+                  food="both", styles=["relaxed"], stay="tier2", tt="normal")
+        _use(sc)
+        trip_id = client.post("/api/trips", headers=user, json=_payload(sc)).json()["id"]
+        out = client.post(f"/api/trips/{trip_id}/plan", headers=user).json()
+        assert out["status"] == "ready", (budget, out.get("feasibility"))
+        b = out["trip"]["itinerary"]["budget"]
+        assert b["status"] != "over" and b["planned"] <= budget, (budget, b["planned"], b["status"])

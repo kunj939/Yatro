@@ -812,7 +812,8 @@ INTENT_SYSTEM = f"""You read a traveller's request to change a trip that is alre
 structured change set. The request may be in English, Hindi or Hinglish, informal, short or vague. Always do your best:
 a request can hold several changes; fill in every field that applies and leave the rest null or empty.
 - Budget changes are {{"mode": "set|increase|decrease", "amount": number}} exactly as the traveller stated them; the
-  backend does the arithmetic. "per person" amounts: multiply by the number of travellers yourself.
+  backend does the arithmetic. Only when they name an amount: "make it cheaper" or "save money" is the "budget"
+  style in add_styles, never a budget_change. "per person" amounts: multiply by the number of travellers yourself.
 - Place ids may only come from candidate_places. To add a place that is NOT in that list ("also visit Fatehpur Sikri"),
   put its name in add_place_names. To skip a place, use its id in exclude_place_ids.
 - interests / avoid_interests use only these tags: {", ".join(sorted(INTEREST_TAGS))}.
@@ -924,7 +925,7 @@ def _from_model(data: dict, candidates: list[dict]) -> Intent:
     return it
 
 
-def _merge(ai: Intent, rules: Intent) -> Intent:
+def _merge(ai: Intent, rules: Intent, message_has_amount: bool = True) -> Intent:
     """The model's reading wins field by field; the rules fill in whatever it left empty."""
     out = Intent(source="ai")
     for name in ("budget_change", "days_total", "pace", "food", "stay", "start_time", "end_time", "travellers",
@@ -943,6 +944,8 @@ def _merge(ai: Intent, rules: Intent) -> Intent:
     out.interests = [t for t in out.interests if t not in out.avoid_tags]
     out.reply = ai.reply
     out.item_price = rules.item_price
+    if out.budget_change and not rules.budget_change and not message_has_amount:
+        out.budget_change = None  # "make it cheaper" names no amount: the model's guess at one is dropped
     if rules.item_price and not rules.budget_change:
         out.budget_change = None  # one item's price, whatever the model made of it
     out.ignored = rules.ignored if not ai.has_change() else []
@@ -973,4 +976,5 @@ def understand(llm: LLMProvider, message: str, ctx: dict, candidates: list[dict]
     log_usage(db, llm, "intent", user_id=user_id, trip_id=trip_id, result=result)
     if not result.data:
         return rules
-    return _merge(_from_model(result.data, candidates), rules)
+    has_amount = bool(re.search(rf"\d|\b(?:{_WORDNUM})\b\s*(?:hazaa?r|hajar|thousand|lakhs?|lacs?|k\b)", _norm(message)))
+    return _merge(_from_model(result.data, candidates), rules, has_amount)
