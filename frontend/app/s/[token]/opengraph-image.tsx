@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { dateSpan, dayDate, fetchShared, shortMoney } from "@/lib/shareCard";
 import type { SharedTrip } from "@/lib/types";
+import { MARK, WORDMARK } from "@/lib/logo";
 
 // The picture WhatsApp (and Telegram, iMessage, Slack…) shows when a share link is sent: the trip as a card, in the
 // site's own dark-and-lime look, so the chat gets something you'd tap rather than a wall of text.
@@ -39,10 +40,16 @@ function Chip({ children, tone = "rgba(255,255,255,0.10)", color = "rgba(255,255
 
 function Brand() {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <div style={{ display: "flex", width: 46, height: 46, borderRadius: 12, background: "#151a17", alignItems: "center",
-        justifyContent: "center", color: LIME, fontSize: 32, fontFamily: "Head" }}>Y</div>
-      <div style={{ display: "flex", fontFamily: "Serif", fontStyle: "italic", fontSize: 40, color: "white" }}>Yaitro</div>
+    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+      <svg width={52} height={52} viewBox="0 0 64 64">
+        <rect width={64} height={64} rx={16} fill={LIME} />
+        <path d={MARK.route} fill="none" stroke={INK} strokeWidth={MARK.stroke} strokeLinecap="round" />
+        <circle cx={MARK.dot.cx} cy={MARK.dot.cy} r={MARK.dot.r} fill={INK} />
+      </svg>
+      <svg width={Math.round(46 * WORDMARK.ratio)} height={46} viewBox={WORDMARK.viewBox}>
+        <path d={WORDMARK.d} fill="white" />
+        <circle cx={WORDMARK.dot.cx} cy={WORDMARK.dot.cy} r={WORDMARK.dot.r} fill={LIME} />
+      </svg>
     </div>
   );
 }

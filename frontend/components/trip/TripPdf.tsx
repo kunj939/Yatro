@@ -3,10 +3,11 @@
 // The plan as a PDF, in the site's dark-and-lime look: a cover with the trip at a glance, then a page per day.
 // Built in the browser from the public share view (exactly what the share link shows) and loaded only when someone
 // asks for it (lib/tripPdf.ts), so the library never weighs on the normal pages.
-import { Document, Font, Image, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Circle, Document, Font, Image, Link, Page, Path, Rect, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
 import type { SharedItem, SharedTrip } from "@/lib/types";
 import type { PdfMaps } from "@/lib/pdfMaps";
 import { dateSpan, dayDate, shortMoney } from "@/lib/shareCard";
+import { MARK, WORDMARK } from "@/lib/logo";
 
 let fontsReady = false;
 function registerFonts() {
@@ -33,8 +34,6 @@ const KIND: Record<string, { label: string; color: string }> = {
 const s = StyleSheet.create({
   page: { backgroundColor: INK, color: "white", fontFamily: "Noto", fontSize: 10, padding: 34, paddingBottom: 50 },
   brand: { flexDirection: "row", alignItems: "center", gap: 8 },
-  logo: { width: 24, height: 24, borderRadius: 6, backgroundColor: CARD, color: LIME, fontFamily: "Head", fontSize: 15,
-    textAlign: "center", paddingTop: 2 },
   title: { fontFamily: "Head", fontSize: 30, lineHeight: 1.1, marginTop: 26 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
   chip: { paddingVertical: 5, paddingHorizontal: 11, borderRadius: 999, backgroundColor: "#1d2320", color: SOFT, fontSize: 10 },
@@ -65,8 +64,15 @@ function Footer({ url }: { url: string }) {
 function Brand() {
   return (
     <View style={s.brand}>
-      <Text style={s.logo}>Y</Text>
-      <Text style={{ fontFamily: "Head", fontSize: 16 }}>Yaitro</Text>
+      <Svg width={24} height={24} viewBox="0 0 64 64">
+        <Rect width={64} height={64} rx={16} fill={LIME} />
+        <Path d={MARK.route} fill="none" stroke={INK} strokeWidth={MARK.stroke} strokeLinecap="round" />
+        <Circle {...MARK.dot} fill={INK} />
+      </Svg>
+      <Svg width={20 * WORDMARK.ratio} height={20} viewBox={WORDMARK.viewBox}>
+        <Path d={WORDMARK.d} fill="white" />
+        <Circle {...WORDMARK.dot} fill={LIME} />
+      </Svg>
     </View>
   );
 }
