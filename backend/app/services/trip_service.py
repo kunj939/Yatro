@@ -301,10 +301,34 @@ def intent_patch(db: Session, providers: Providers, user: User, trip: Trip, mess
             budget = new
             labels.append(f"budget {money(current)} → {money(new)}")
 
+    # trip dates: "20 Oct to 26 Oct", "start on the 22nd", "postpone by 2 days"
+    start_date = end_date = None
+    if intent.start_date:
+        new_start = date.fromisoformat(intent.start_date)
+        if intent.end_date:
+            new_end = date.fromisoformat(intent.end_date)
+        else:  # a new start keeps the trip's length (or the length asked for in the same message)
+            nights = intent.days_total - 1 if intent.days_total else (trip.end_date - trip.start_date).days + intent.extend_days
+            new_end = new_start + timedelta(days=max(0, nights))
+        fmt = lambda d: f"{d.day} {d:%b}"  # noqa: E731
+        if new_start < date.today():
+            issues.append(f"{fmt(new_start)} has already gone; pick dates from today on.")
+        elif new_end < new_start:
+            issues.append("The trip can't end before it starts.")
+        elif (new_end - new_start).days > MAX_TRIP_DAYS:
+            issues.append(f"Trips can be at most {MAX_TRIP_DAYS + 1} days; pick a shorter range.")
+        elif new_start == trip.start_date and new_end == trip.end_date:
+            issues.append(f"The trip is already {fmt(new_start)}" + (f" to {fmt(new_end)}." if new_end != new_start else "."))
+        else:
+            start_date, end_date = new_start, new_end
+            labels.append(f"dates {fmt(new_start)}" + (f" to {fmt(new_end)}" if new_end != new_start else "")
+                          + f" ({(new_end - new_start).days + 1} day{'s' if new_end != new_start else ''})")
+
     # trip length
-    end_date = None
     target = None
-    if intent.days_total:
+    if intent.start_date:
+        pass  # the dates above already set it
+    elif intent.days_total:
         target = trip.start_date + timedelta(days=intent.days_total - 1)
     elif intent.extend_days:
         target = trip.end_date + timedelta(days=intent.extend_days)
@@ -523,7 +547,8 @@ def intent_patch(db: Session, providers: Providers, user: User, trip: Trip, mess
     issues.extend(f"I couldn't act on “{x}”." for x in intent.ignored)
 
     patch = PreferencesPatch(budget=budget, travellers=travellers, traveller_type=traveller_type,
-                             start_time=start_time, end_time=end_time, end_date=end_date, pace=pace, food=food,
+                             start_time=start_time, end_time=end_time, start_date=start_date, end_date=end_date,
+                             pace=pace, food=food,
                              stay=stay, trip_styles=trip_styles, transport_modes=transport_modes,
                              include_place_ids=include or None, exclude_place_ids=exclude or None)
     return IntentOutcome(patch, new_interests, labels, _dedupe_keep(issues), intent.reply, intent.source,
@@ -698,7 +723,8 @@ def trip_card(t: Trip) -> dict:
     it = t.current_itinerary
     p = t.preferences
     return {"id": str(t.id), "title": t.title, "status": t.status, "origin": t.origin_name,
-            "destination": t.destination_name, "start_date": t.start_date.isoformat(), "end_date": t.end_date.isoformat(),
+            "destination": t.destination_name, "destination_lat": t.destination_lat, "destination_lng": t.destination_lng,
+            "start_date": t.start_date.isoformat(), "end_date": t.end_date.isoformat(),
             "travellers": t.travellers, "traveller_type": p.traveller_type if p else None, "budget": _num(t.budget),
             "estimated_cost": _num(it.total_cost) if it else None, "remaining": _num(it.remaining) if it else None,
             "feasible": (t.feasibility or {}).get("feasible"), "data_mode": t.data_mode, "currency": t.currency,

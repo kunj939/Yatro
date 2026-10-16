@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowDownUp, ArrowLeft, ArrowRight, CalendarDays, Check, MapPin, Pencil, Sparkles, Star, TrainFront, Wallet, X } from "lucide-react";
 import { LocationInput, type LocationValue } from "./LocationInput";
+import { DestinationPhoto } from "../DestinationPhoto";
 import { WhenPicker } from "./WhenPicker";
 import type { HighlightPlace } from "@/lib/types";
 import { AgeSelector, BudgetInput, FoodSelector, InterestSelector, StaySelector, TransportSelector, TravellerSelector, TripStyleSelector } from "./Selectors";
@@ -408,45 +409,51 @@ export function TripWizard() {
         </div>
 
         {/* Live summary: a ticket that fills in as you go */}
-        <aside className={`h-fit overflow-hidden rounded-3xl border border-white/10 bg-[#0f1219] text-white shadow-[0_30px_80px_-40px_rgb(0_0_0/0.8)] lg:sticky lg:top-28 ${last ? "" : "hidden lg:block"}`}
+        <aside className={`h-fit overflow-hidden rounded-3xl border border-line bg-paper text-ink shadow-[0_1px_2px_rgb(var(--shadow)/0.05),0_30px_70px_-40px_rgb(var(--shadow)/0.45)] lg:sticky lg:top-28 ${last ? "" : "hidden lg:block"}`}
                aria-label="Your trip so far">
+          {/* where you're going, in a picture, as soon as it's picked */}
+          {s.destination.name.trim().length >= 2 && (
+            <DestinationPhoto name={s.destination.name} lat={s.destination.lat} lng={s.destination.lng} className="h-32">
+              <span aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-paper via-paper/0 to-transparent" />
+            </DestinationPhoto>
+          )}
           <div className="relative p-6">
-            <div aria-hidden className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[rgb(190_255_74/0.16)] blur-3xl" />
+            <div aria-hidden className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-signal/10 blur-3xl" />
             <div className="relative flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/55">{last ? "Check your trip" : "Your trip so far"}</p>
-              <span className="num text-xs font-semibold text-[rgb(190_255_74)]">{Math.round(((step + 1) / STEPS.length) * 100)}%</span>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-mute">{last ? "Check your trip" : "Your trip so far"}</p>
+              <span className="num rounded-full bg-signal-soft px-2 py-0.5 text-xs font-semibold text-signal-deep">{Math.round(((step + 1) / STEPS.length) * 100)}%</span>
             </div>
             {/* Route */}
             <div className="relative mt-5 flex gap-3">
               <div className="flex flex-col items-center pt-1.5">
-                <span className="h-2.5 w-2.5 rounded-full border-2 border-white/60" />
-                <span className="my-1 w-px flex-1 border-l border-dashed border-white/30" />
-                <MapPin className="h-4 w-4 text-[rgb(190_255_74)]" aria-hidden />
+                <span className="h-2.5 w-2.5 rounded-full border-2 border-ink/40" />
+                <span className="my-1 w-px flex-1 border-l border-dashed border-ink/25" />
+                <MapPin className="h-4 w-4 text-signal" aria-hidden />
               </div>
               <div className="min-w-0 flex-1 space-y-4">
-                <div><p className="text-xs text-white/50">From</p><p className="truncate font-semibold">{s.origin.name || "—"}</p></div>
-                <div><p className="text-xs text-white/50">To</p><p className="truncate text-lg font-bold">{s.destination.name || "Somewhere new"}</p></div>
+                <div><p className="text-xs text-ink-mute">From</p><p className="truncate font-semibold">{s.origin.name || "—"}</p></div>
+                <div><p className="text-xs text-ink-mute">To</p><p className="truncate text-lg font-bold">{s.destination.name || "Somewhere new"}</p></div>
               </div>
               {step > 0 && <EditBtn onClick={() => go(0)} />}
             </div>
-            <p className="num relative mt-4 flex flex-wrap items-center gap-2 text-[14px] text-white/75">
-              <CalendarDays className="h-4 w-4 text-white/50" aria-hidden />{when}
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[12px] font-semibold">{lengthLabel}</span>
+            <p className="num relative mt-4 flex flex-wrap items-center gap-2 text-[14px] text-ink-soft">
+              <CalendarDays className="h-4 w-4 text-ink-mute" aria-hidden />{when}
+              <span className="rounded-full bg-haze-2 px-2 py-0.5 text-[12px] font-semibold text-ink">{lengthLabel}</span>
             </p>
           </div>
 
           {/* Perforation */}
-          <div className="relative h-0 border-t border-dashed border-white/15">
-            <span className="absolute -left-3 -top-3 h-6 w-6 rounded-full bg-haze" />
-            <span className="absolute -right-3 -top-3 h-6 w-6 rounded-full bg-haze" />
+          <div className="relative h-0 border-t border-dashed border-line">
+            <span className="absolute -left-3 -top-3 h-6 w-6 rounded-full border border-line bg-haze" />
+            <span className="absolute -right-3 -top-3 h-6 w-6 rounded-full border border-line bg-haze" />
           </div>
 
           <div className="p-6">
             <div className={`flex items-end justify-between gap-3 transition-opacity ${step < 1 ? "opacity-40" : ""}`}>
               <div>
-                <p className="text-xs text-white/50">Budget</p>
+                <p className="text-xs text-ink-mute">Budget</p>
                 <p className="num text-3xl font-extrabold tracking-tight">{money(s.budget, currency)}</p>
-                {s.travellers > 1 && <p className="num text-xs text-white/55">{money(Math.round(s.budget / s.travellers), currency)} per person</p>}
+                {s.travellers > 1 && <p className="num text-xs text-ink-mute">{money(Math.round(s.budget / s.travellers), currency)} per person</p>}
               </div>
               {step > 1 && <EditBtn onClick={() => go(1)} />}
             </div>
@@ -454,14 +461,14 @@ export function TripWizard() {
               {summary.map((r) => (
                 <div key={r.k} className={`flex items-start justify-between gap-3 transition-opacity ${r.step > step ? "opacity-35" : ""}`}>
                   <div className="min-w-0">
-                    <dt className="text-xs text-white/50">{r.k}</dt>
+                    <dt className="text-xs text-ink-mute">{r.k}</dt>
                     <dd className="truncate">{r.v}</dd>
                   </div>
                   {r.step < step && <EditBtn onClick={() => go(r.step)} />}
                 </div>
               ))}
               {s.include_place_ids.length > 0 && (
-                <div><dt className="text-xs text-white/50">Pinned places</dt><dd>{s.include_place_ids.length} must-see{s.include_place_ids.length > 1 ? "s" : ""}</dd></div>
+                <div><dt className="text-xs text-ink-mute">Pinned places</dt><dd>{s.include_place_ids.length} must-see{s.include_place_ids.length > 1 ? "s" : ""}</dd></div>
               )}
             </dl>
           </div>
@@ -478,7 +485,7 @@ export function TripWizard() {
 function EditBtn({ onClick }: { onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} aria-label="Edit"
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-white/50 transition-colors hover:bg-white/10 hover:text-[rgb(190_255_74)]">
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink-mute transition-colors hover:bg-haze hover:text-signal-deep">
       <Pencil className="h-3.5 w-3.5" aria-hidden />
     </button>
   );

@@ -88,6 +88,7 @@ export interface Preferences {
 
 export interface TripCard {
   id: string; title: string; status: string; origin: string; destination: string; start_date: string; end_date: string;
+  destination_lat?: number | null; destination_lng?: number | null;
   travellers: number; traveller_type: string | null; budget: number; estimated_cost: number | null;
   remaining: number | null; feasible: boolean | null; data_mode: string; created_at: string; currency?: string;
 }

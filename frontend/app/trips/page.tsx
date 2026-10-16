@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowRight, CalendarDays, MapPin, Plus, Trash2, Users } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { DestinationPhoto } from "@/components/DestinationPhoto";
 import { RequireAuth } from "@/components/AuthPage";
 import { ApiError, endpoints } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -97,7 +98,12 @@ function TripList() {
             const over = (t.remaining ?? 0) < 0;
             return (
               <li key={t.id} style={{ ["--d" as string]: `${i * 60}ms` }}
-                  className="fade-up group relative flex flex-col rounded-2xl border border-line bg-paper/85 p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-signal/40 hover:shadow-glow">
+                  className="fade-up group relative flex flex-col overflow-hidden rounded-3xl border border-line bg-paper shadow-[0_1px_2px_rgb(var(--shadow)/0.05),0_18px_40px_-28px_rgb(var(--shadow)/0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-signal/40 hover:shadow-glow">
+                <DestinationPhoto name={t.destination} lat={t.destination_lat} lng={t.destination_lng} className="h-40 shrink-0">
+                  <span aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/0 to-black/15" />
+                  <span className="absolute bottom-3 left-4 z-10 text-[13px] font-semibold text-white drop-shadow">{t.destination.split(",")[0]}</span>
+                </DestinationPhoto>
+                <div className="flex flex-1 flex-col p-5">
                 <div className="flex items-start justify-between gap-3">
                   <span className={`rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${infeasible ? "bg-caution-soft text-caution" : st.cls}`}>
                     {infeasible ? "Needs a change" : st.label}
@@ -134,6 +140,7 @@ function TripList() {
                   <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-haze-2" aria-hidden>
                     {used !== null && <div className={`h-full rounded-full ${over ? "bg-danger" : "bg-gradient-to-r from-signal to-spark"}`} style={{ width: `${used}%` }} />}
                   </div>
+                </div>
                 </div>
               </li>
             );

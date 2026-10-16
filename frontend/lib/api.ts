@@ -122,6 +122,12 @@ export const endpoints = {
       place_id: string; name: string; address?: string | null; lat?: number | null; lng?: number | null; currency?: string | null } | null }>(
       `/api/places/highlights?${q.toString()}`);
   },
+  // A photo of the destination (Wikimedia Commons, with credit) for cards and headers; null when there's none
+  placePhoto: (name: string, lat?: number | null, lng?: number | null) => {
+    const q = new URLSearchParams({ name });
+    if (lat != null && lng != null) { q.set("lat", String(lat)); q.set("lng", String(lng)); }
+    return api<{ photo: { url: string; credit: string; license: string | null; source_url: string | null } | null }>(`/api/places/photo?${q}`);
+  },
   demoTrip: () => api<Trip>("/api/demo/trip"),
   config: () => api<{ mode: string; app_name: string; free_trip_plans: number; share_links_enabled?: boolean; upi_links_enabled?: boolean; plan_emails?: boolean }>("/api/config"),
   addMember: (id: string, body: unknown) => api(`/api/trips/${id}/members`, { method: "POST", json: body }),

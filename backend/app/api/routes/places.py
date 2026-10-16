@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from app.api.deps import providers_dep
 from app.core.errors import AppError, ProviderUnavailable
 from app.core.middleware import limit
+from app.providers import photos
 from app.providers.registry import Providers
 from app.utils.locale import locale_for
 
@@ -61,3 +62,9 @@ def reverse(lat: float = Query(ge=-90, le=90), lng: float = Query(ge=-180, le=18
         return {"result": None}
     return {"result": {"place_id": place.provider_place_id, "label": place.name, "secondary": place.address,
                        "lat": place.lat, "lng": place.lng}}
+
+@router.get("/photo")
+def photo(name: str = Query(min_length=2, max_length=200), lat: float | None = Query(default=None, ge=-90, le=90),
+          lng: float | None = Query(default=None, ge=-180, le=180)):
+    """A photo of the destination for trip cards and the trip header (Wikimedia Commons, with its credit), or null."""
+    return {"photo": photos.destination_photo(name, lat, lng)}

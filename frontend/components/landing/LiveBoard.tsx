@@ -70,7 +70,8 @@ export function LiveBoard() {
       return () => clearTimeout(t);
     }
     if (paused) return;
-    const t = setTimeout(() => { setShown(0); setIdx((i) => (i + 1) % TRIPS.length); }, HOLD_MS);
+    // the next trip arrives whole, with a cross-fade: emptying the card first left a blank white box (very visible on phones)
+    const t = setTimeout(() => { setIdx((i) => (i + 1) % TRIPS.length); setShown(ROWS); }, HOLD_MS);
     return () => clearTimeout(t);
   }, [shown, trip, paused, reduced, rows.length]);
 
@@ -96,7 +97,7 @@ export function LiveBoard() {
           <div className="h-full bg-gradient-to-r from-signal to-spark transition-[width] duration-500 ease-out" style={{ width: `${pct}%` }} />
         </div>
 
-        <ol aria-live="polite">
+        <ol key={trip.key} aria-live="polite" className="fade-up">
           {rows.map((r, i) => (
             <li key={`${trip.key}-${r.t}`}
                 className={`group grid grid-cols-[46px_1fr_auto] items-baseline gap-x-3 border-b border-line/70 px-5 py-4 transition-all duration-500 last:border-b-0 hover:bg-signal-soft/50 sm:grid-cols-[58px_1fr_auto] sm:gap-x-4 sm:px-6 ${

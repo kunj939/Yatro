@@ -99,7 +99,7 @@ export function HeroStory() {
             <div key={s.label} aria-hidden={!on || undefined}
                  className={`col-start-1 row-start-1 min-w-0 transition-all duration-500 ease-out ${
                    on ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}>
-              <p className="text-[clamp(1.75rem,3.2vw,2.75rem)] font-extrabold leading-[1.08] text-ink">
+              <p className="headline-font text-[clamp(1.75rem,3.2vw,2.75rem)] font-extrabold leading-[1.08] text-ink">
                 {s.lead}{" "}
                 <span className={`accent block ${s.tone === "highlight" ? "highlight" : s.tone}`}>{s.accent}</span>
               </p>

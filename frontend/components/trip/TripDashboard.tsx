@@ -15,6 +15,7 @@ import { MapPanel } from "./MapPanel";
 import { GroupMembers } from "./GroupMembers";
 import { ExpenseSplitter, SettleUpHeader } from "./ExpenseSplitter";
 import { TodayCard } from "./TodayCard";
+import { DestinationPhoto } from "../DestinationPhoto";
 import { ShareSheet, SharedLinks } from "./ShareSheet";
 import { PlanActions } from "./PlanActions";
 import { TripChat } from "./TripChat";
@@ -35,7 +36,7 @@ function withPlace(title: string, destination: string) {
   const name = (destination || "").split(",")[0].trim();
   const at = name ? title.toLowerCase().indexOf(name.toLowerCase()) : -1;
   if (at < 0) return title;
-  return <>{title.slice(0, at)}<span className="accent highlight-night">{title.slice(at, at + name.length)}</span>{title.slice(at + name.length)}</>;
+  return <>{title.slice(0, at)}<span className="accent highlight">{title.slice(at, at + name.length)}</span>{title.slice(at + name.length)}</>;
 }
 
 function itemKeys(trip: Trip | null) {
@@ -151,7 +152,12 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
   return (
     <div className="container-x pb-24 pt-4">
       {/* Header: one light card. Title, route and facts on the left; the money on the right. */}
-      <header className="card p-4 sm:p-5 md:p-6">
+      <header className="card overflow-hidden">
+        {/* the place itself, so a plan opens on where you're going (our photo, or Wikimedia's with its credit) */}
+        <DestinationPhoto name={trip.destination} lat={trip.destination_detail?.lat} lng={trip.destination_detail?.lng} className="h-36 sm:h-44 md:h-52">
+          <span aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-paper via-paper/10 to-black/10" />
+        </DestinationPhoto>
+        <div className="relative -mt-8 p-4 pt-0 sm:p-5 sm:pt-0 md:p-6 md:pt-0">
         <div className="flex flex-wrap items-center gap-1.5 text-[13px] text-ink-soft">
           {demo ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-haze-2 px-2.5 py-0.5 font-semibold text-ink"><FlaskConical className="h-3.5 w-3.5" aria-hidden />Demo: sample data</span>
@@ -220,6 +226,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
               </div>
             )}
           </div>
+        </div>
         </div>
       </header>
 
@@ -378,7 +385,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
       {canShare && <ShareSheet trip={trip} open={sharing} onClose={() => setSharing(false)} onChanged={() => setShareTick((n) => n + 1)} />}
       <AlternativeDrawer item={changing} onClose={() => setChanging(null)} onUse={swap} readOnly={readOnly} busy={running} currency={trip.currency} />
       {running && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Updating your plan">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[rgb(var(--ink)/0.28)] p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Updating your plan">
           <div className="w-full max-w-lg">
             <TripLoading shown={shown} queued={queued} title="Re-planning your trip" subtitle="Checking every change against time and budget" compact />
           </div>
