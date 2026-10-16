@@ -164,7 +164,7 @@ function Account() {
             <p className="num mt-1 text-3xl font-bold">{inr(price("plus"))}<span className="text-base font-medium text-ink-mute"> /month</span></p>
           )}
           <ul className="mt-2 flex-1 space-y-1 text-ink-soft">
-            {["Unlimited trip plans", "Priority when Yaitro is busy", "Hisaab: split group spends"].map((f) => (
+            {["Unlimited trip plans", "Priority when Yaitro is busy", "Settle Up: split group spends"].map((f) => (
               <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-teal" aria-hidden />{f}</li>
             ))}
           </ul>

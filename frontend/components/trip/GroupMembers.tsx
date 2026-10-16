@@ -6,13 +6,13 @@ import type { Trip } from "@/lib/types";
 import { ApiError, endpoints } from "@/lib/api";
 import { FOOD_LABEL, currencySymbol, money } from "@/lib/format";
 
-// One colour per person, by their place in the group, so the same face shows up the same everywhere in Hisaab.
+// One colour per person, by their place in the group, so the same face shows up the same everywhere in Settle Up.
 const TONES = ["bg-[#659600] text-white", "bg-[#2a78d6] text-white", "bg-[#eb6834] text-white", "bg-[#6250d6] text-white",
   "bg-[#eda100] text-[#101311]", "bg-ink text-paper"];
-export function avatarTone(trip: Trip, memberId: string): string {
-  const n = trip.members.findIndex((m) => m.id === memberId);
-  return TONES[(n < 0 ? 0 : n) % TONES.length];
-}
+const HEX = ["#659600", "#2a78d6", "#eb6834", "#6250d6", "#eda100", "#101311"];
+const place = (trip: Trip, id: string) => Math.max(0, trip.members.findIndex((m) => m.id === id));
+export function avatarTone(trip: Trip, memberId: string): string { return TONES[place(trip, memberId) % TONES.length]; }
+export function avatarHex(trip: Trip, memberId: string): string { return HEX[place(trip, memberId) % HEX.length]; }
 
 export function Avatar({ trip, id, name, size = "h-9 w-9 text-[14px]" }: { trip: Trip; id: string; name: string; size?: string }) {
   return <span className={`grid shrink-0 place-items-center rounded-full font-bold ring-2 ring-paper ${size} ${avatarTone(trip, id)}`} aria-hidden>{name.slice(0, 1).toUpperCase()}</span>;
@@ -69,13 +69,22 @@ export function GroupMembers({ trip, onChanged, readOnly }: { trip: Trip; onChan
       <ul className="mt-3 space-y-2">
         {trip.members.map((m) => {
           const short = share !== null && m.budget !== null && m.budget < share;
+          const net = trip.expense_summary.members.find((x) => x.member_id === m.id)?.net ?? 0;
           const fill = share !== null && m.budget ? Math.min(100, (share / m.budget) * 100) : 0;
           return (
             <li key={m.id} className="group/m rounded-2xl border border-line bg-paper px-3.5 py-3 transition-colors hover:border-ink/20">
               <div className="flex items-center gap-3">
                 <Avatar trip={trip} id={m.id} name={m.name} />
                 <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-1.5 truncate font-semibold">{m.name}{m.is_owner && <Crown className="h-4 w-4 shrink-0 text-[#eda100]" aria-label="Trip owner" />}</p>
+                  <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 font-semibold">
+                    <span className="truncate">{m.name}</span>{m.is_owner && <Crown className="h-4 w-4 shrink-0 text-[#eda100]" aria-label="Trip owner" />}
+                    {trip.expense_summary.total > 0 && (
+                      <span className={`num rounded-full px-2 py-px text-[11.5px] font-semibold ${
+                        net > 0.005 ? "bg-signal-soft text-signal-deep" : net < -0.005 ? "bg-[#eb6834]/10 text-[#b84a1c]" : "bg-haze-2 text-ink-mute"}`}>
+                        {net > 0.005 ? `gets ${money(net, trip.currency)}` : net < -0.005 ? `owes ${money(-net, trip.currency)}` : "square"}
+                      </span>
+                    )}
+                  </p>
                   <p className="num flex flex-wrap items-center gap-x-2 text-[13px] text-ink-mute">
                     <span>{m.budget !== null ? `Budget ${money(m.budget, trip.currency)}` : "No personal budget"}</span>
                     {m.food_pref && (

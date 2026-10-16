@@ -108,7 +108,7 @@ function ItemRow({ i, cur, pin, place }: { i: SharedItem; cur: string; pin?: num
 
 
 /** The money page: the same two charts as the Budget tab (lib/budgetViz.ts), in the PDF's dark colours, and the
- *  Hisaab settle-up when the link includes it. Colours come with labels and amounts, never on their own. */
+ *  Settle Up summary when the link includes it. Colours come with labels and amounts, never on their own. */
 function MoneyPage({ view, budget, url }: { view: SharedTrip; budget?: BudgetBreakdown; url: string }) {
   const cur = view.trip.currency;
   const slices = budget ? slicesFromBudget(budget) : slicesFromDays(view.itinerary.days);
@@ -189,7 +189,7 @@ function MoneyPage({ view, budget, url }: { view: SharedTrip; budget?: BudgetBre
         <View style={{ marginTop: 18, backgroundColor: CARD, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: LINE }} wrap={false}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
             <View>
-              <Text style={{ fontFamily: "Head", fontSize: 13 }}>Hisaab</Text>
+              <Text style={{ fontFamily: "Head", fontSize: 13 }}>Settle Up</Text>
               <Text style={{ color: MUTE, fontSize: 8.5, marginTop: 2 }}>What the group has spent, and who pays whom</Text>
             </View>
             <Text style={{ fontFamily: "Head", fontSize: 15, color: LIME }}>{shortMoney(split.total, cur)}</Text>

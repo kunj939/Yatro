@@ -261,7 +261,7 @@ function SpentVsPlan({ budget, expenses, m }: { budget: BudgetBreakdown; expense
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h3 id="actual-vs-plan" className="font-bold">Spent so far vs the plan</h3>
-          <p className="text-[13px] text-ink-mute">What the group has logged in Hisaab</p>
+          <p className="text-[13px] text-ink-mute">What the group has logged in Settle Up</p>
         </div>
         <p className="num text-right">
           <span className="text-[22px] font-extrabold text-ink">{m(expenses.total)}</span>

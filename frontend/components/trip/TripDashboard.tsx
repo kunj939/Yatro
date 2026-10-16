@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, Baby, CalendarDays, Share2, ChevronDown, Clock, CloudSun, FlaskConical, History, Info, ListChecks, ListOrdered, Map as MapIcon, MapPin, Navigation, Repeat, Send, Sparkles, Users, Wallet } from "lucide-react";
+import { ArrowDown, Baby, CalendarDays, Share2, ChevronDown, Clock, CloudSun, FlaskConical, HandCoins, History, Info, ListChecks, ListOrdered, Map as MapIcon, MapPin, Navigation, Repeat, Send, Sparkles, Users, Wallet } from "lucide-react";
 import type { Adjustment, ItineraryItem, Trip } from "@/lib/types";
 import { ApiError } from "@/lib/api";
 import { usePlanStream } from "@/lib/usePlanStream";
@@ -13,7 +13,7 @@ import { AlternativeDrawer } from "./AlternativeDrawer";
 import { BudgetPanel } from "./BudgetPanel";
 import { MapPanel } from "./MapPanel";
 import { GroupMembers } from "./GroupMembers";
-import { ExpenseSplitter, HisaabHeader } from "./ExpenseSplitter";
+import { ExpenseSplitter, SettleUpHeader } from "./ExpenseSplitter";
 import { ShareSheet, SharedLinks } from "./ShareSheet";
 import { PlanActions } from "./PlanActions";
 import { TripChat } from "./TripChat";
@@ -26,7 +26,7 @@ import { planSources } from "@/lib/sources";
 type Tab = "timeline" | "map" | "budget" | "group";
 const TABS: { key: Tab; label: string; icon: any }[] = [
   { key: "timeline", label: "Itinerary", icon: ListOrdered }, { key: "map", label: "Map", icon: MapIcon },
-  { key: "budget", label: "Budget", icon: Wallet }, { key: "group", label: "Hisaab", icon: Users },
+  { key: "budget", label: "Budget", icon: Wallet }, { key: "group", label: "Settle Up", icon: HandCoins },
 ];
 
 /** The trip's title with the destination's name in the accent style ("Agra in 2 days for two"). */
@@ -361,7 +361,7 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
             {tab === "budget" && <BudgetPanel budget={it.budget} days={it.days} expenses={trip.expense_summary} currency={trip.currency} />}
             {tab === "group" && (
               <div className="space-y-5">
-                <HisaabHeader trip={trip} />
+                <SettleUpHeader trip={trip} />
                 <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
                   <GroupMembers trip={trip} onChanged={reload} readOnly={readOnly} />
                   <ExpenseSplitter trip={trip} onChanged={reload} readOnly={readOnly} />
