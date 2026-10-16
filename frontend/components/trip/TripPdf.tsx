@@ -3,9 +3,9 @@
 // The plan as a PDF, in the site's dark-and-lime look: a cover with the trip at a glance, then a page per day.
 // Built in the browser from the public share view (exactly what the share link shows) and loaded only when someone
 // asks for it (lib/tripPdf.ts), so the library never weighs on the normal pages.
-import { Circle, Document, Font, Image, Link, Page, Path, Rect, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
+import { Circle, Document, Font, G, Image, Line, Link, Page, Path, Polyline, Rect, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
 import type { BudgetBreakdown, SharedItem, SharedTrip } from "@/lib/types";
-import type { PdfMaps } from "@/lib/pdfMaps";
+import type { DaySketch, PdfMaps } from "@/lib/pdfMaps";
 import { dateSpan, dayDate, shortMoney } from "@/lib/shareCard";
 import { MARK, WORDMARK } from "@/lib/logo";
 import { CATS, dailySpend, rings, slicesFromBudget, slicesFromDays } from "@/lib/budgetViz";
@@ -79,6 +79,81 @@ function Brand() {
 }
 
 const shown = (items: SharedItem[]) => items.filter((i) => i.kind !== "free");
+
+/** Nudge markers closer than `min` apart, so clustered stops stay readable (as on the trip page's map). */
+function spread(pts: [number, number][], min: number): [number, number][] {
+  const out = pts.map(([x, y]) => [x, y] as [number, number]);
+  for (let iter = 0; iter < 60; iter++) {
+    let moved = false;
+    for (let i = 0; i < out.length; i++) {
+      for (let j = i + 1; j < out.length; j++) {
+        const dx = out[j][0] - out[i][0], dy = out[j][1] - out[i][1], d = Math.hypot(dx, dy);
+        if (d < min) {
+          const a = d > 0.01 ? Math.atan2(dy, dx) : j * 2.39996, push = (min - d) / 2;
+          out[i][0] -= Math.cos(a) * push; out[i][1] -= Math.sin(a) * push;
+          out[j][0] += Math.cos(a) * push; out[j][1] += Math.sin(a) * push;
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+  return out;
+}
+
+const STOP_FILL: Record<string, string> = { activity: "#beff4a", meal: "#ffc46e", sunset: "#ff8fbe", stay: "#ffffff" };
+
+/** A day's route, drawn from the plan's own coordinates when Google's map picture can't be had: the roads between stops,
+ *  numbered stops in visiting order (matching the list below), the start ringed. Scaled to fit, north up. */
+function DaySketchMap({ sketch, tone }: { sketch: DaySketch; tone: string }) {
+  const W = 527, H = 210, PAD = 26;
+  const pts: [number, number][] = [...sketch.stops.map((s) => [s.lat, s.lng] as [number, number]), ...sketch.paths.flat()];
+  const lats = pts.map((p) => p[0]), lngs = pts.map((p) => p[1]);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats), minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+  const k = Math.cos((((minLat + maxLat) / 2) * Math.PI) / 180);
+  const spanX = Math.max((maxLng - minLng) * k, 0.006), spanY = Math.max(maxLat - minLat, 0.006);
+  const sc = Math.min((W - PAD * 2) / spanX, (H - PAD * 2) / spanY);
+  const ox = (W - spanX * sc) / 2, oy = (H - spanY * sc) / 2, cx = (minLng + maxLng) / 2, cy = (minLat + maxLat) / 2;
+  const P = (lat: number, lng: number): [number, number] => [ox + ((lng - cx) * k + spanX / 2) * sc, oy + (spanY / 2 - (lat - cy)) * sc];
+  const line = (path: [number, number][]) => path.map(([a, b]) => P(a, b).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const order = sketch.stops.map((s) => P(s.lat, s.lng));
+  const placed = spread(order, 21);  // close stops (a lunch beside a fort) pushed apart so both numbers read
+  return (
+    <View wrap={false} style={{ marginBottom: 8, borderRadius: 10, overflow: "hidden", backgroundColor: "#111613", borderWidth: 1, borderColor: LINE }}>
+      <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        {Array.from({ length: 12 }, (_, i) => <Line key={`v${i}`} x1={i * 48} y1={0} x2={i * 48} y2={H} stroke="#1a211d" strokeWidth={1} />)}
+        {Array.from({ length: 5 }, (_, i) => <Line key={`h${i}`} x1={0} y1={i * 48} x2={W} y2={i * 48} stroke="#1a211d" strokeWidth={1} />)}
+        {/* the stops in order, faint, so a day without road data still reads as a route */}
+        {order.length > 1 && <Polyline points={order.map((p) => p.map((v) => v.toFixed(1)).join(",")).join(" ")} fill="none" stroke="#3a463f" strokeWidth={1.5} strokeDasharray="4 4" />}
+        {sketch.paths.map((path, i) => <Polyline key={i} points={line(path)} fill="none" stroke={tone} strokeOpacity={0.85} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />)}
+        {sketch.stops.map((s, i) => {
+          const [x, y] = placed[i];
+          const [tx, ty] = order[i];
+          const fill = STOP_FILL[s.kind] ?? "#ffffff";
+          return (
+            <G key={s.n}>
+              {(Math.abs(x - tx) > 1 || Math.abs(y - ty) > 1) && (
+                <G><Line x1={tx} y1={ty} x2={x} y2={y} stroke="#ffffff" strokeOpacity={0.45} strokeWidth={0.8} /><Circle cx={tx} cy={ty} r={2} fill="#ffffff" fillOpacity={0.7} /></G>
+              )}
+              {i === 0 && <Circle cx={x} cy={y} r={13} fill="none" stroke="#ffffff" strokeOpacity={0.5} strokeWidth={1.5} />}
+              <Circle cx={x} cy={y} r={9} fill={fill} stroke="#0b0d0c" strokeWidth={2} />
+              <Text x={x} y={y + 3.2} textAnchor="middle" style={{ fontSize: 8.5, fontWeight: 700, fill: "#0b0d0c" }}>{PIN[s.n - 1] ?? ""}</Text>
+            </G>
+          );
+        })}
+      </Svg>
+      <View style={{ position: "absolute", bottom: 7, left: 10, flexDirection: "row", gap: 9 }}>
+        {[["#beff4a", "Sight"], ["#ffc46e", "Meal"], ["#ff8fbe", "Sunset"], ["#ffffff", "Hotel"]].map(([c, l]) => (
+          <View key={l} style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c }} />
+            <Text style={{ color: MUTE, fontSize: 7 }}>{l}</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={{ position: "absolute", bottom: 7, right: 10, color: MUTE, fontSize: 7 }}>Route sketch · numbers match the stops below</Text>
+    </View>
+  );
+}
 const dayCost = (items: SharedItem[]) => items.reduce((n, i) => n + (i.cost || 0), 0);
 
 const PIN = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -300,7 +375,7 @@ export function TripPdf({ view, url, maps, budget }: { view: SharedTrip; url: st
                 <View wrap={false} style={{ marginBottom: 8 }}>
                   <Image src={maps.maps[d.index]} style={{ width: "100%", height: 245, borderRadius: 8, objectFit: "cover" }} />
                 </View>
-              ) : null}
+              ) : maps?.sketches?.[d.index] ? <DaySketchMap sketch={maps.sketches[d.index]} tone={tone} /> : null}
               {shown(d.items).map((i) => <ItemRow key={i.id} i={i} cur={cur} pin={maps?.numbers[i.id]} place={maps?.places[i.id]} />)}
             </View>
           );

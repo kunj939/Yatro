@@ -47,7 +47,7 @@ export function ShareSheet({ trip, open, onClose, onChanged }: { trip: Trip; ope
         if (!live) return;
         setPdf(file); setPdfState("ready");
         // the day maps are pictures from Google's Maps Static API: say plainly when they couldn't be added
-        if (maps === "failed") setMapNote("The day maps couldn't be added (the site's Google key doesn't allow map pictures yet). The PDF links each day and stop to Google Maps instead.");
+        if (maps === "failed") setMapNote("Google's map pictures couldn't be added, so each day has a drawn route map instead, and every day and stop links to Google Maps.");
       })
       .catch(() => live && setPdfState("failed"));
     return () => { live = false; };

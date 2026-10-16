@@ -1,5 +1,6 @@
 import type { ItineraryItem, Trip } from "./types";
 import { dayRouteUrl } from "./tripLinks";
+import { decodePolyline } from "./polyline";
 
 /** A map for each day of the PDF: Google Static Maps with the day's stops numbered in order and the routes between them
  *  drawn. Built from the owner's own trip (the public view carries no coordinates), only from Google content that is
@@ -16,7 +17,24 @@ const MAX_URL = 8000;
 export type PdfMaps = {
   maps: Record<number, string>; numbers: Record<string, number>; routes: Record<number, string>;
   places: Record<string, string>; status: "added" | "none" | "failed";
+  /** A drawn map of each day for when Google's picture can't be had: the stops in order and the roads between them. */
+  sketches: Record<number, DaySketch>;
 };
+export type DaySketch = { stops: { n: number; lat: number; lng: number; kind: string; title: string }[]; paths: [number, number][][] };
+
+/** The day's stops (the hotel at both ends once) and its road and walking routes, from the plan itself. No call made. */
+function daySketch(items: ItineraryItem[]): DaySketch | null {
+  const stops: DaySketch["stops"] = [];
+  for (const item of items) {
+    if (!MAPPED.has(item.kind) || !point(item)) continue;
+    const last = stops[stops.length - 1];
+    if (last && last.lat === item.meta.lat && last.lng === item.meta.lng) continue;
+    stops.push({ n: stops.length + 1, lat: item.meta.lat, lng: item.meta.lng, kind: item.kind, title: item.title });
+  }
+  if (!stops.length) return null;
+  const paths = items.filter((i) => MAPPED.has(i.kind) && i.polyline).map((i) => decodePolyline(i.polyline)).filter((p) => p.length > 1);
+  return { stops, paths };
+}
 
 const point = (i: ItineraryItem) =>
   typeof i.meta?.lat === "number" && typeof i.meta?.lng === "number" && !i.meta?.google_expired
@@ -68,7 +86,7 @@ async function asDataUrl(url: string): Promise<string | null> {
 
 export async function pdfDayMaps(trip: Trip | undefined, fetchImage: (url: string) => Promise<string | null> = asDataUrl,
                                   key: string = KEY): Promise<PdfMaps> {
-  const out: PdfMaps = { maps: {}, numbers: {}, routes: {}, places: {}, status: "none" };
+  const out: PdfMaps = { maps: {}, numbers: {}, routes: {}, places: {}, status: "none", sketches: {} };
   const days = trip?.itinerary?.days ?? [];
   for (const d of days) {
     const route = dayRouteUrl(d.items);
@@ -78,12 +96,26 @@ export async function pdfDayMaps(trip: Trip | undefined, fetchImage: (url: strin
       if (at) out.places[i.id] = `https://www.google.com/maps/search/?api=1&query=${at}`;
     }
   }
-  if (!key || !days.length) return out;
+  const drawn = () => {  // any day without Google's picture gets our own drawing, numbered the same way
+    for (const d of days) {
+      if (out.maps[d.index]) continue;
+      const sk = daySketch(d.items);
+      if (!sk) continue;
+      out.sketches[d.index] = sk;
+      for (const i of d.items) {
+        const at = MAPPED.has(i.kind) ? point(i) : null;
+        const hit = at ? sk.stops.find((x) => `${x.lat.toFixed(5)},${x.lng.toFixed(5)}` === at) : null;
+        if (hit) out.numbers[i.id] = hit.n;
+      }
+    }
+  };
+  if (!key || !days.length) { drawn(); return out; }
   const urls = days.map((d) => [d.index, dayUrl(d.items, out.numbers, key)] as const);
   const images = await Promise.all(urls.map(([, u]) => (u ? fetchImage(u) : Promise.resolve(null))));
   urls.forEach(([index], n) => { if (images[n]) out.maps[index] = images[n]!; });
   const tried = urls.some(([, u]) => !!u);
   out.status = Object.keys(out.maps).length ? "added" : tried ? "failed" : "none";
-  if (!Object.keys(out.maps).length) out.numbers = {};  // no maps: no numbers pointing at them
+  if (!Object.keys(out.maps).length) out.numbers = {};  // no pictures: the drawn maps number the stops instead
+  drawn();
   return out;
 }
