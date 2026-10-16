@@ -56,7 +56,7 @@ const COMPARE = [
 
 export function WhyDifferent() {
   return (
-    <section id="compare" className="py-20 md:py-28" aria-labelledby="compare-heading">
+    <section id="compare" className="py-16 md:py-24" aria-labelledby="compare-heading">
       <div className="container-x">
         <Reveal className="mx-auto max-w-3xl text-center">
           <span className="eyebrow mx-auto">Chatbot vs {brand.name}</span>
@@ -133,7 +133,7 @@ export function BudgetAware() {
   const fits = f ? withBuffer <= f.budget : false;
 
   return (
-    <section className="py-24" aria-labelledby="budget-heading">
+    <section className="py-16 md:py-20" aria-labelledby="budget-heading">
       <div className="container-x grid gap-12 lg:grid-cols-2 lg:items-center">
         <Reveal className="min-w-0">
           <span className="eyebrow">Budget, sorted</span>
@@ -225,7 +225,7 @@ export function AlternativesSection() {
   const start = LUNCH_END + a.walk, end = start + a.visit, spare = NEXT_AT - end - 10;
 
   return (
-    <section className="py-24" aria-labelledby="alts-heading">
+    <section className="py-16 md:py-20" aria-labelledby="alts-heading">
       <div className="container-x grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
         <Reveal className="order-2 min-w-0 lg:order-1">
           <div className="spotlight panel overflow-hidden rounded-2xl shadow-[0_30px_80px_-40px_rgb(var(--shadow)/0.55)]">
@@ -317,7 +317,7 @@ export function GroupSection() {
   const tone = (n: string) => PEOPLE.find((p) => p.name === n)!.tone;
 
   return (
-    <section className="py-20 md:py-24" aria-labelledby="group-heading">
+    <section className="py-16 md:py-20" aria-labelledby="group-heading">
       <div className="container-x grid gap-10 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-14">
         <Reveal className="min-w-0">
           <span className="eyebrow">Group trips</span>
@@ -422,7 +422,7 @@ const STEPS = [
 
 export function FinalCTA() {
   return (
-    <section className="py-20 md:py-24">
+    <section className="py-16 md:py-20">
       <div className="container-x">
         <Reveal>
           <div className="relative isolate overflow-hidden rounded-[28px] border border-line bg-paper px-6 py-12 shadow-[0_1px_2px_rgb(var(--shadow)/0.05),0_30px_80px_-40px_rgb(var(--shadow)/0.35)] md:px-14 md:py-16">

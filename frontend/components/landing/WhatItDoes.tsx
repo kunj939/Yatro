@@ -31,7 +31,7 @@ const IN_EVERY_PLAN = [
 
 export function WhatItDoes() {
   return (
-    <section id="features" className="py-20 md:py-24" aria-labelledby="what-heading">
+    <section id="features" className="py-16 md:py-20" aria-labelledby="what-heading">
       <div className="container-x">
         <Reveal className="mx-auto max-w-3xl text-center">
           <span className="eyebrow mx-auto">Why {brand.name}</span>

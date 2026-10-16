@@ -102,9 +102,12 @@ section[id] { scroll-margin-top: 96px; }
   .chip { @apply inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-200; }
   .chip-off { @apply chip border-line bg-paper text-ink hover:-translate-y-px hover:border-ink/40; }
   .chip-on { @apply chip border-signal bg-signal text-[rgb(var(--on-signal))] shadow-[0_6px_18px_-8px_rgb(var(--signal)/0.8)]; }
-  .panel { @apply rounded-ticket border border-line bg-paper; }
+  .panel { @apply rounded-2xl border bg-paper; border-color: rgb(var(--ink) / 0.07);
+           box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 1px 2px rgb(var(--shadow) / 0.04), 0 18px 40px -30px rgb(var(--shadow) / 0.22); }
   /* Cards that respond to the pointer: a small lift and a brand-tinted edge. */
-  .card-hover { @apply transition-all duration-300 ease-out hover:-translate-y-1 hover:border-signal/40 hover:shadow-glow; }
+  .card-hover { @apply transition-all duration-300 ease-out hover:-translate-y-1 hover:border-signal/40; }
+  .card-hover:hover { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 2px 4px rgb(var(--shadow) / 0.05),
+                                  0 16px 32px -16px rgb(var(--shadow) / 0.16), 0 36px 70px -36px rgb(var(--signal) / 0.45); }
   .text-gradient { @apply bg-gradient-to-r from-ink via-ink to-signal bg-clip-text text-transparent; }
   /* The accent: the one phrase that matters in a headline, in an italic serif against the bold sans. Pair it with
      .highlight (the brand gradient, light or dark theme) or .highlight-night (on panels that are always dark). The
@@ -115,7 +118,11 @@ section[id] { scroll-margin-top: 96px; }
               letter-spacing: -0.01em; }
   .headline-font { font-family: "Inter Tight", Inter, system-ui, sans-serif; letter-spacing: -0.03em; }
   /* One card look for the landing page: solid white, a hairline edge and a soft two-layer shadow. */
-  .card { @apply rounded-2xl border border-line/80 bg-paper; box-shadow: 0 1px 2px rgb(var(--shadow) / 0.05), 0 12px 32px -16px rgb(var(--shadow) / 0.18); }
+  /* Premium cards: a crisp top highlight, a hairline edge and three soft shadows (contact, lift, distance). */
+  .card { @apply rounded-2xl border bg-paper; border-color: rgb(var(--ink) / 0.07);
+          background-image: linear-gradient(180deg, rgb(255 255 255), rgb(251 252 250));
+          box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 1px 2px rgb(var(--shadow) / 0.04),
+                      0 8px 20px -12px rgb(var(--shadow) / 0.12), 0 28px 56px -36px rgb(var(--shadow) / 0.24); }
 
   /* Cards that catch the light: a thin glow on the edge that follows the pointer, a faint wash inside, and a soft
      highlight along the top edge at rest. SpotlightTracker (one listener for the page) writes the pointer position

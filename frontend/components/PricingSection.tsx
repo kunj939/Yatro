@@ -38,7 +38,7 @@ export function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="py-24" aria-labelledby="pricing-heading">
+    <section id="pricing" className="py-16 md:py-20" aria-labelledby="pricing-heading">
       <div className="container-x">
         <Reveal className="text-center">
           <span className="eyebrow">Pricing</span>
