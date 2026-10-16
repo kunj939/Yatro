@@ -81,11 +81,16 @@ export function LiveBoard() {
   return (
     <div className="board-glow relative" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <div className="spotlight relative overflow-hidden card rounded-2xl">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-line px-5 py-4 sm:px-6">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-mute">
-            {trip.route} · {trip.date}
-          </span>
-          <span className="num text-[13px] font-semibold text-ink">{fmt(trip, spent)} <span className="text-ink-mute">/ {fmt(trip, trip.budget)}</span></span>
+        <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4 sm:px-6">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-signal-deep">Sample trip plan · Day 1</p>
+            <p className="mt-1 truncate text-[17px] font-bold leading-tight text-ink">{trip.route}</p>
+            <p className="mt-0.5 text-[13px] text-ink-mute">{trip.date} · budget {fmt(trip, trip.budget)}</p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-mute">Planned</p>
+            <p className="num mt-1 text-[17px] font-bold leading-tight text-ink">{fmt(trip, spent)}</p>
+          </div>
         </div>
         <div className="h-[3px] bg-haze-2" aria-hidden>
           <div className="h-full bg-gradient-to-r from-signal to-spark transition-[width] duration-500 ease-out" style={{ width: `${pct}%` }} />
@@ -116,7 +121,7 @@ export function LiveBoard() {
             <span className="board-live h-1.5 w-1.5 rounded-full bg-teal" />{trip.compared} departures compared
           </span>
           <span className="num font-semibold text-ink">
-            {shown === rows.length ? `${fmt(trip, trip.budget - total)} left` : "Counting…"}
+            {shown === rows.length ? <>{fmt(trip, trip.budget - total)} left<span className="hidden sm:inline"> in budget</span></> : "Counting…"}
           </span>
         </div>
       </div>
