@@ -204,6 +204,9 @@ _DATE_ONE = [
 _DATE_SHIFT = re.compile(rf"\b(?P<verb>postpone|push|move|shift|delay|prepone|bring)\w*\s+(?:it\s+|the trip\s+|trip\s+)?"
                     rf"(?:back\s+|forward\s+|ahead\s+)?(?:by\s+)?(?P<n>\d+|{_WORDNUM}|a|an)\s*"
                     rf"(?P<u>day|days|din|week|weeks|hafte|hafta)(?:\s+(?P<dir>later|earlier|baad|pehle|before|after))?")
+# no verb, but a direction: "make it 3 days earlier", "a week later", "3 din pehle kar do" (a move, not a length)
+_DATE_SHIFT_BARE = re.compile(rf"\b(?P<n>\d+|{_WORDNUM}|a|an|ek)\s*(?P<u>day|days|din|week|weeks|hafte|hafta)\s+"
+                              rf"(?P<dir>later|earlier|baad|pehle|before|after|ahead|aage|peeche)\b")
 
 
 def _iso(d: int, m: int, y: int | None, today: date) -> str | None:
@@ -253,11 +256,12 @@ def _read_dates(t: str, it: Intent, ctx: dict) -> str:
             if start:
                 it.start_date = start
                 return t[:m.start()] + " " + t[m.end():]
-    m = _DATE_SHIFT.search(t)
+    m = _DATE_SHIFT.search(t) or _DATE_SHIFT_BARE.search(t)
     if m and ctx.get("start_date"):
         n = int(m.group("n")) if m.group("n").isdigit() else (_NUMWORDS.get(m.group("n")) or 1)
         n *= 7 if m.group("u").startswith(("week", "haft")) else 1
-        if m.group("verb") in ("prepone", "bring") or m.group("dir") in ("earlier", "pehle", "before"):
+        verb = m.groupdict().get("verb")
+        if verb in ("prepone", "bring") or m.group("dir") in ("earlier", "pehle", "before", "peeche"):
             n = -n
         s0 = date.fromisoformat(ctx["start_date"])
         e0 = date.fromisoformat(ctx.get("end_date") or ctx["start_date"])

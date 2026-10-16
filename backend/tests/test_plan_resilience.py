@@ -60,10 +60,14 @@ def test_one_failed_search_does_not_sink_the_sights(monkeypatch):
 
 
 def test_restaurants_survive_one_failed_search(monkeypatch):
+    seen: list[str] = []
+
     def search(self, q, center, radius=25000, max_results=12, veg=False):
         if q.startswith("cafes"):
             raise ProviderUnavailable("timeout")
-        return [{**row(hash(q) % 1000 + i), "types": ["restaurant"]} for i in range(4)]
+        seen.append(q)  # fixed ids per query (hash() is randomised per run and once made two queries collide)
+        base = 100 * (sorted(["restaurants", "famous"]).index("famous" if q.startswith("famous") else "restaurants") + 1)
+        return [{**row(base + i), "types": ["restaurant"]} for i in range(4)]
 
     monkeypatch.setattr(GooglePlacesProvider, "_text_search", search)
     assert len(GooglePlacesProvider().restaurants(CITY, "both", False)) == 8

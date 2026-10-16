@@ -108,22 +108,37 @@ class RailAwareTransport:
             rail = r.result() if r else []
         def is_train(t, scheduled=False):
             return getattr(t, "mode", None) == "train" and not (scheduled and getattr(t, "flexible", False))
-        if not any(is_train(t, scheduled=True) for t in google + rail):
-            rail = self.official.intercity(origin, dest, depart_day, return_day) or rail  # 3. official dataset
-        if window_start and window_end and not any(is_train(t, scheduled=True) for t in google + rail):
-            # No real timetable anywhere. Google's own fallback is a straight-line "train" from the exact start
+        # Each direction on its own: a real outbound train must not stop the return from getting a fallback. (Moving a
+        # trip to other weekdays once found Tuesday's train but no Thursday timetable, so the way back was only a cab
+        # and the plan looked ₹20,000 dearer.)
+        directions = ("outbound", "return") if return_day is not None else ("outbound",)
+
+        def missing() -> set[str]:
+            return {d for d in directions
+                    if not any(is_train(t, scheduled=True) and t.direction == d for t in google + rail)}
+
+        if missing():
+            want = missing()
+            official = [t for t in self.official.intercity(origin, dest, depart_day, return_day) or []
+                        if t.direction in want]  # 3. official dataset
+            rail = [*rail, *official]
+        want = missing()
+        if window_start and window_end and want:
+            # No real timetable for that way. Google's own fallback is a straight-line "train" from the exact start
             # point, which ignores where the stations are; replace it with one routed through real stations.
-            est = estimated_rail_options(origin, dest, depart_day, return_day, window_start, window_end)  # 4.
+            est = [t for t in estimated_rail_options(origin, dest, depart_day, return_day, window_start, window_end)
+                   if t.direction in want]  # 4.
             if not est:  # 5. AI guidance: stations only, each one checked against the gazetteer
                 o_st, d_st = self.ai.stations(origin, dest)
                 if o_st and d_st:
-                    est = estimated_rail_options(origin, dest, depart_day, return_day, window_start, window_end,
-                                                 stations=(o_st[0], d_st[0]), source=SourceKind.AI_GUIDANCE)
+                    est = [t for t in estimated_rail_options(origin, dest, depart_day, return_day, window_start,
+                                                             window_end, stations=(o_st[0], d_st[0]),
+                                                             source=SourceKind.AI_GUIDANCE) if t.direction in want]
             if est:
-                google = [t for t in google if not is_train(t)]
-                rail = est
-                log.info("No train timetable for %s -> %s; using a station-network estimate (%s to %s)",
-                         origin.name, dest.name, est[0].from_name, est[0].to_name)
+                google = [t for t in google if not (is_train(t) and t.direction in want)]
+                rail = [*rail, *est]
+                log.info("No train timetable for %s -> %s (%s); using a station-network estimate (%s to %s)",
+                         origin.name, dest.name, ", ".join(sorted(want)), est[0].from_name, est[0].to_name)
         return google + rail
 
     @property
