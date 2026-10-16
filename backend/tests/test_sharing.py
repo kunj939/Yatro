@@ -65,6 +65,12 @@ SECRETS = lambda s: [s["me"]["email"], s["me"]["phone"], "password", "password_h
 
 # --- I8: nothing private in the public view or the text ---------------------------------------------------------------
 
+def _amount_in(n: int, blob: str) -> bool:
+    """The number as an amount, not as digits inside a random id ("c73212b8-…" once matched 7321 and failed the test)."""
+    import re
+    return bool(re.search(rf"(?<![0-9a-fA-F-]){n}(?![0-9a-fA-F])", blob))
+
+
 def test_the_public_view_and_text_hold_no_private_data(client, seeded):
     j, token = _share(client, seeded["auth"], seeded["trip_id"])
     view = _public(client, token)
@@ -72,7 +78,7 @@ def test_the_public_view_and_text_hold_no_private_data(client, seeded):
     blob = json.dumps(view.json()) + j["text"] + unquote(j["wa_url"])
     for secret in SECRETS(seeded):
         assert secret not in blob, secret
-    assert str(BUDGET) not in blob and "Hotel advance" not in blob  # the budget and expenses stay private by default
+    assert not _amount_in(BUDGET, blob) and "Hotel advance" not in blob  # the budget and expenses stay private by default
     from app.utils.money import fmt_money  # ...in the form the page prints them too, and in the plan's own sentences
     remaining = client.get(f"/api/trips/{seeded['trip_id']}", headers=seeded["auth"]).json()["itinerary"]["remaining"]
     for form in (f"{BUDGET:,}", fmt_money(BUDGET), fmt_money(remaining), f"{int(remaining):,}"):
@@ -130,7 +136,7 @@ def test_the_split_appears_only_for_plan_and_split(client, seeded):
     assert split["total"] == 1450 and {m["name"] for m in split["members"]} >= {"Riya"}
     assert split["expenses"][0]["description"] == "Hotel advance"
     blob = json.dumps(split)
-    assert "riya-secret@example.com" not in blob and str(MEMBER_BUDGET) not in blob and OWNER_UPI not in blob
+    assert "riya-secret@example.com" not in blob and not _amount_in(MEMBER_BUDGET, blob) and OWNER_UPI not in blob
 
 
 def test_the_token_is_never_stored(client, seeded):

@@ -14,6 +14,7 @@ import difflib
 import json
 import logging
 import re
+from datetime import date, timedelta
 import time
 from dataclasses import dataclass, field
 
@@ -69,6 +70,8 @@ _INTEREST_ANY = re.compile(r"\b(?:" + "|".join(w for w, _, _ in INTEREST_WORDS) 
 class Intent:
     budget_change: dict | None = None  # {"mode": "set|increase|decrease", "amount": number}
     days_total: int | None = None  # "make it a 3-day trip"
+    start_date: str | None = None  # "YYYY-MM-DD": "20 Oct to 26 Oct", "start on the 22nd", "postpone by 2 days"
+    end_date: str | None = None
     extend_days: int = 0  # "add one more day" = 1
     pace: str | None = None
     add_styles: list[str] = field(default_factory=list)
@@ -102,7 +105,7 @@ class Intent:
     source: str = "rules"
 
     def has_change(self) -> bool:
-        return bool(self.budget_change or self.days_total or self.extend_days or self.pace or self.add_styles
+        return bool(self.budget_change or self.days_total or self.start_date or self.extend_days or self.pace or self.add_styles
                     or self.remove_styles or self.food or self.stay or self.transport_only or self.transport_add
                     or self.transport_remove or self.start_time or self.end_time or self.start_shift or self.end_shift
                     or self.travellers
@@ -170,6 +173,97 @@ def _day_change(t: str) -> int:
     if re.search(r"\b(?:add|more|extend|extra|longer|aur|badha\w*|stay)\b", t):
         return n
     return 0
+
+
+# --- trip dates ------------------------------------------------------------------------------------------
+
+_MONTHS = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6, "jul": 7, "aug": 8, "sep": 9, "oct": 10,
+           "nov": 11, "dec": 12}
+_MON = (r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|"
+        r"oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)")
+_DAY = r"(?:3[01]|[12]\d|0?[1-9])(?:st|nd|rd|th)?"
+_TO = r"\s*(?:to|till|until|upto|up to|through|thru|-|–|—|se)\s*"
+_DATE_RANGES = [
+    # 20 oct to 26 oct · 20-26 oct · 20th to 26th october · 20 oct se 26 oct tak · 28 dec to 3 jan
+    re.compile(rf"\b(?P<d1>{_DAY})\s*(?:of\s+)?(?P<m1>{_MON})?\.?(?:,?\s*(?P<y1>20\d\d))?{_TO}(?P<d2>{_DAY})\s*(?:of\s+)?"
+               rf"(?P<m2>{_MON})\b(?:,?\s*(?P<y2>20\d\d))?"),
+    # oct 20 to oct 26 · oct 20-26 · october 20 to 26
+    re.compile(rf"\b(?P<m1>{_MON})\.?\s*(?P<d1>{_DAY}){_TO}(?:(?P<m2>{_MON})\.?\s*)?(?P<d2>{_DAY})\b"),
+    # 20/10 to 26/10 · 20.10.2026 - 26.10.2026
+    re.compile(r"\b(?P<d1>[0-3]?\d)[/.](?P<n1>[01]?\d)(?:[/.](?P<y1>\d{2,4}))?" + _TO +
+               r"(?P<d2>[0-3]?\d)[/.](?P<n2>[01]?\d)(?:[/.](?P<y2>\d{2,4}))?\b"),
+]
+_DATE_ONE = [
+    re.compile(rf"\b(?:on|from|start\w*(?:\s+(?:on|from))?|leav\w*(?:\s+on)?|date|dates?\s+to|move\w*(?:\s+it)?\s+to|"
+               rf"shift\w*(?:\s+it)?\s+to|change\w*(?:\s+(?:it|the date|dates))?\s+to|postpone\w*(?:\s+it)?\s+to|"
+               rf"prepone\w*(?:\s+it)?\s+to)\s+(?:the\s+)?(?P<d>{_DAY})\s*(?:of\s+)?(?P<m>{_MON})\b(?:,?\s*(?P<y>20\d\d))?"),
+    re.compile(rf"\b(?:on|from|start\w*(?:\s+(?:on|from))?|move\w*(?:\s+it)?\s+to|shift\w*(?:\s+it)?\s+to|"
+               rf"change\w*(?:\s+(?:it|the date|dates))?\s+to)\s+(?P<m>{_MON})\.?\s*(?P<d>{_DAY})\b"),
+    re.compile(rf"\b(?P<d>{_DAY})\s*(?P<m>{_MON})\s+(?:se|ko|from)\b"),  # "22 oct se", "22 oct ko"
+]
+_DATE_SHIFT = re.compile(rf"\b(?P<verb>postpone|push|move|shift|delay|prepone|bring)\w*\s+(?:it\s+|the trip\s+|trip\s+)?"
+                    rf"(?:back\s+|forward\s+|ahead\s+)?(?:by\s+)?(?P<n>\d+|{_WORDNUM}|a|an)\s*"
+                    rf"(?P<u>day|days|din|week|weeks|hafte|hafta)(?:\s+(?P<dir>later|earlier|baad|pehle|before|after))?")
+
+
+def _iso(d: int, m: int, y: int | None, today: date) -> str | None:
+    try:
+        if y is not None:
+            return date(y + 2000 if y < 100 else y, m, d).isoformat()
+        out = date(today.year, m, d)
+        if out < today:  # "20 Oct" said in December means next October
+            out = date(today.year + 1, m, d)
+        return out.isoformat()
+    except ValueError:
+        return None
+
+
+def _day(s: str) -> int:
+    return int(re.match(r"\d+", s).group(0))
+
+
+def _read_dates(t: str, it: Intent, ctx: dict) -> str:
+    """Trip dates the traveller names. Returns the text with them taken out, so "20" or "26" isn't read as a budget,
+    a time or a number of people by the readers after this one."""
+    today = date.today()
+    for rx in _DATE_RANGES:
+        m = rx.search(t)
+        if not m:
+            continue
+        g = m.groupdict()
+        y2 = int(g["y2"]) if g.get("y2") else (int(g["y1"]) if g.get("y1") else None)
+        y1 = int(g["y1"]) if g.get("y1") else y2  # "20 to 26 Oct 2026": the year said once covers both
+        if g.get("n1"):  # numeric
+            m1, m2 = int(g["n1"]), int(g["n2"])
+        else:
+            m2 = _MONTHS[(g.get("m2") or g.get("m1"))[:3]]
+            m1 = _MONTHS[g["m1"][:3]] if g.get("m1") else (m2 if _day(g["d1"]) <= _day(g["d2"]) else (m2 - 2) % 12 + 1)
+        start, end = _iso(_day(g["d1"]), m1, y1, today), _iso(_day(g["d2"]), m2, y2, today)
+        if start and end:
+            if end < start:  # 28 Dec to 3 Jan: the end is next year
+                e = date.fromisoformat(end)
+                end = e.replace(year=e.year + 1).isoformat()
+            it.start_date, it.end_date = start, end
+            return t[:m.start()] + " " + t[m.end():]
+    for rx in _DATE_ONE:
+        m = rx.search(t)
+        if m:
+            y = m.groupdict().get("y")
+            start = _iso(_day(m.group("d")), _MONTHS[m.group("m")[:3]], int(y) if y else None, today)
+            if start:
+                it.start_date = start
+                return t[:m.start()] + " " + t[m.end():]
+    m = _DATE_SHIFT.search(t)
+    if m and ctx.get("start_date"):
+        n = int(m.group("n")) if m.group("n").isdigit() else (_NUMWORDS.get(m.group("n")) or 1)
+        n *= 7 if m.group("u").startswith(("week", "haft")) else 1
+        if m.group("verb") in ("prepone", "bring") or m.group("dir") in ("earlier", "pehle", "before"):
+            n = -n
+        s0 = date.fromisoformat(ctx["start_date"])
+        e0 = date.fromisoformat(ctx.get("end_date") or ctx["start_date"])
+        it.start_date, it.end_date = (s0 + timedelta(days=n)).isoformat(), (e0 + timedelta(days=n)).isoformat()
+        return t[:m.start()] + " " + t[m.end():]
+    return t
 
 
 # --- trip length -----------------------------------------------------------------------------------------
@@ -778,6 +872,7 @@ def _rule_core(message: str, candidates: list[dict], ctx: dict) -> Intent:
         return it
     clauses = _clauses(message)
     dest_tokens = set(re.findall(r"[a-z0-9']+", _norm(ctx.get("destination") or "")))
+    t = _read_dates(t, it, ctx)  # first, and taken out of the text: "20 Oct to 26 Oct" is dates, not 20 rupees or 26 people
     _read_length(t, it)
     _read_budget(t, it, ctx)
     _read_times(clauses, t, it)
@@ -820,6 +915,10 @@ a request can hold several changes; fill in every field that applies and leave t
 - start_time / end_time are 24-hour "HH:MM" (end_time is when the traveller wants to be back).
 - travellers is the new total number of people. extend_days adds whole days ("one more day" = 1, "a day less" = -1);
   days_total sets the whole trip length ("make it 3 days").
+- start_date / end_date are "YYYY-MM-DD", only when the traveller names dates or moves the trip ("20 Oct to 26 Oct",
+  "start on the 22nd", "postpone by 2 days"). Use the next such date on or after current_trip.today. A date range is
+  start_date and end_date, never days_total. Leave both null when no date is named.
+- Only fill a field the request asks to change. Never repeat a value from current_trip.
 - transport_modes lists the modes meant; transport_action says whether they replace the current ones ("only"), join
   them ("add") or are taken away ("remove").
 - A price for ONE item (a cab, a ticket, a hotel room, a meal: "the cab is ₹358, make it under 200") is NOT the trip
@@ -846,7 +945,7 @@ INTENT_SCHEMA = {
     "required": ["budget_change", "days_total", "extend_days", "pace", "add_styles", "remove_styles", "food", "stay",
                  "transport_modes", "transport_action", "start_time", "end_time", "travellers", "traveller_type",
                  "exclude_place_ids", "include_place_ids", "add_place_names", "interests", "avoid_interests", "reply",
-                 "train_names", "train_direction"],
+                 "train_names", "train_direction", "start_date", "end_date"],
     "properties": {
         "budget_change": _nullable({"type": "object", "additionalProperties": False, "required": ["mode", "amount"],
                                     "properties": {"mode": {"type": "string", "enum": ["set", "increase", "decrease"]},
@@ -867,6 +966,7 @@ INTENT_SCHEMA = {
         "train_names": _STR_LIST,
         "train_direction": _nullable({"type": "string", "enum": ["outbound", "return", "both"]}),
         "reply": {"type": "string"},
+        "start_date": _nullable({"type": "string"}), "end_date": _nullable({"type": "string"}),
     },
 }
 
@@ -922,7 +1022,29 @@ def _from_model(data: dict, candidates: list[dict]) -> Intent:
     it.interests = [t for t in data.get("interests") or [] if t in INTEREST_TAGS]
     it.avoid_tags = [t for t in data.get("avoid_interests") or [] if t in INTEREST_TAGS]
     it.reply = (str(data.get("reply") or "").strip()[:300]) or None
+    for name in ("start_date", "end_date"):
+        v = str(data.get(name) or "").strip()
+        try:
+            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and date.fromisoformat(v):
+                setattr(it, name, v)
+        except ValueError:
+            pass
     return it
+
+
+_ECHO = {"start_time": "start_time", "end_time": "end_time", "travellers": "travellers", "days_total": "days",
+         "food": "food", "stay": "stay", "pace": "pace", "traveller_type": "traveller_type", "start_date": "start_date",
+         "end_date": "end_date"}
+
+
+def _drop_echoes(ai: Intent, rules: Intent, ctx: dict) -> Intent:
+    """A model sometimes copies the trip's current settings into its answer; those aren't requests, and reporting them
+    ("The trip already starts at 07:00") is noise. A value the rules also read from the text is kept."""
+    for field_name, key in _ECHO.items():
+        v = getattr(ai, field_name)
+        if v is not None and ctx.get(key) is not None and str(v) == str(ctx[key]) and getattr(rules, field_name) is None:
+            setattr(ai, field_name, None)
+    return ai
 
 
 def _merge(ai: Intent, rules: Intent, message_has_amount: bool = True) -> Intent:
@@ -931,6 +1053,10 @@ def _merge(ai: Intent, rules: Intent, message_has_amount: bool = True) -> Intent
     for name in ("budget_change", "days_total", "pace", "food", "stay", "start_time", "end_time", "travellers",
                  "traveller_type", "train_direction"):
         setattr(out, name, getattr(ai, name) if getattr(ai, name) is not None else getattr(rules, name))
+    # dates the rules read exactly ("20 Oct to 26 Oct") win; the model's reading fills in phrasing they don't know
+    out.start_date, out.end_date = (rules.start_date, rules.end_date) if rules.start_date else (ai.start_date, ai.end_date)
+    if out.start_date and out.end_date:
+        out.days_total = None  # a range already sets the length: "20 to 26 Oct" is not "make it 6 days"
     out.start_shift = rules.start_shift if not ai.start_time else 0  # "start an hour later": only the rules read it
     out.end_shift = rules.end_shift if not ai.end_time else 0
     out.extend_days = ai.extend_days or rules.extend_days
@@ -958,7 +1084,7 @@ def understand(llm: LLMProvider, message: str, ctx: dict, candidates: list[dict]
     rules = rule_intent(message, candidates, ctx)
     if not llm.live:
         return rules
-    payload = {"request": message[:1000], "current_trip": ctx,
+    payload = {"request": message[:1000], "current_trip": {**ctx, "today": date.today().isoformat()},
                "candidate_places": [{"id": c["id"], "name": c["name"], "kind": c.get("kind"),
                                      "in_plan": bool(c.get("planned"))} for c in candidates[:60]]}
     t0 = time.perf_counter()
@@ -977,4 +1103,4 @@ def understand(llm: LLMProvider, message: str, ctx: dict, candidates: list[dict]
     if not result.data:
         return rules
     has_amount = bool(re.search(rf"\d|\b(?:{_WORDNUM})\b\s*(?:hazaa?r|hajar|thousand|lakhs?|lacs?|k\b)", _norm(message)))
-    return _merge(_from_model(result.data, candidates), rules, has_amount)
+    return _merge(_drop_echoes(_from_model(result.data, candidates), rules, ctx), rules, has_amount)
