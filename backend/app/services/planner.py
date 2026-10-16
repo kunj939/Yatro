@@ -269,7 +269,11 @@ class Planner:
         # A trip longer than a week needs more than the city's top sights: the day trips around it go first in the hints.
         long_trip = ["day_trips"] if inp.days > 7 else []
         found_places = self.p.places.attractions(dest, [*long_trip, *age_fit.search_hints(inp.age_groups), *inp.styles, *inp.interests])
-        found_restaurants = self.p.places.restaurants(dest, inp.effective_food, "premium" in inp.styles)
+        try:
+            found_restaurants = self.p.places.restaurants(dest, inp.effective_food, "premium" in inp.styles)
+        except ProviderUnavailable:  # the plan still comes; meals keep their share of the budget
+            found_restaurants = []
+            self.warn("Restaurant suggestions couldn't be loaded this time, so meal stops are left to you. The food budget is kept aside.")
         found_places = self._with_named_places(found_places, found_restaurants, inp, dest)
         attractions = PS.attraction_candidates(found_places, inp, act_allow, city=dest.name.split(",")[0])
         restaurants = PS.restaurant_candidates(found_restaurants, inp, meal_pp)

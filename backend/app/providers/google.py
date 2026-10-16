@@ -430,6 +430,29 @@ class GooglePlacesProvider(PlacesProvider):
                 return place
         return None
 
+    def _searches(self, jobs: list[tuple[str, float, int]], center: tuple[float, float]) -> list[list[dict]]:
+        """Several text searches at once (they don't depend on each other), in the order asked. One that fails or times
+        out gives no rows instead of sinking the plan; only when every one fails is the error raised (the caller's
+        fallback then applies)."""
+        def one(job):
+            q, radius, n = job
+            try:
+                return self._text_search(q, center, radius=radius, max_results=n)
+            except ProviderUnavailable as exc:
+                log.warning("Google search %r skipped: %s", q, exc)
+                return exc
+        if not jobs:
+            return []
+        if len(jobs) == 1:
+            out = [one(jobs[0])]
+        else:
+            with ContextThreadPool(max_workers=min(4, len(jobs)), thread_name_prefix="places") as pool:
+                out = list(pool.map(one, jobs))
+        failures = [r for r in out if isinstance(r, ProviderUnavailable)]
+        if failures and len(failures) == len(out):
+            raise failures[0]
+        return [[] if isinstance(r, ProviderUnavailable) else r for r in out]
+
     def attractions(self, city: PlaceData, interests: list[str], known: list[PlaceData] | None = None) -> list[PlaceData]:
         currency = currency_for(city.lat, city.lng)  # offline, from the destination's own coordinates
         queries = [f"top tourist attractions in {city.name}"]
@@ -452,8 +475,10 @@ class GooglePlacesProvider(PlacesProvider):
         queries += [f"{extra[i]} in {city.name}" for i in wanted][:3]
         seen, out = set(), []
 
-        def run(q: str, radius: float = 25000) -> None:
-            for p in self._text_search(q, (city.lat, city.lng), radius=radius):
+        center = (city.lat, city.lng)
+
+        def take(rows: list[dict]) -> None:
+            for p in rows:
                 if p["id"] in seen or p.get("businessStatus") in ("CLOSED_PERMANENTLY",):
                     continue
                 if any(t in p.get("types", []) for t in ("lodging", "restaurant", "travel_agency")):
@@ -461,17 +486,25 @@ class GooglePlacesProvider(PlacesProvider):
                 seen.add(p["id"])
                 out.append(to_place(p, "attraction", currency))
 
-        for q in queries:
-            run(q)
+        def run_all(qs: list[tuple[str, float]], must: bool) -> None:
+            try:
+                for rows in self._searches([(q, r, 12) for q, r in qs], center):
+                    take(rows)
+            except ProviderUnavailable:
+                if must and not known:
+                    raise  # nothing at all to plan with: the caller decides
+                log.warning("Google sight searches for %s failed; planning with what we have", city.name)
+
+        run_all([(q, 25000) for q in queries], must=True)
         # What kind of place is it? A beach town gets "best beaches in Goa", the hills "viewpoints, valleys and treks",
         # a big city "famous landmarks and museums": the search behind the plan matches the destination.
-        for q in destination_profile.queries(destination_profile.profile(out + known)):
-            if not any(q in done for done in queries):
-                run(f"{q} in {city.name}")
+        more = [(f"{q} in {city.name}", 25000) for q in destination_profile.queries(destination_profile.profile(out + known))
+                if not any(q in done for done in queries)]
         # A small town has few real sights of its own (Bharatpur): add the well-known places around it, so the days
         # are filled with Deeg or Fatehpur Sikri rather than neighbourhood parks.
         if not lean and sum(1 for p in out if (p.rating_count or 0) >= 500) < 10:
-            run(f"famous places to visit near {city.name}", radius=60000)
+            more.append((f"famous places to visit near {city.name}", 60000))
+        run_all(more, must=False)
         return out[:48 if "day_trips" in wanted else 32]  # a long trip needs a bigger pool to fill its days
 
     def restaurants(self, city: PlaceData, food: str, premium: bool) -> list[PlaceData]:
@@ -481,8 +514,8 @@ class GooglePlacesProvider(PlacesProvider):
         if premium:
             queries.append(f"fine dining in {city.name}")
         seen, out = set(), []
-        for q in queries:
-            for p in self._text_search(q, (city.lat, city.lng), radius=15000, max_results=10):
+        for rows in self._searches([(q, 15000, 10) for q in queries], (city.lat, city.lng)):
+            for p in rows:
                 if p["id"] in seen or p.get("businessStatus") == "CLOSED_PERMANENTLY":
                     continue
                 seen.add(p["id"])

@@ -8,12 +8,16 @@ Google's, unchanged.
 """
 from __future__ import annotations
 
+import logging
 import re
 from difflib import SequenceMatcher
 
+from app.core.errors import ProviderUnavailable
 from app.providers import wikidata
 from app.providers.types import PlaceData
 from app.utils.geo import haversine_m
+
+log = logging.getLogger("tripai.wiki_places")
 
 SAME_SPOT_M = 300      # this close, two entries are the same place whatever they're called
 SAME_NAME_M = 2500     # a big site's pin differs by source (park centre vs gate): similar names this close are one place
@@ -62,4 +66,13 @@ class WikiAwarePlaces:
 
     def attractions(self, city: PlaceData, interests: list[str]) -> list[PlaceData]:
         wiki = wikidata.sights(city)
-        return merge(self.base.attractions(city, interests, known=wiki), wiki)
+        try:
+            google = self.base.attractions(city, interests, known=wiki)
+        except ProviderUnavailable:
+            if len(wiki) < 4:
+                raise
+            # Google can't answer right now: plan with the famous sights Wikidata knows (no ratings or hours from Google),
+            # rather than telling the traveller to come back later
+            log.warning("Google sights unavailable for %s; using %d Wikidata sights", city.name, len(wiki))
+            return wiki
+        return merge(google, wiki)

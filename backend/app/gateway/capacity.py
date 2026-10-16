@@ -19,7 +19,6 @@ from datetime import UTC, datetime, timedelta
 
 from app.core.config import get_settings
 from app.core.errors import ProviderUnavailable
-from app.gateway.breaker import breakers
 from app.gateway.budget import budgets
 from app.gateway.errors import BudgetExhausted, GatewayError
 
@@ -64,19 +63,15 @@ def _live(providers) -> bool:
 
 
 def check_new_plan(providers) -> Unavailable | None:
-    """Before a new plan reserves the quota: is there room today, and are the required (Google) sources open?"""
-    s = get_settings()
+    """Before a new plan reserves the quota: is there room today in the plan cap and the Google budget?"""
     if not _live(providers):
         return None
     if budgets.exhausted("plans"):
         return Unavailable("daily_cap", budgets.reset_at(), CAP_MESSAGE)
     if budgets.exhausted("google"):
         return Unavailable("provider_busy", budgets.reset_at(), MESSAGE)
-    if s.gateway_breakers:
-        for prov in ("google-places", "google-routes"):  # places are required; a routes outage degrades, it doesn't stop
-            if prov == "google-places" and breakers.is_open(prov):
-                until = breakers.open_until(prov)
-                return Unavailable("provider_busy", _at_least(datetime.fromtimestamp(until, UTC) if until else None), MESSAGE)
+    # An open Google circuit no longer turns people away: the plan runs, skips what it can't reach, and falls back to
+    # Wikidata's sights and estimated prices, labelled on the plan. Only the money caps above and an admin pause stop it.
     return None
 
 

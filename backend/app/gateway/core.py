@@ -136,9 +136,9 @@ def _send(method, url, display, prov, endpoint, grp, retries, timeout, idempoten
             except BudgetExhausted as exc:
                 breakers.release(prov, endpoint, token)
                 _skip("budget", prov, endpoint, grp, exc)
-            eff = timeout if timeout is not None else timeout_for(prov, endpoint)
-            if rem is not None:
-                eff = min(eff, max(0.5, rem - 0.2))
+            full = timeout if timeout is not None else timeout_for(prov, endpoint)
+            eff = full if rem is None else min(full, max(0.5, rem - 0.2))
+            capped = eff < full  # this call got only what was left of the plan's time, not the provider's own timeout
             if attempt == 0:
                 retry_budget.on_call(prov)
             t0 = time.perf_counter()
@@ -173,8 +173,14 @@ def _send(method, url, display, prov, endpoint, grp, retries, timeout, idempoten
             ledger.add(prov, endpoint, calls=1, ok=1 if good else 0, errors=0 if good else 1, latency_ms=ms,
                        retries=1 if attempt else 0, quota_hits=1 if quota else 0)
             ledger.outcome(prov, good, ms)
+            # A timeout because *our* plan ran out of time says nothing about the provider: it must not trip the
+            # circuit for every other traveller (that turned one slow plan into "busy" for everyone).
+            neutral = outcome == "timeout" and capped
             if s.gateway_breakers:
-                breakers.record(prov, endpoint, ok=good, token=token, quota=quota)
+                if neutral:
+                    breakers.release(prov, endpoint, token)
+                else:
+                    breakers.record(prov, endpoint, ok=good, token=token, quota=quota)
                 if resp is not None and good and quota_header:  # this answer was fine, but it was the last one: stop asking
                     breakers.set_quota(prov, "remaining quota header is 0")
             if outcome in ("timeout",):  # the provider may have billed it: keep the reservation
