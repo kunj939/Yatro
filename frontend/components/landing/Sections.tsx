@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { AlertTriangle, ArrowRight, Bot, Check, Clock, Footprints, MapPin, Repeat, Route, ShieldCheck, Sparkles, Users, Wallet, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, Bot, Check, Clock, Footprints, Leaf, MapPin, Receipt, Repeat, Route, ShieldCheck, Sparkles, TrainFront, Users, Wallet, X } from "lucide-react";
 import { eur, inr } from "@/lib/format";
 import { brand } from "@/lib/brand";
 import { Reveal, useCountUp, useInView } from "../Reveal";
@@ -302,58 +302,103 @@ const PEOPLE = [
 ];
 const BILL = 2400, PAYER = "Aarav";
 
+const GROUP_POINTS = [
+  { icon: Users, title: "Everyone in, their own way", text: "Add each person with their own budget and food choices." },
+  { icon: Leaf, title: "One vegetarian in the gang?", text: "Every meal stop has veg options." },
+  { icon: Receipt, title: "No more “who paid for what”", text: `Log spends as you go and ${brand.name} settles up.` },
+];
+
 export function GroupSection() {
   const [inSplit, setInSplit] = useState<string[]>(PEOPLE.map((p) => p.name));
   const share = Math.round((BILL / inSplit.length) * 100) / 100;
   const owers = inSplit.filter((n) => n !== PAYER);
   const toggle = (n: string) => setInSplit((s) => s.includes(n) ? (s.length > 1 ? s.filter((x) => x !== n) : s) : PEOPLE.map((p) => p.name).filter((x) => x === n || s.includes(x)));
   const list = (xs: string[]) => xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`;
+  const tone = (n: string) => PEOPLE.find((p) => p.name === n)!.tone;
 
   return (
-    <section className="py-24" aria-labelledby="group-heading">
-      <div className="container-x grid gap-12 lg:grid-cols-2 lg:items-center">
+    <section className="py-20 md:py-24" aria-labelledby="group-heading">
+      <div className="container-x grid gap-10 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-14">
         <Reveal className="min-w-0">
           <span className="eyebrow">Group trips</span>
           <h2 id="group-heading" className="mt-5 text-title font-bold">Your group chat could <span className="accent highlight">never plan this.</span></h2>
-          <p className="mt-4 text-lg leading-relaxed text-ink-soft">We turn &ldquo;bro, let&apos;s go somewhere&rdquo; into <span className="font-semibold text-ink">actual tickets, stays, food stops, timings, and a budget everyone can agree on</span>. Add everyone with their own budget and food choices. One vegetarian in the gang? Every meal stop has veg options. Log spends as you go and {brand.name} settles up, so no more &ldquo;who paid for what&rdquo;.</p>
-          <p className="mt-3 text-lg font-semibold text-ink">From bakchodi to boarding pass.</p>
+          <p className="mt-4 max-w-lg text-lg leading-relaxed text-ink-soft">We turn &ldquo;bro, let&apos;s go somewhere&rdquo; into <span className="font-semibold text-ink">actual tickets, stays, food stops, timings, and a budget everyone can agree on</span>.</p>
+          <ul className="mt-7 space-y-4">
+            {GROUP_POINTS.map(({ icon: I, title, text }) => (
+              <li key={title} className="flex gap-4">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-signal/20 bg-signal-soft text-signal-deep">
+                  <I className="h-[18px] w-[18px]" aria-hidden />
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-semibold text-ink">{title}</span>
+                  <span className="block text-[15px] text-ink-soft">{text}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-7 inline-flex items-center gap-2 rounded-full border border-line bg-paper px-4 py-2 text-[15px] font-semibold text-ink shadow-[0_6px_20px_-14px_rgb(var(--shadow)/0.5)]">
+            <span className="h-2 w-2 rounded-full bg-signal" aria-hidden />From bakchodi to boarding pass.
+          </p>
         </Reveal>
         <Reveal delay={120} className="min-w-0">
-          <div className="spotlight card rounded-2xl p-6 md:p-8">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="font-semibold">Dinner at Pinch of Spice, Agra, paid by {PAYER}</p>
-              <p className="num text-xl font-bold">{inr(BILL)}</p>
+          <div className="spotlight card rounded-3xl p-5 md:p-7">
+            <div className="flex items-center gap-3.5">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-haze text-ink-soft ring-1 ring-line">
+                <Receipt className="h-5 w-5" aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold leading-snug">Dinner at Pinch of Spice</p>
+                <p className="truncate text-[13px] text-ink-mute">Agra · paid by {PAYER}</p>
+              </div>
+              <p className="num headline-font shrink-0 text-xl font-extrabold md:text-2xl">{inr(BILL)}</p>
             </div>
-            <p className="mt-1 text-sm text-ink-mute">Split equally between {inSplit.length} · tap someone to leave them out</p>
-            <ul className="num mt-5 space-y-2">
+            <div className="mt-5 flex items-center justify-between gap-3 border-t border-line pt-4 text-[13px]">
+              <span className="font-semibold text-ink">Split equally between {inSplit.length}</span>
+              <span className="text-right text-ink-mute"><span className="sm:hidden">Tap to leave out</span><span className="hidden sm:inline">Tap someone to leave them out</span></span>
+            </div>
+            <ul className="num mt-3 space-y-2">
               {PEOPLE.map((p) => {
                 const on = inSplit.includes(p.name);
                 const short = on && p.left < share;
                 return (
                   <li key={p.name}>
                     <button type="button" onClick={() => toggle(p.name)} aria-pressed={on}
-                            className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-200 hover:-translate-y-px ${
-                              on ? "border-line bg-haze" : "border-dashed border-line bg-transparent opacity-50"}`}>
+                            className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-3.5 py-2.5 text-left transition-all duration-200 ${
+                              on ? "border-line bg-paper hover:border-signal/40 hover:shadow-[0_8px_24px_-16px_rgb(var(--signal)/0.6)]" : "border-dashed border-line bg-haze/50 opacity-55 hover:opacity-80"}`}>
                       <span className="flex min-w-0 items-center gap-3">
-                        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold ${p.tone}`}>{p.name[0]}</span>
+                        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold ring-2 ring-paper ${p.tone}`}>{p.name[0]}</span>
                         <span className="min-w-0">
-                          <span className="block font-medium">{p.name}{p.name === PAYER && <span className="ml-2 text-xs text-ink-mute">paid</span>}</span>
+                          <span className="flex items-center gap-2 font-medium">{p.name}
+                            {p.name === PAYER && <span className="rounded-full bg-signal-soft px-2 py-px text-[11px] font-semibold text-signal-deep">Paid</span>}
+                          </span>
                           <span className={`block text-xs ${short ? "font-semibold text-caution" : "text-ink-mute"}`}>
                             {short ? `Only ${inr(p.left)} left in their budget` : `${inr(p.left)} left in budget`}
                           </span>
                         </span>
                       </span>
-                      <span className={`font-semibold ${on ? "" : "line-through"}`}>{on ? inr(share) : "—"}</span>
+                      <span className={`font-semibold ${on ? "" : "text-ink-mute line-through"}`}>{on ? inr(share) : "—"}</span>
                     </button>
                   </li>
                 );
               })}
             </ul>
-            <p key={inSplit.join()} className="fade-up mt-5 text-[16px]">
-              {owers.length
-                ? <>{list(owers)} {owers.length > 1 ? "each pay" : "pays"} {PAYER} <span className="num font-semibold">{inr(share)}</span>.</>
-                : <>{PAYER} covers it alone; nobody owes anything.</>}
-            </p>
+            <div className="mt-4 flex items-center gap-3 rounded-2xl border border-signal/20 bg-signal-soft/60 px-4 py-3">
+              {owers.length > 0 && (
+                <span className="flex shrink-0 items-center" aria-hidden>
+                  <span className="flex -space-x-1.5">
+                    {owers.map((n) => <span key={n} className={`grid h-7 w-7 place-items-center rounded-full text-[11px] font-bold ring-2 ring-signal-soft ${tone(n)}`}>{n[0]}</span>)}
+                  </span>
+                  <ArrowRight className="mx-1.5 h-4 w-4 text-signal-deep" />
+                  <span className={`grid h-7 w-7 place-items-center rounded-full text-[11px] font-bold ring-2 ring-signal-soft ${tone(PAYER)}`}>{PAYER[0]}</span>
+                </span>
+              )}
+              <p key={inSplit.join()} className="fade-up min-w-0 text-[15px] text-ink">
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-signal-deep">Settle up</span>
+                {owers.length
+                  ? <>{list(owers)} {owers.length > 1 ? "each pay" : "pays"} {PAYER} <span className="num font-semibold">{inr(share)}</span>.</>
+                  : <>{PAYER} covers it alone; nobody owes anything.</>}
+              </p>
+            </div>
           </div>
         </Reveal>
       </div>
@@ -363,25 +408,54 @@ export function GroupSection() {
 
 /* ---------------------------------------------------------------- Final call to action */
 
+// The planner's own four steps (components/wizard/TripWizard.tsx), drawn as stops on a route.
+const STEPS = [
+  { icon: MapPin, label: "Where & when" },
+  { icon: Wallet, label: "Budget & group" },
+  { icon: TrainFront, label: "Travel & food" },
+  { icon: Sparkles, label: "Style & stay" },
+];
+
 export function FinalCTA() {
   return (
-    <section className="py-24">
+    <section className="py-20 md:py-24">
       <div className="container-x">
         <Reveal>
-          <div className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-[#0c0f16] px-6 py-14 text-white md:px-14 md:py-20">
-            <div aria-hidden className="absolute -left-20 -top-32 -z-10 h-80 w-80 rounded-full bg-[rgb(190_255_74/0.22)] blur-3xl" />
-            <div aria-hidden className="absolute -bottom-32 right-0 -z-10 h-80 w-96 rounded-full bg-[rgb(45_212_230/0.18)] blur-3xl" />
-            <div>
+          <div className="relative isolate overflow-hidden rounded-[28px] border border-line bg-paper px-6 py-12 shadow-[0_1px_2px_rgb(var(--shadow)/0.05),0_30px_80px_-40px_rgb(var(--shadow)/0.35)] md:px-14 md:py-16">
+            {/* soft brand light, and a faint dot grid that fades out towards the text */}
+            <div aria-hidden className="absolute -left-24 -top-40 -z-10 h-96 w-96 rounded-full bg-signal/15 blur-3xl" />
+            <div aria-hidden className="absolute -bottom-40 right-[-6rem] -z-10 h-96 w-[28rem] rounded-full bg-spark/10 blur-3xl" />
+            <div aria-hidden className="absolute inset-0 -z-10 opacity-60 [background-image:radial-gradient(rgb(var(--ink)/0.09)_1px,transparent_1px)] [background-size:18px_18px] [mask-image:linear-gradient(to_left,black,transparent_65%)]" />
+            <div className="grid items-center gap-10 md:grid-cols-[1.35fr_1fr]">
               <div>
-                <h2 className="max-w-2xl text-title font-bold">Pack the bag. <span className="accent highlight-night">We&apos;ll do the maths.</span></h2>
-                <p className="mt-4 max-w-xl text-lg text-white/70">Four quick steps. Under a minute. A plan where every time and every rupee checks out.</p>
-                <div className="mt-9 flex flex-wrap items-center gap-3">
-                  <Link href="/plan" className="shine group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-[rgb(190_255_74)] px-7 py-3.5 text-base font-semibold text-[#0b0d0c] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_14px_40px_-12px_rgb(190_255_74/0.7)]">
+                <h2 className="max-w-2xl text-title font-bold">Pack the bag. <span className="accent highlight">We&apos;ll do the maths.</span></h2>
+                <p className="mt-4 max-w-xl text-lg text-ink-soft">Four quick steps. Under a minute. A plan where every time and every rupee checks out.</p>
+                <div className="mt-8 flex flex-wrap items-center gap-3">
+                  <Link href="/plan" className="btn-primary shine group !rounded-full !px-7 !py-3.5 !text-base">
                     Build my trip <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
                   </Link>
-                  <Link href="/#pricing" className="btn-ghost-dark px-7 py-3.5 text-base">See pricing</Link>
+                  <Link href="/#pricing" className="btn-ghost !rounded-full !px-7 !py-3.5 !text-base">See pricing</Link>
                 </div>
               </div>
+              <ol className="relative mx-auto w-full max-w-xs rounded-2xl border border-line bg-paper/80 p-4 backdrop-blur" aria-label="The four steps">
+                <span aria-hidden className="absolute bottom-8 left-[33px] top-8 border-l-2 border-dashed border-signal/35" />
+                {STEPS.map(({ icon: I, label }, n) => (
+                  <li key={label} className="relative flex items-center gap-3 px-1 py-2">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line bg-paper text-signal-deep shadow-sm">
+                      <I className="h-4 w-4" aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1 font-medium text-ink">{label}</span>
+                    <span className="num text-[12px] font-semibold text-ink-mute">0{n + 1}</span>
+                  </li>
+                ))}
+                <li className="relative mt-1 flex items-center gap-3 rounded-xl bg-signal-soft px-1 py-2 pr-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink">
+                    <span className="h-3 w-3 rounded-full bg-[#beff4a]" />
+                  </span>
+                  <span className="flex-1 font-semibold text-ink">Your plan, ready</span>
+                  <Check className="h-4 w-4 text-signal-deep" aria-hidden />
+                </li>
+              </ol>
             </div>
           </div>
         </Reveal>
