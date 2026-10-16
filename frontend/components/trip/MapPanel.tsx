@@ -194,47 +194,135 @@ function Empty() {
   );
 }
 
-/** Google Maps rendering, used only when a browser key is configured. */
-function GoogleMap({ trip, day, selected, onSelect }: { trip: Trip; day: number | null; selected: string | null; onSelect: (id: string) => void }) {
+/** A numbered stop marker as an SVG picture: ink for sights, white for meals, orange for sunsets; the chosen one is
+ *  bigger with a lime ring, so it reads like the list beside the map. */
+function pin(n: number, kind: string, on: boolean): { url: string; size: number } {
+  const size = on ? 44 : 32, r = on ? 15 : 12, c = size / 2;
+  const fill = kind === "sunset" ? "#E8873A" : kind === "meal" ? "#ffffff" : "#101311";
+  const ink = kind === "meal" ? "#101311" : "#ffffff";
+  const ring = on ? `<circle cx="${c}" cy="${c}" r="${r + 5}" fill="#beff4a" opacity="0.9"/>` : "";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">${ring}`
+    + `<circle cx="${c}" cy="${c}" r="${r}" fill="${fill}" stroke="#101311" stroke-width="2.5"/>`
+    + `<text x="${c}" y="${c + 4.5}" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="${on ? 15 : 13}" font-weight="700" fill="${ink}">${n}</text></svg>`;
+  return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, size };
+}
+
+// A quiet base map: shops, businesses and transit icons off, so the plan's own stops are what you see.
+const MAP_STYLE = [
+  { featureType: "poi", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.business", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ saturation: -60 }] },
+  { featureType: "water", elementType: "geometry.fill", stylers: [{ color: "#cfe4ef" }] },
+  { featureType: "landscape", elementType: "geometry.fill", stylers: [{ color: "#f4f5f1" }] },
+];
+
+function loadGoogle(): Promise<any> {
+  const w = window as any;
+  if (w.google?.maps) return Promise.resolve(w.google.maps);
+  return new Promise((resolve, reject) => {
+    const id = "gmaps-js";
+    let script = document.getElementById(id) as HTMLScriptElement | null;
+    if (!script) {
+      script = document.createElement("script");
+      script.id = id; script.async = true;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(BROWSER_KEY)}`;
+      document.head.appendChild(script);
+    }
+    script.addEventListener("load", () => (w.google?.maps ? resolve(w.google.maps) : reject(new Error("no maps"))));
+    script.addEventListener("error", () => reject(new Error("maps script failed")));
+  });
+}
+
+const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+
+/** The real Google map, used when a browser key is configured: the day's stops and legs, or the whole journey. */
+function GoogleMap({ trip, view, day, selected, onSelect }: { trip: Trip; view: "city" | "journey"; day: number | null; selected: string | null; onSelect: (id: string) => void }) {
   const el = useRef<HTMLDivElement>(null);
+  const live = useRef<{ map: any; markers: Map<string, any>; info: any } | null>(null);
   const [failed, setFailed] = useState(false);
-  const g = useMemo(() => buildGeometry(trip, day), [trip, day]);
+  const g = useMemo(() => buildGeometry(trip, view === "journey" ? null : day), [trip, view, day]);
+  const pick = useRef(onSelect);
+  pick.current = onSelect;
+
   useEffect(() => {
     let cancelled = false;
-    const w = window as any;
-    const ready = () => {
-      if (cancelled || !el.current || !w.google?.maps) return;
-      const gm = w.google.maps;
-      const map = new gm.Map(el.current, { disableDefaultUI: true, zoomControl: true, clickableIcons: false });
-      const bounds = new gm.LatLngBounds();
-      g.cityPaths.forEach((p) => new gm.Polyline({
-        map, path: p.coords.map(([lat, lng]) => ({ lat, lng })), strokeColor: p.kind === "walk" ? "#0E8A6A" : "#101B36", strokeOpacity: 0.8, strokeWeight: 4,
-      }));
-      g.stops.forEach((s) => {
-        const pos = { lat: s.at[0], lng: s.at[1] };
-        bounds.extend(pos);
-        const m = new gm.Marker({ map, position: pos, label: { text: String(s.n), color: "#fff", fontWeight: "700" }, title: s.title });
-        m.addListener("click", () => onSelect(s.id));
+    // Google calls this when the key is wrong or not allowed on this site: show the route sketch instead of its error page
+    (window as any).gm_authFailure = () => !cancelled && setFailed(true);
+    loadGoogle().then((gm) => {
+      if (cancelled || !el.current) return;
+      const map = new gm.Map(el.current, {
+        disableDefaultUI: true, zoomControl: true, fullscreenControl: true, clickableIcons: false,
+        gestureHandling: "cooperative", styles: MAP_STYLE,
       });
-      if (!bounds.isEmpty()) map.fitBounds(bounds, 48);
-    };
-    if (w.google?.maps) ready();
-    else {
-      const id = "gmaps-js";
-      let script = document.getElementById(id) as HTMLScriptElement | null;
-      if (!script) {
-        script = document.createElement("script");
-        script.id = id; script.async = true;
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(BROWSER_KEY)}`;
-        script.onerror = () => setFailed(true);
-        document.head.appendChild(script);
+      const bounds = new gm.LatLngBounds();
+      const markers = new Map<string, any>();
+      const at = ([lat, lng]: LatLng) => ({ lat, lng });
+      if (view === "journey") {
+        g.journeyPaths.forEach((p, i) => {
+          p.coords.forEach((c) => bounds.extend(at(c)));
+          new gm.Polyline({
+            map, path: p.coords.map(at), strokeColor: i === 0 ? "#101311" : "#659600", strokeOpacity: i === 0 ? 0.9 : 0, strokeWeight: 5,
+            icons: i === 0 ? [] : [{ icon: { path: "M 0,-1 0,1", strokeOpacity: 1, strokeColor: "#659600", scale: 4 }, offset: "0", repeat: "16px" }],
+          });
+        });
+        const ends = [
+          [trip.origin, ll([trip.origin_detail.lat, trip.origin_detail.lng])],
+          [trip.destination, ll([trip.destination_detail.lat, trip.destination_detail.lng])],
+        ] as [string, LatLng | null][];
+        ends.forEach(([name, p], i) => {
+          if (!p) return;
+          bounds.extend(at(p));
+          const icon = pin(i + 1, i ? "sunset" : "activity", false);
+          new gm.Marker({ map, position: at(p), title: name, icon: { url: icon.url, scaledSize: new gm.Size(icon.size, icon.size), anchor: new gm.Point(icon.size / 2, icon.size / 2) } });
+        });
+      } else {
+        g.cityPaths.forEach((p) => new gm.Polyline({
+          map, path: p.coords.map(at), strokeColor: p.kind === "walk" ? "#0E8A6A" : "#101311",
+          strokeOpacity: p.kind === "walk" ? 0 : 0.75, strokeWeight: 4,
+          icons: p.kind === "walk" ? [{ icon: { path: gm.SymbolPath.CIRCLE, fillOpacity: 1, fillColor: "#0E8A6A", strokeOpacity: 0, scale: 2.5 }, offset: "0", repeat: "11px" }] : [],
+        }));
+        g.stops.forEach((s) => {
+          const pos = at(s.at);
+          bounds.extend(pos);
+          const icon = pin(s.n, s.kind, false);
+          const m = new gm.Marker({ map, position: pos, title: `${s.n}. ${s.title}`, zIndex: s.n,
+            icon: { url: icon.url, scaledSize: new gm.Size(icon.size, icon.size), anchor: new gm.Point(icon.size / 2, icon.size / 2) } });
+          m.addListener("click", () => pick.current(s.id));
+          markers.set(s.id, m);
+        });
       }
-      script.addEventListener("load", ready);
-    }
-    return () => { cancelled = true; };
-  }, [g, onSelect]);
-  if (failed) return <SvgMap trip={trip} view="city" day={day} selected={selected} onSelect={onSelect} />;
-  return <div ref={el} className="h-[460px] w-full" aria-label={`Map of stops in ${trip.destination}`} />;
+      if (!bounds.isEmpty()) map.fitBounds(bounds, 56);
+      live.current = { map, markers, info: new gm.InfoWindow({ disableAutoPan: false }) };
+    }).catch(() => !cancelled && setFailed(true));
+    return () => { cancelled = true; live.current = null; };
+  }, [g, view, trip]);
+
+  // The chosen stop: a bigger marker, a small card with its time and address, and a link to it in Google Maps.
+  useEffect(() => {
+    const L = live.current, gm = (window as any).google?.maps;
+    if (!L || !gm || view !== "city") return;
+    g.stops.forEach((s) => {
+      const m = L.markers.get(s.id);
+      if (!m) return;
+      const icon = pin(s.n, s.kind, s.id === selected);
+      m.setIcon({ url: icon.url, scaledSize: new gm.Size(icon.size, icon.size), anchor: new gm.Point(icon.size / 2, icon.size / 2) });
+      m.setZIndex(s.id === selected ? 999 : s.n);
+    });
+    const s = g.stops.find((x) => x.id === selected);
+    const m = s && L.markers.get(s.id);
+    if (!s || !m) { L.info.close(); return; }
+    const link = s.item.meta?.maps_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${s.title}, ${trip.destination}`)}${s.item.place_id ? `&query_place_id=${encodeURIComponent(s.item.place_id)}` : ""}`;
+    L.info.setContent(`<div style="font-family:Inter,system-ui,sans-serif;max-width:220px;padding:2px 2px 0">
+      <div style="font-weight:700;font-size:14px;color:#101311">${s.n}. ${esc(s.title)}</div>
+      <div style="font-size:12px;color:#666d68;margin-top:2px">${esc(s.time || "")}${s.item.meta?.address ? ` · ${esc(String(s.item.meta.address))}` : ""}</div>
+      <a href="${esc(link)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:#4e7400;text-decoration:none">Open in Google Maps &rarr;</a></div>`);
+    L.info.open({ map: L.map, anchor: m });
+    L.map.panTo(m.getPosition());
+  }, [selected, g, view, trip.destination]);
+
+  if (failed) return <SvgMap trip={trip} view={view} day={day} selected={selected} onSelect={onSelect} />;
+  return <div ref={el} className="h-[480px] w-full bg-haze" aria-label={view === "journey" ? `Journey from ${trip.origin} to ${trip.destination}` : `Map of stops in ${trip.destination}`} />;
 }
 
 export function MapPanel({ trip }: { trip: Trip }) {
@@ -273,8 +361,8 @@ export function MapPanel({ trip }: { trip: Trip }) {
             <p className="text-[13px] text-ink-mute">{BROWSER_KEY ? "Google Maps" : "Route sketch from the plan's coordinates"}</p>
           )}
         </div>
-        {BROWSER_KEY && view === "city"
-          ? <GoogleMap trip={trip} day={multi ? day : null} selected={selected} onSelect={setSelected} />
+        {BROWSER_KEY
+          ? <GoogleMap trip={trip} view={view} day={multi ? day : null} selected={selected} onSelect={setSelected} />
           : <SvgMap trip={trip} view={view} day={multi ? day : null} selected={selected} onSelect={setSelected} />}
         <div className="flex flex-wrap gap-x-5 gap-y-1 border-t border-line px-4 py-3 text-[13px] text-ink-soft">
           {view === "journey" ? (
@@ -287,7 +375,7 @@ export function MapPanel({ trip }: { trip: Trip }) {
               <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-night" />By road</span>
               <span className="inline-flex items-center gap-2"><span className="w-6 border-t-2 border-dotted border-teal" />On foot</span>
               <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm border-2 border-night bg-paper" />Station</span>
-              <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-signal" />Sunset</span>
+              <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-[#E8873A]" />Sunset</span>
               <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full border-2 border-night bg-paper" />Meal</span>
             </>
           )}

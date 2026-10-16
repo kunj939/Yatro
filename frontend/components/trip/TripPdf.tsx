@@ -4,10 +4,11 @@
 // Built in the browser from the public share view (exactly what the share link shows) and loaded only when someone
 // asks for it (lib/tripPdf.ts), so the library never weighs on the normal pages.
 import { Circle, Document, Font, Image, Link, Page, Path, Rect, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
-import type { SharedItem, SharedTrip } from "@/lib/types";
+import type { BudgetBreakdown, SharedItem, SharedTrip } from "@/lib/types";
 import type { PdfMaps } from "@/lib/pdfMaps";
 import { dateSpan, dayDate, shortMoney } from "@/lib/shareCard";
 import { MARK, WORDMARK } from "@/lib/logo";
+import { CATS, dailySpend, rings, slicesFromBudget, slicesFromDays } from "@/lib/budgetViz";
 
 let fontsReady = false;
 function registerFonts() {
@@ -105,7 +106,110 @@ function ItemRow({ i, cur, pin, place }: { i: SharedItem; cur: string; pin?: num
   );
 }
 
-export function TripPdf({ view, url, maps }: { view: SharedTrip; url: string; maps?: PdfMaps }) {
+
+/** The money page: the same two charts as the Budget tab (lib/budgetViz.ts), in the PDF's dark colours, and the
+ *  Hisaab settle-up when the link includes it. Colours come with labels and amounts, never on their own. */
+function MoneyPage({ view, budget, url }: { view: SharedTrip; budget?: BudgetBreakdown; url: string }) {
+  const cur = view.trip.currency;
+  const slices = budget ? slicesFromBudget(budget) : slicesFromDays(view.itinerary.days);
+  const total = slices.reduce((a, x) => a + x.amount, 0);
+  const segs = rings(slices, 80, 80, 50, 74, 3);
+  const daily = dailySpend(view.itinerary.days);
+  const top = Math.max(1, ...daily.map((d) => d.total));
+  const H = 120;
+  const fill = (x: { key: string; dark: string }) => (x.key === "buffer" ? "#59625c" : x.dark);
+  const split = view.split;
+  return (
+    <Page size="A4" style={s.page}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <Brand />
+        <Text style={[s.chip, { backgroundColor: "#24331a", color: LIME }]}>Money</Text>
+      </View>
+      <Text style={[s.title, { fontSize: 24 }]}>Where the money goes</Text>
+      <Text style={{ color: MUTE, marginTop: 4 }}>
+        {shortMoney(total, cur)} planned{view.budget ? ` of a ${shortMoney(view.budget.budget, cur)} budget` : ""}
+        {view.trip.travellers > 1 ? ` · about ${shortMoney(Math.round(total / view.trip.travellers), cur)} each` : ""}
+      </Text>
+
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 22, marginTop: 18, backgroundColor: CARD, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: LINE }} wrap={false}>
+        <View style={{ width: 160, height: 160 }}>
+          <Svg width={160} height={160} viewBox="0 0 160 160">
+            {segs.map((x) => <Path key={x.key} d={x.d} fill={fill(x)} />)}
+          </Svg>
+          <View style={{ position: "absolute", top: 62, left: 0, right: 0, alignItems: "center" }}>
+            <Text style={{ color: MUTE, fontSize: 8 }}>Planned</Text>
+            <Text style={{ fontFamily: "Head", fontSize: 15, marginTop: 2 }}>{shortMoney(total, cur)}</Text>
+          </View>
+        </View>
+        <View style={{ flex: 1 }}>
+          {segs.map((x) => (
+            <View key={x.key} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 4.5, borderBottomWidth: 1, borderBottomColor: "#1b211e" }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: fill(x), marginRight: 8 }} />
+              <Text style={{ flex: 1, color: SOFT }}>{x.label}</Text>
+              <Text style={{ width: 34, textAlign: "right", color: MUTE, fontSize: 9 }}>{Math.round(x.share * 100)}%</Text>
+              <Text style={{ width: 70, textAlign: "right", fontWeight: 700 }}>{shortMoney(Math.round(x.amount), cur)}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {daily.length > 1 && (
+        <View style={{ marginTop: 18, backgroundColor: CARD, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: LINE }} wrap={false}>
+          <Text style={{ fontFamily: "Head", fontSize: 13 }}>Spend by day</Text>
+          <Text style={{ color: MUTE, fontSize: 8.5, marginTop: 2 }}>The hotel is spread over the nights it covers</Text>
+          <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-around", height: H + 18, marginTop: 12,
+            borderBottomWidth: 1, borderBottomColor: LINE }}>
+            {daily.map((d) => (
+              <View key={d.index} style={{ alignItems: "center", flex: 1 }}>
+                {daily.length <= 12 ? <Text style={{ color: SOFT, fontSize: 7.5, marginBottom: 3 }}>{shortMoney(Math.round(d.total), cur)}</Text> : null}
+                <View style={{ width: daily.length > 12 ? 10 : 20, height: Math.max(2, (d.total / top) * H), flexDirection: "column-reverse",
+                  borderTopLeftRadius: 3, borderTopRightRadius: 3, overflow: "hidden" }}>
+                  {CATS.map((c) => d.parts[c.key] > 0 ? (
+                    <View key={c.key} style={{ height: `${(d.parts[c.key] / d.total) * 100}%`, backgroundColor: c.dark, borderTopWidth: 1.5, borderTopColor: CARD }} />
+                  ) : null)}
+                </View>
+              </View>
+            ))}
+          </View>
+          <View style={{ flexDirection: "row", justifyContent: "space-around", marginTop: 4 }}>
+            {daily.map((d, n) => <Text key={d.index} style={{ flex: 1, textAlign: "center", color: MUTE, fontSize: 7.5 }}>{daily.length > 12 && n % 2 ? "" : `D${n + 1}`}</Text>)}
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
+            {CATS.filter((c) => daily.some((d) => d.parts[c.key] > 0)).map((c) => (
+              <View key={c.key} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: c.dark }} />
+                <Text style={{ color: SOFT, fontSize: 8 }}>{c.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {split && split.total > 0 ? (
+        <View style={{ marginTop: 18, backgroundColor: CARD, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: LINE }} wrap={false}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
+            <View>
+              <Text style={{ fontFamily: "Head", fontSize: 13 }}>Hisaab</Text>
+              <Text style={{ color: MUTE, fontSize: 8.5, marginTop: 2 }}>What the group has spent, and who pays whom</Text>
+            </View>
+            <Text style={{ fontFamily: "Head", fontSize: 15, color: LIME }}>{shortMoney(split.total, cur)}</Text>
+          </View>
+          <View style={{ marginTop: 10 }}>
+            {split.settlements.length ? split.settlements.map((x, i) => (
+              <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: "#1b211e" }}>
+                <Text style={{ color: SOFT }}><Text style={{ color: "white", fontWeight: 700 }}>{x.from}</Text> pays <Text style={{ color: "white", fontWeight: 700 }}>{x.to}</Text></Text>
+                <Text style={{ fontWeight: 700 }}>{shortMoney(x.amount, cur)}</Text>
+              </View>
+            )) : <Text style={{ color: SOFT }}>Everyone is square.</Text>}
+          </View>
+        </View>
+      ) : null}
+      <Footer url={url} />
+    </Page>
+  );
+}
+
+export function TripPdf({ view, url, maps, budget }: { view: SharedTrip; url: string; maps?: PdfMaps; budget?: BudgetBreakdown }) {
   registerFonts();
   const { trip, itinerary: it } = view;
   const cur = trip.currency;
@@ -163,6 +267,8 @@ export function TripPdf({ view, url, maps }: { view: SharedTrip; url: string; ma
         {it.summary ? (<><Text style={s.h2}>The plan</Text><Text style={{ color: SOFT, lineHeight: 1.35 }}>{it.summary}</Text></>) : null}
         <Footer url={url} />
       </Page>
+
+      {it.total_cost > 0 && <MoneyPage view={view} budget={budget} url={url} />}
 
       <Page size="A4" style={s.page}>
         {it.days.map((d, n) => {

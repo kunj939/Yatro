@@ -11,7 +11,8 @@ export async function buildTripPdf(token: string, url: string, trip?: Trip): Pro
     import("@react-pdf/renderer"), import("@/components/trip/TripPdf"), endpoints.shared(token), pdfDayMaps(trip),
   ]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const blob = await pdf(createElement(TripPdf, { view, url, maps }) as any).toBlob();
+  // the owner's own budget breakdown when we have it (a shared view only carries the rows, which the PDF sums itself)
+  const blob = await pdf(createElement(TripPdf, { view, url, maps, budget: trip?.itinerary?.budget }) as any).toBlob();
   const name = (view.itinerary.title || view.trip.title).replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "").slice(0, 60) || "trip";
   return { file: new File([blob], `${name}-Yaitro.pdf`, { type: "application/pdf" }), maps: maps.status };
 }

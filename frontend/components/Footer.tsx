@@ -60,7 +60,6 @@ export function Footer() {
         <div className="flex flex-col gap-4 border-t border-line py-6 text-sm sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p>© {new Date().getFullYear()} {brand.name}. Made for people who count every rupee.</p>
-            <p className="mt-1 text-[12px] text-ink-mute">Data from Google Maps, Wikidata, Open-Meteo and Indian Railways timetables.</p>
           </div>
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

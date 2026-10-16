@@ -31,7 +31,7 @@ export function PricingSection() {
     { key: "plus", name: "Plus", price: yearly ? `₹${brand.plusYearly}` : `₹${brand.plusMonthly}`, unit: yearly ? "/year" : "/month",
       note: yearly ? `About ₹${YEARLY_PER_MONTH} a month · save ${SAVING}%` : "Cancel any time",
       lead: "For people who are always on the move.",
-      features: ["Unlimited trip plans", "Priority when Yaitro is busy", "Group expense split", "Everything in Free"],
+      features: ["Unlimited trip plans", "Priority when Yaitro is busy", "Hisaab: split group spends", "Everything in Free"],
       cta: "Get Plus", href: yearly ? "/account?upgrade=plus_yearly" : "/account?upgrade=plus", featured: true },
     { key: "one", name: "Trip pass", price: `₹${brand.tripPass}`, unit: "/trip", lead: "Just this one trip.", note: "One-time payment",
       features: ["1 extra trip plan", "Unlimited changes to it", "No subscription"], cta: "Buy a pass", href: "/account?upgrade=one_trip" },
