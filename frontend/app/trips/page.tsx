@@ -7,7 +7,7 @@ import { Navbar } from "@/components/Navbar";
 import { RequireAuth } from "@/components/AuthPage";
 import { ApiError, endpoints } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import type { TripCard } from "@/lib/types";
+import type { GroupCard, TripCard } from "@/lib/types";
 import { money, niceDate, plural } from "@/lib/format";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -20,10 +20,12 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 function TripList() {
   const { quota } = useAuth();
   const [trips, setTrips] = useState<TripCard[] | null>(null);
+  const [groups, setGroups] = useState<GroupCard[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     endpoints.trips().then((r) => setTrips(r.trips)).catch((e) => setError(e instanceof ApiError ? e.message : "Couldn't load your trips."));
+    endpoints.groups().then((r) => setGroups(r.groups)).catch(() => { /* group plans are extra; trips still show */ });
   }, []);
 
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -48,8 +50,30 @@ function TripList() {
             </p>
           )}
         </div>
-        <Link href="/plan" className="btn-primary shine"><Plus className="h-4 w-4" aria-hidden />Plan a new trip</Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/together/new" className="btn-ghost"><Users className="h-4 w-4" aria-hidden />Plan with friends</Link>
+          <Link href="/plan" className="btn-primary shine"><Plus className="h-4 w-4" aria-hidden />Plan a new trip</Link>
+        </div>
       </div>
+      {groups.some((g) => g.status === "open") && (
+        <section className="mt-8" aria-labelledby="groups-title">
+          <h2 id="groups-title" className="text-[13px] font-semibold uppercase tracking-[0.14em] text-ink-mute">Group plans collecting answers</h2>
+          <ul className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {groups.filter((g) => g.status === "open").map((g) => (
+              <li key={g.id}>
+                <Link href={`/together/${g.id}`} className="group flex items-center gap-3 rounded-2xl border border-signal/25 bg-gradient-to-br from-signal-soft/60 to-paper p-4 transition-all hover:-translate-y-0.5 hover:shadow-glow">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-paper text-signal-deep ring-1 ring-signal/20"><Users className="h-5 w-5" aria-hidden /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-bold text-ink">{g.title}</span>
+                    <span className="num block truncate text-[13px] text-ink-soft">{g.options.join(" · ")} · {plural(g.replies_count, "answer")}</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-signal-deep transition-transform group-hover:translate-x-0.5" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {error && <p role="alert" className="mt-6 rounded-xl bg-danger-soft px-4 py-3 text-danger">{error}</p>}
       {trips === null && !error && (
         <ul className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Loading trips">

@@ -93,6 +93,7 @@ export interface TripCard {
 }
 
 export interface Trip extends TripCard {
+  timezone: string;  // the destination's clock, e.g. Asia/Kolkata (plan times are this wall clock)
   start_time: string; end_time: string;
   origin_detail: { name: string; place_id: string | null; lat: number | null; lng: number | null };
   destination_detail: { name: string; place_id: string | null; lat: number | null; lng: number | null };
@@ -160,3 +161,27 @@ export interface PlanEvent {
 
 export interface Suggestion { place_id: string; label: string; secondary: string | null; lat: number | null; lng: number | null }
 export interface HighlightPlace { place_id: string; name: string; teaser: string | null; rating: number | null; rating_count: number | null }
+/** Plan together (ADR 0022): what the organiser and the friends see. Friends never get anyone's budget. */
+export interface GroupOption { id: string; name: string; votes: number; lat: number | null; lng: number | null }
+export interface GroupSummary {
+  id: string; title: string; origin: string; window_start: string; window_end: string; days: number;
+  status: "open" | "made" | "closed" | "expired"; expires_at: string; note: string | null; stay: string;
+  options: GroupOption[]; replies_count: number; max_replies: number;
+  best_dates: { start: string; end: string; fits: number; of: number }[];
+  days_heat: { date: string; count: number }[];
+  food: { veg: number; non_veg: number; both: number }; budgets_given: number; trip_id: string | null; currency: string;
+}
+export interface GroupReply { id: string; name: string; budget: number | null; food: string; dates: string[]; votes: string[]; is_owner: boolean; updated_at: string }
+export interface GroupOwnerView extends GroupSummary {
+  url: string; budget_hint: number | null; replies: GroupReply[];
+  budget: { per_person: number | null; people: number; total: number | null; from: "lowest" | "organiser" | null; gave: number };
+}
+export interface GroupPublicView extends GroupSummary {
+  organiser: string; names: string[]; budget_hint: number | null;
+  mine: { name: string; budget: number | null; food: string; dates: string[]; votes: string[] } | null;
+}
+export interface GroupBundle { group: GroupOwnerView; text: string; wa_url: string }
+export interface GroupCard { id: string; title: string; status: GroupSummary["status"]; replies_count: number; options: string[];
+  window_start: string; window_end: string; days: number; trip_id: string | null; created_at: string }
+export interface LateResult { status: "shifted" | "missed" | "nothing"; moved: number; dropped: string[]; shortened: string[];
+  missed: { title: string; time: string } | null; note: string | null }

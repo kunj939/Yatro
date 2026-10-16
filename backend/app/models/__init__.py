@@ -4,6 +4,7 @@ from app.models.catalog import ApiCache, Hotel, Place, Restaurant, WebSource  # 
 from app.models.circuit import ProviderCircuit  # noqa: F401
 from app.models.counters import DailyCounter  # noqa: F401
 from app.models.expense import Expense, ExpenseSplit  # noqa: F401
+from app.models.group import GroupPlan, GroupPlanOption, GroupPlanReply  # noqa: F401
 from app.models.rail import (  # noqa: F401
     RailCityRoute,
     RailDailyStat,

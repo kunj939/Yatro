@@ -1,5 +1,6 @@
 import type {
-  HighlightPlace, PlanEvent, Quota, ReferralCard, ShareLink, ShareResult, SharedTrip, Suggestion, Trip, TripCard, User } from "./types";
+  GroupBundle, GroupCard, GroupPublicView, HighlightPlace, LateResult, PlanEvent, Quota, ReferralCard, ShareLink, ShareResult,
+  SharedTrip, Suggestion, Trip, TripCard, User } from "./types";
 
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
 const TOKEN_KEY = "tripai.token";
@@ -160,4 +161,20 @@ export const endpoints = {
   setUpi: (upi_id: string | null) => api<User>("/api/auth/me/upi", { method: "PATCH", json: { upi_id } }),
   addExpense: (id: string, body: unknown) => api(`/api/trips/${id}/expenses`, { method: "POST", json: body }),
   deleteExpense: (id: string, eid: string) => api<void>(`/api/trips/${id}/expenses/${eid}`, { method: "DELETE" }),
+  // Live trip mode (ADR 0021): "running late" moves the rest of one day, offline; Undo goes back one version
+  liveLate: (id: string, body: { minutes: number; day_index: number; from_item_id?: string | null; now?: string | null }) =>
+    api<{ result: LateResult; trip: Trip }>(`/api/trips/${id}/live/late`, { method: "POST", json: body }),
+  liveUndo: (id: string) => api<{ trip: Trip }>(`/api/trips/${id}/live/undo`, { method: "POST" }),
+  // Plan together (ADR 0022): the organiser's side, and the public link friends answer without an account
+  createGroup: (body: unknown) => api<GroupBundle>("/api/groups", { method: "POST", json: body }),
+  groups: () => api<{ groups: GroupCard[] }>("/api/groups"),
+  group: (id: string) => api<GroupBundle>(`/api/groups/${id}`),
+  deleteGroup: (id: string) => api<void>(`/api/groups/${id}`, { method: "DELETE" }),
+  removeGroupReply: (id: string, rid: string) => api<GroupBundle>(`/api/groups/${id}/replies/${rid}`, { method: "DELETE" }),
+  makeGroupTrip: (id: string, body: { option_id?: string | null; start_date?: string | null }) =>
+    api<{ trip_id: string }>(`/api/groups/${id}/make`, { method: "POST", json: body }),
+  joinGroup: (token: string, device: string) =>
+    api<GroupPublicView>(`/api/groups/join/${encodeURIComponent(token)}?device=${encodeURIComponent(device)}`),
+  replyGroup: (token: string, body: unknown) =>
+    api<GroupPublicView>(`/api/groups/join/${encodeURIComponent(token)}`, { method: "POST", json: body }),
 };

@@ -27,7 +27,7 @@ from app.models.user import User
 from app.providers.registry import Providers
 from app.schemas.expense import ExpenseCreate
 from app.schemas.trip import MemberCreate, MemberUpdate, PreferencesPatch, ReplanRequest, TripCreate, TripUpdate
-from app.services import chat_service, expense_service, google_content, plan_jobs, plan_runner, quota_service, share_service
+from app.services import chat_service, expense_service, google_content, live_reflow, plan_jobs, plan_runner, quota_service, share_service
 from app.services import trip_service as TS
 from app.services.engine_types import StageReporter
 
@@ -434,6 +434,38 @@ def replan_trip(trip_id: uuid.UUID, body: ReplanRequest, stream: bool = Query(Fa
     out = _plan_now(db, p, user, trip, change_note=note, is_replan=True)
     out["interpreted_by"] = source
     return out
+
+
+# ------------------------------------------------------------------------------------------------------
+# Live trip mode (ADR 0021): "running late" moves the rest of one day; offline, so it uses no re-plan
+# ------------------------------------------------------------------------------------------------------
+
+class LateRequest(BaseModel):
+    minutes: int = Field(ge=5, le=360)
+    day_index: int = Field(ge=0, le=400)
+    from_item_id: uuid.UUID | None = None  # the first stop to move; default: the first one that hasn't started
+    now: datetime | None = None  # the traveller's wall clock at the destination, for "hasn't started yet"
+
+
+_live_limit = limit("live", 20)
+
+
+@router.post("/{trip_id}/live/late", dependencies=[Depends(_live_limit)])
+def live_late(trip_id: uuid.UUID, body: LateRequest, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    trip = TS.load_trip(db, trip_id, user)
+    now = body.now.replace(tzinfo=None) if body.now else None
+    result = live_reflow.apply_late(db, trip, body.day_index, body.minutes, body.from_item_id, now=now)
+    db.commit()
+    return {"result": result.as_dict(), "trip": TS.trip_out(TS.load_trip(db, trip_id, user))}
+
+
+@router.post("/{trip_id}/live/undo", dependencies=[Depends(_live_limit)])
+def live_undo(trip_id: uuid.UUID, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    trip = TS.load_trip(db, trip_id, user)
+    if not live_reflow.undo(db, trip):
+        raise AppError("There's no running-late change to undo.", code="nothing_to_undo", status_code=409)
+    db.commit()
+    return {"trip": TS.trip_out(TS.load_trip(db, trip_id, user))}
 
 
 class ChatTurn(BaseModel):

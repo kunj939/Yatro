@@ -94,14 +94,17 @@ def run_retention(now: datetime | None = None) -> dict:
         purged = purge_expired_cache(db, now)
         rail = purge_rail(db, now)
         jobs = purge_plan_jobs(db, now)
+        from app.services import group_service
+        groups = group_service.purge_old(db, now)  # group-plan replies 30 days after (ADR 0022)
         from app.services import prewarm
         prewarm.run(db, now)  # off unless PREWARM_ENABLED (ADR 0008)
         db.commit()
-    if scrubbed or purged or scrubbed_trips or any(rail.values()) or jobs:
+    if scrubbed or purged or scrubbed_trips or any(rail.values()) or jobs or groups:
         log.info("retention: scrubbed %d Google places and %d saved-trip rows older than 30 days, deleted %d expired cache rows, "
-                 "rail rows %s, %d old plan jobs", scrubbed, scrubbed_trips, purged, {k: v for k, v in rail.items() if v}, jobs)
+                 "rail rows %s, %d old plan jobs, %d old group plans", scrubbed, scrubbed_trips, purged,
+                 {k: v for k, v in rail.items() if v}, jobs, groups)
     return {"google_places_scrubbed": scrubbed, "saved_trip_rows_scrubbed": scrubbed_trips, "cache_rows_deleted": purged,
-            "rail": rail, "plan_jobs_deleted": jobs}
+            "rail": rail, "plan_jobs_deleted": jobs, "group_plans_deleted": groups}
 
 
 def start_retention_thread() -> threading.Thread | None:

@@ -336,9 +336,13 @@ export function GroupSection() {
               </li>
             ))}
           </ul>
-          <p className="mt-7 inline-flex items-center gap-2 rounded-full border border-line bg-paper px-4 py-2 text-[15px] font-semibold text-ink shadow-[0_6px_20px_-14px_rgb(var(--shadow)/0.5)]">
-            <span className="h-2 w-2 rounded-full bg-signal" aria-hidden />From bakchodi to boarding pass.
-          </p>
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            <Link href="/together/new" className="btn-primary shine !rounded-full !px-6 !py-3">Start a group plan<ArrowRight className="h-4 w-4" aria-hidden /></Link>
+            <p className="inline-flex items-center gap-2 rounded-full border border-line bg-paper px-4 py-2 text-[15px] font-semibold text-ink shadow-[0_6px_20px_-14px_rgb(var(--shadow)/0.5)]">
+              <span className="h-2 w-2 rounded-full bg-signal" aria-hidden />From bakchodi to boarding pass.
+            </p>
+          </div>
+          <p className="mt-3 text-[14px] text-ink-mute">One link in the group chat. Everyone votes, picks dates and adds a budget. No sign-up for them.</p>
         </Reveal>
         <Reveal delay={120} className="min-w-0">
           <div className="spotlight card rounded-3xl p-5 md:p-7">

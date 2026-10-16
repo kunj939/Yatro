@@ -14,6 +14,7 @@ import { BudgetPanel } from "./BudgetPanel";
 import { MapPanel } from "./MapPanel";
 import { GroupMembers } from "./GroupMembers";
 import { ExpenseSplitter, SettleUpHeader } from "./ExpenseSplitter";
+import { TodayCard } from "./TodayCard";
 import { ShareSheet, SharedLinks } from "./ShareSheet";
 import { PlanActions } from "./PlanActions";
 import { TripChat } from "./TripChat";
@@ -237,6 +238,8 @@ export function TripDashboard({ initial, readOnly = false, onReload }: {
 
       {it && (
         <>
+          {/* Live trip mode (ADR 0021): on the trip's own dates, what's now, what's next, and a fix for running late */}
+          {!readOnly && <TodayCard trip={trip} onTrip={setTrip} />}
           {/* Not sticky: floating under the navbar it covered the timeline (half of the Day 2 heading) while scrolling. */}
           <div className="mt-6">
             <div className="grid w-full grid-cols-4 gap-1 rounded-2xl border border-line bg-paper/85 p-1.5 shadow-[0_10px_30px_-20px_rgb(var(--shadow)/0.5)] backdrop-blur-xl sm:flex sm:w-fit" role="tablist" aria-label="Trip views">
